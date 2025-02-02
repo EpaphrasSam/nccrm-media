@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
 import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
-import { fetchMainIndicators } from "./api";
+import { fetchMainIndicators } from "../../../../services/main-indicators/api";
 
 export function InitializeMainIndicators() {
   const initializeMainIndicators = useCallback(async () => {

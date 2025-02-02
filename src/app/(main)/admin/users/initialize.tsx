@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useUsersStore } from "@/store/users";
 import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
-import { fetchUsers } from "./api";
+import { fetchUsers } from "../../../../services/users/api";
 
 export function InitializeUsers() {
   const initializeUsers = useCallback(async () => {

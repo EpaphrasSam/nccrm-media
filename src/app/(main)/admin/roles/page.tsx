@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayo
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { RolesToolbar } from "@/components/modules/admin/roles/RolesToolbar";
 import { RolesTable } from "@/components/modules/admin/roles/RolesTable";
-import { InitializeRoles } from "@/services/roles/initialize";
+import { InitializeRoles } from "@/app/(main)/admin/roles/initialize";
 
 export default function RolesPage() {
   return (

@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import { Role } from "@/services/roles/types";
+import {
+  createRole as createRoleApi,
+  updateRole as updateRoleApi,
+} from "@/services/roles/api";
 
 interface RolesState {
   // Data
   roles: Role[];
   totalRoles: number;
   filteredRoles: Role[];
+  currentRole?: Role;
 
   // Search
   searchQuery: string;
@@ -21,6 +26,8 @@ interface RolesState {
   addRole: () => void;
   editRole: (role: Role) => void;
   deleteRole: (roleId: string) => Promise<void>;
+  createRole: (role: Omit<Role, "id" | "createdAt">) => Promise<void>;
+  updateRole: (id: string, role: Partial<Role>) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
@@ -43,6 +50,7 @@ export const useRolesStore = create<RolesState>((set, get) => ({
   roles: [],
   totalRoles: 0,
   filteredRoles: [],
+  currentRole: undefined,
 
   // Search
   searchQuery: "",
@@ -86,6 +94,51 @@ export const useRolesStore = create<RolesState>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to delete role:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  createRole: async (role) => {
+    try {
+      set({ isLoading: true });
+      const newRole = await createRoleApi(role);
+      set((state) => {
+        const newRoles = [...state.roles, newRole];
+        const filtered = filterRoles(newRoles, state.searchQuery);
+        return {
+          roles: newRoles,
+          filteredRoles: filtered,
+          totalRoles: filtered.length,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to create role:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  updateRole: async (id, role) => {
+    try {
+      set({ isLoading: true });
+      const updatedRole = await updateRoleApi(id, role);
+      set((state) => {
+        const newRoles = state.roles.map((r) =>
+          r.id === id ? updatedRole : r
+        );
+        const filtered = filterRoles(newRoles, state.searchQuery);
+        return {
+          roles: newRoles,
+          filteredRoles: filtered,
+          totalRoles: filtered.length,
+          currentRole: updatedRole,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to update role:", error);
       set({ isLoading: false });
       throw error;
     }

@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useThematicAreasStore } from "@/store/thematic-areas";
 import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
-import { fetchThematicAreas } from "./api";
+import { fetchThematicAreas } from "../../../../services/thematic-areas/api";
 
 export function InitializeThematicAreas() {
   const initializeThematicAreas = useCallback(async () => {

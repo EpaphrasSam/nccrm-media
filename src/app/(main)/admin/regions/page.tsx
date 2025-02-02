@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayo
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { RegionsToolbar } from "@/components/modules/admin/regions/RegionsToolbar";
 import { RegionsTable } from "@/components/modules/admin/regions/RegionsTable";
-import { InitializeRegions } from "@/services/regions/initialize";
+import { InitializeRegions } from "@/app/(main)/admin/regions/initialize";
 
 export default function RegionsPage() {
   return (

@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayo
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { SubIndicatorsToolbar } from "@/components/modules/admin/sub-indicators/SubIndicatorsToolbar";
 import { SubIndicatorsTable } from "@/components/modules/admin/sub-indicators/SubIndicatorsTable";
-import { InitializeSubIndicators } from "@/services/sub-indicators/initialize";
+import { InitializeSubIndicators } from "@/app/(main)/admin/sub-indicators/initialize";
 
 export default function SubIndicatorsPage() {
   return (

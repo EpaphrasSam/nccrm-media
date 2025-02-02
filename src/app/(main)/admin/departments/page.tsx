@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayo
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { DepartmentsToolbar } from "@/components/modules/admin/departments/DepartmentsToolbar";
 import { DepartmentsTable } from "@/components/modules/admin/departments/DepartmentsTable";
-import { InitializeDepartments } from "@/services/departments/initialize";
+import { InitializeDepartments } from "@/app/(main)/admin/departments/initialize";
 
 export default function DepartmentsPage() {
   return (

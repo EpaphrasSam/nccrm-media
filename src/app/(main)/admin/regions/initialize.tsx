@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useRegionsStore } from "@/store/regions";
 import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
-import { fetchRegions } from "./api";
+import { fetchRegions } from "../../../../services/regions/api";
 
 export function InitializeRegions() {
   const initializeRegions = useCallback(async () => {

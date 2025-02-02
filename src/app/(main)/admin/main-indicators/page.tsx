@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayo
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { MainIndicatorsToolbar } from "@/components/modules/admin/main-indicators/MainIndicatorsToolbar";
 import { MainIndicatorsTable } from "@/components/modules/admin/main-indicators/MainIndicatorsTable";
-import { InitializeMainIndicators } from "@/services/main-indicators/initialize";
+import { InitializeMainIndicators } from "@/app/(main)/admin/main-indicators/initialize";
 
 export default function MainIndicatorsPage() {
   return (

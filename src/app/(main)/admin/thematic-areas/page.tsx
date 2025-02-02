@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayo
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { ThematicAreasToolbar } from "@/components/modules/admin/thematic-areas/ThematicAreasToolbar";
 import { ThematicAreasTable } from "@/components/modules/admin/thematic-areas/ThematicAreasTable";
-import { InitializeThematicAreas } from "@/services/thematic-areas/initialize";
+import { InitializeThematicAreas } from "@/app/(main)/admin/thematic-areas/initialize";
 
 export default function ThematicAreasPage() {
   return (

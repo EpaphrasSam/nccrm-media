@@ -1,25 +1,30 @@
-"use client";
-
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { RoleForm } from "@/components/modules/admin/roles/RoleForm";
+import { InitializeRoleEdit } from "./initialize";
 
 interface EditRolePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function EditRolePage({ params }: EditRolePageProps) {
+export default async function EditRolePage({ params }: EditRolePageProps) {
+  const { id } = await params;
+
   return (
-    <AdminPageLayout
-      header={
-        <AdminPageHeader
-          title="Edit Role"
-          description="Modify role details and permissions."
-        />
-      }
-    >
-      {/* Form will be added later */}
-    </AdminPageLayout>
+    <>
+      <InitializeRoleEdit roleId={id} />
+      <AdminPageLayout
+        header={
+          <AdminPageHeader
+            title="Edit Role"
+            description="Modify role details and permissions."
+          />
+        }
+      >
+        <RoleForm isNew={false} />
+      </AdminPageLayout>
+    </>
   );
 }

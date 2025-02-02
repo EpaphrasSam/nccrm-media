@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useRolesStore } from "@/store/roles";
 import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
-import { fetchRoles } from "./api";
+import { fetchRoles } from "../../../../services/roles/api";
 
 export function InitializeRoles() {
   const initializeRoles = useCallback(async () => {

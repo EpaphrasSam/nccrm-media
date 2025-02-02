@@ -1,7 +1,6 @@
-"use client";
-
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { RoleForm } from "@/components/modules/admin/roles/RoleForm";
 
 export default function NewRolePage() {
   return (
@@ -9,11 +8,11 @@ export default function NewRolePage() {
       header={
         <AdminPageHeader
           title="Add New Role"
-          description="Create a new role and define its permissions within the system."
+          description="Create a new role and define its permissions."
         />
       }
     >
-      {/* Form will be added later */}
+      <RoleForm isNew />
     </AdminPageLayout>
   );
 }

@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayo
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { UsersToolbar } from "@/components/modules/admin/users/UsersToolbar";
 import { UsersTable } from "@/components/modules/admin/users/UsersTable";
-import { InitializeUsers } from "@/services/users/initialize";
+import { InitializeUsers } from "@/app/(main)/admin/users/initialize";
 
 export default function UsersPage() {
   return (
