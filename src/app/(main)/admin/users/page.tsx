@@ -13,8 +13,8 @@ export default function UsersPage() {
       <AdminPageLayout
         header={
           <AdminPageHeader
-            title="Users"
-            description="Manage user accounts and permissions"
+            title="Manage Users"
+            description="Add, edit and manage user accounts and roles"
           />
         }
         toolbar={<UsersToolbar />}

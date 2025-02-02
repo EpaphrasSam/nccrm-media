@@ -10,7 +10,6 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-
 import { FaRegEdit } from "react-icons/fa";
 import { useRolesStore } from "@/store/roles";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -18,7 +17,6 @@ import { tableStyles } from "@/lib/styles";
 import { useState } from "react";
 import { Role } from "@/services/roles/types";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
-import { IoTrashSharp } from "react-icons/io5";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -62,8 +60,6 @@ export function RolesTable() {
       setRoleToDelete(null);
     }
   };
-
-  
 
   return (
     <>
@@ -125,17 +121,6 @@ export function RolesTable() {
                         onPress={() => editRole(role)}
                       >
                         <FaRegEdit size={18} color="blue" />
-                      </Button>
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        size="sm"
-                        onPress={() => {
-                          setRoleToDelete(role);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        <IoTrashSharp size={18} color="red" />
                       </Button>
                     </div>
                   </TableCell>

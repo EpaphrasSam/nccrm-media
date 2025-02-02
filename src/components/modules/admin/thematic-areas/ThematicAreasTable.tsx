@@ -10,7 +10,6 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-import { IoTrashSharp } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { useThematicAreasStore } from "@/store/thematic-areas";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -40,7 +39,6 @@ export function ThematicAreasTable() {
   const {
     filteredThematicAreas,
     editThematicArea,
-    deleteThematicArea,
     isLoading,
     currentPage,
     pageSize,
@@ -118,14 +116,7 @@ export function ThematicAreasTable() {
                     >
                       <FaRegEdit size={18} color="blue" />
                     </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => deleteThematicArea(area.id)}
-                    >
-                      <IoTrashSharp size={18} color="red" />
-                    </Button>
+                    
                   </div>
                 </TableCell>
               </TableRow>

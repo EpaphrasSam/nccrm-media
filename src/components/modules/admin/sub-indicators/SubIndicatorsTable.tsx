@@ -10,7 +10,6 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-import { IoTrashSharp } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -40,7 +39,6 @@ export function SubIndicatorsTable() {
   const {
     filteredSubIndicators,
     editSubIndicator,
-    deleteSubIndicator,
     isLoading,
     currentPage,
     pageSize,
@@ -122,14 +120,7 @@ export function SubIndicatorsTable() {
                     >
                       <FaRegEdit size={18} color="blue" />
                     </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => deleteSubIndicator(subIndicator.id)}
-                    >
-                      <IoTrashSharp size={18} color="red" />
-                    </Button>
+                   
                   </div>
                 </TableCell>
               </TableRow>

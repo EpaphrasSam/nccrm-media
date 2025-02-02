@@ -11,7 +11,6 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-import { IoTrashSharp } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import {
   UserRole,
@@ -53,7 +52,6 @@ export function UsersTable() {
   const {
     filteredUsers,
     editUser,
-    deleteUser,
     isLoading,
     currentPage,
     pageSize,
@@ -135,14 +133,7 @@ export function UsersTable() {
                     >
                       <FaRegEdit size={18} color="blue" />
                     </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => deleteUser(user.id)}
-                    >
-                      <IoTrashSharp size={18} color="red" />
-                    </Button>
+                   
                   </div>
                 </TableCell>
               </TableRow>

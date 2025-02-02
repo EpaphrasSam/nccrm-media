@@ -10,7 +10,6 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-import { IoTrashSharp } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -41,7 +40,6 @@ export function MainIndicatorsTable() {
   const {
     filteredMainIndicators,
     editMainIndicator,
-    deleteMainIndicator,
     isLoading,
     currentPage,
     pageSize,
@@ -128,14 +126,6 @@ export function MainIndicatorsTable() {
                       onPress={() => editMainIndicator(mainIndicator)}
                     >
                       <FaRegEdit size={18} color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => deleteMainIndicator(mainIndicator.id)}
-                    >
-                      <IoTrashSharp size={18} color="red" />
                     </Button>
                   </div>
                 </TableCell>

@@ -10,7 +10,6 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-import { IoTrashSharp } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { useRegionsStore } from "@/store/regions";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -39,7 +38,6 @@ export function RegionsTable() {
   const {
     filteredRegions,
     editRegion,
-    deleteRegion,
     isLoading,
     currentPage,
     pageSize,
@@ -108,14 +106,6 @@ export function RegionsTable() {
                       onPress={() => editRegion(region)}
                     >
                       <FaRegEdit size={18} color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => deleteRegion(region.id)}
-                    >
-                      <IoTrashSharp size={18} color="red" />
                     </Button>
                   </div>
                 </TableCell>

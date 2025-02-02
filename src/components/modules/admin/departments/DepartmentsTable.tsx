@@ -10,7 +10,6 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-import { IoTrashSharp } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { useDepartmentsStore } from "@/store/departments";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -39,7 +38,6 @@ export function DepartmentsTable() {
   const {
     filteredDepartments,
     editDepartment,
-    deleteDepartment,
     isLoading,
     currentPage,
     pageSize,
@@ -108,14 +106,6 @@ export function DepartmentsTable() {
                       onPress={() => editDepartment(department)}
                     >
                       <FaRegEdit size={18} color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => deleteDepartment(department.id)}
-                    >
-                      <IoTrashSharp size={18} color="red" />
                     </Button>
                   </div>
                 </TableCell>
