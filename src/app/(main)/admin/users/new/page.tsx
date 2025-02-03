@@ -2,6 +2,7 @@
 
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { UserCreateForm } from "@/components/modules/admin/users/UserCreateForm";
 
 export default function NewUserPage() {
   return (
@@ -9,11 +10,11 @@ export default function NewUserPage() {
       header={
         <AdminPageHeader
           title="Add New User"
-          description="Create a new user account and assign their role and permissions."
+          description="Create a new user and assign their role and department."
         />
       }
     >
-      {/* Form will be added later */}
+      <UserCreateForm />
     </AdminPageLayout>
   );
 }

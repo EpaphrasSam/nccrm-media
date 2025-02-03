@@ -1,23 +1,23 @@
 import { create } from "zustand";
 import { User } from "@/services/users/types";
+import {
+  createUser as createUserApi,
+  updateUser as updateUserApi,
+  deleteUser as deleteUserApi,
+  approveUser as approveUserApi,
+  rejectUser as rejectUserApi,
+} from "@/services/users/api";
 
 interface UsersState {
   // Data
   users: User[];
   totalUsers: number;
   filteredUsers: User[];
+  currentUser?: User;
 
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-
-  // Filters
-  filters: {
-    department: string;
-    role: string;
-  };
-  setFilters: (department: string, role: string) => void;
-  clearFilters: () => void;
 
   // Pagination
   currentPage: number;
@@ -29,34 +29,26 @@ interface UsersState {
   addUser: () => void;
   editUser: (user: User) => void;
   deleteUser: (userId: string) => Promise<void>;
+  createUser: (
+    user: Omit<User, "id" | "createdAt" | "avatarUrl">
+  ) => Promise<void>;
+  updateUser: (id: string, user: Partial<User>) => Promise<void>;
+  approveUser: (userId: string) => Promise<void>;
+  rejectUser: (userId: string) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
   setLoading: (loading: boolean) => void;
 }
 
-const filterUsers = (
-  users: User[],
-  searchQuery: string,
-  filters: { department: string; role: string }
-) => {
+const filterUsers = (users: User[], searchQuery: string) => {
   return users.filter((user) => {
     const matchesSearch = searchQuery
       ? user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
-    const matchesDepartment =
-      filters.department === "all" || !filters.department
-        ? true
-        : user.department === filters.department;
-
-    const matchesRole =
-      filters.role === "all" || !filters.role
-        ? true
-        : user.role === filters.role;
-
-    return matchesSearch && matchesDepartment && matchesRole;
+    return matchesSearch;
   });
 };
 
@@ -65,45 +57,14 @@ export const useUsersStore = create<UsersState>((set, get) => ({
   users: [],
   totalUsers: 0,
   filteredUsers: [],
+  currentUser: undefined,
 
   // Search
   searchQuery: "",
   setSearchQuery: (query) => {
     set({ searchQuery: query });
     const state = get();
-    const filtered = filterUsers(state.users, query, state.filters);
-    set({
-      filteredUsers: filtered,
-      totalUsers: filtered.length,
-      currentPage: 1,
-    });
-  },
-
-  // Filters
-  filters: {
-    department: "all",
-    role: "all",
-  },
-  setFilters: (department, role) => {
-    set({ filters: { department, role } });
-    const state = get();
-    const filtered = filterUsers(state.users, state.searchQuery, {
-      department,
-      role,
-    });
-    set({
-      filteredUsers: filtered,
-      totalUsers: filtered.length,
-      currentPage: 1,
-    });
-  },
-  clearFilters: () => {
-    set({ filters: { department: "all", role: "all" } });
-    const state = get();
-    const filtered = filterUsers(state.users, state.searchQuery, {
-      department: "all",
-      role: "all",
-    });
+    const filtered = filterUsers(state.users, query);
     set({
       filteredUsers: filtered,
       totalUsers: filtered.length,
@@ -127,14 +88,10 @@ export const useUsersStore = create<UsersState>((set, get) => ({
   deleteUser: async (userId) => {
     try {
       set({ isLoading: true });
-      // TODO: Add API call to delete user
+      await deleteUserApi(userId);
       set((state) => {
         const newUsers = state.users.filter((u) => u.id !== userId);
-        const filtered = filterUsers(
-          newUsers,
-          state.searchQuery,
-          state.filters
-        );
+        const filtered = filterUsers(newUsers, state.searchQuery);
         return {
           users: newUsers,
           filteredUsers: filtered,
@@ -144,6 +101,97 @@ export const useUsersStore = create<UsersState>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to delete user:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  createUser: async (userData) => {
+    try {
+      set({ isLoading: true });
+      const newUser = await createUserApi(userData);
+      set((state) => {
+        const newUsers = [...state.users, newUser];
+        const filtered = filterUsers(newUsers, state.searchQuery);
+        return {
+          users: newUsers,
+          filteredUsers: filtered,
+          totalUsers: filtered.length,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to create user:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  updateUser: async (id, userData) => {
+    try {
+      set({ isLoading: true });
+      const updatedUser = await updateUserApi(id, userData);
+      set((state) => {
+        const newUsers = state.users.map((u) =>
+          u.id === id ? updatedUser : u
+        );
+        const filtered = filterUsers(newUsers, state.searchQuery);
+        return {
+          users: newUsers,
+          filteredUsers: filtered,
+          totalUsers: filtered.length,
+          currentUser: updatedUser,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  approveUser: async (userId) => {
+    try {
+      set({ isLoading: true });
+      const updatedUser = await approveUserApi(userId);
+      set((state) => {
+        const newUsers = state.users.map((u) =>
+          u.id === userId ? updatedUser : u
+        );
+        const filtered = filterUsers(newUsers, state.searchQuery);
+        return {
+          users: newUsers,
+          filteredUsers: filtered,
+          totalUsers: filtered.length,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to approve user:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  rejectUser: async (userId) => {
+    try {
+      set({ isLoading: true });
+      const updatedUser = await rejectUserApi(userId);
+      set((state) => {
+        const newUsers = state.users.map((u) =>
+          u.id === userId ? updatedUser : u
+        );
+        const filtered = filterUsers(newUsers, state.searchQuery);
+        return {
+          users: newUsers,
+          filteredUsers: filtered,
+          totalUsers: filtered.length,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to reject user:", error);
       set({ isLoading: false });
       throw error;
     }

@@ -31,11 +31,18 @@ export const USER_STATUSES = {
   PENDING: "Pending Verification",
 } as const;
 
+// Add to existing constants
+export const GENDERS = {
+  MALE: "male",
+  FEMALE: "female",
+} as const;
+
 type ValueOf<T> = T[keyof T];
 
 export type UserRole = ValueOf<typeof USER_ROLES>;
 export type Department = ValueOf<typeof DEPARTMENTS>;
 export type UserStatus = ValueOf<typeof USER_STATUSES>;
+export type Gender = (typeof GENDERS)[keyof typeof GENDERS];
 
 // Role color mapping
 export const ROLE_COLORS: Record<UserRole, string> = {

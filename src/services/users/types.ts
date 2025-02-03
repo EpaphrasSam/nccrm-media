@@ -1,9 +1,12 @@
-import { UserRole, Department, UserStatus } from "@/lib/constants";
+import { UserRole, Department, UserStatus, Gender } from "@/lib/constants";
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  phoneNumber: string;
+  gender: Gender;
+  username: string;
   role: UserRole;
   department: Department;
   status: UserStatus;

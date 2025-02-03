@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useEffect, useCallback, useState } from "react";
 import { Input, Textarea, Checkbox, Button, Skeleton } from "@heroui/react";
 import { MODULE_PERMISSIONS, ModulePermissions } from "@/services/roles/types";
-import { buttonStyles, inputStyles } from "@/lib/styles";
+import { buttonStyles, checkboxStyles, inputStyles } from "@/lib/styles";
 import { useRolesStore } from "@/store/roles";
 import { useRouter } from "next/navigation";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
@@ -247,7 +247,7 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
                           )
                         }
                         radius="sm"
-                        className="[&>span]:after:!bg-brand-red [&>span]:before:group-data-[selected=true]:!border-brand-red"
+                        className={checkboxStyles}
                       />
                       <span className="text-sm">
                         Can {permission}{" "}

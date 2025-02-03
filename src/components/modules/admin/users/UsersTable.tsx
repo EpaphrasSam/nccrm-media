@@ -10,13 +10,16 @@ import {
   User as HeroUser,
   Button,
   Skeleton,
+  Tooltip,
 } from "@heroui/react";
-import { FaRegEdit } from "react-icons/fa";
+import { FaRegEdit, FaCheck } from "react-icons/fa";
+import { IoMdClose } from "react-icons/io";
 import {
   UserRole,
   UserStatus,
   ROLE_COLORS,
   STATUS_COLORS,
+  USER_STATUSES,
 } from "@/lib/constants";
 import { useUsersStore } from "@/store/users";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -57,6 +60,8 @@ export function UsersTable() {
     pageSize,
     setCurrentPage,
     totalUsers,
+    approveUser,
+    rejectUser,
   } = useUsersStore();
 
   const startIndex = (currentPage - 1) * pageSize;
@@ -133,7 +138,36 @@ export function UsersTable() {
                     >
                       <FaRegEdit size={18} color="blue" />
                     </Button>
-                   
+                    {user.status === USER_STATUSES.PENDING && (
+                      <>
+                        <Tooltip content="Approve User">
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            onPress={() => approveUser(user.id)}
+                          >
+                            <FaCheck
+                              size={18}
+                              className="text-brand-green-dark"
+                            />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Reject User">
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            onPress={() => rejectUser(user.id)}
+                          >
+                            <IoMdClose
+                              size={20}
+                              className="text-brand-red-dark"
+                            />
+                          </Button>
+                        </Tooltip>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

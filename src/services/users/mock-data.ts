@@ -1,11 +1,19 @@
 import { User } from "./types";
-import { DEPARTMENTS, USER_ROLES, USER_STATUSES } from "../../lib/constants";
+import {
+  DEPARTMENTS,
+  GENDERS,
+  USER_ROLES,
+  USER_STATUSES,
+} from "@/lib/constants";
 
 export const mockUsers: User[] = [
   {
     id: "1",
     name: "Sarah Ibrahim",
     email: "sarah.ibrahim@example.com",
+    phoneNumber: "+233 24 123 4567",
+    gender: GENDERS.FEMALE,
+    username: "sarah.ibrahim",
     role: USER_ROLES.ADMIN,
     department: DEPARTMENTS.CRIME_JUSTICE,
     status: USER_STATUSES.ACTIVE,
@@ -15,6 +23,9 @@ export const mockUsers: User[] = [
     id: "2",
     name: "John Doe",
     email: "john.doe@example.com",
+    phoneNumber: "+233 24 987 6543",
+    gender: GENDERS.MALE,
+    username: "john.doe",
     role: USER_ROLES.EDITOR,
     department: DEPARTMENTS.SPORTS_RECREATION,
     status: USER_STATUSES.ACTIVE,
@@ -24,6 +35,9 @@ export const mockUsers: User[] = [
     id: "3",
     name: "Emma Wilson",
     email: "emma.wilson@example.com",
+    phoneNumber: "+233 24 456 7890",
+    gender: GENDERS.FEMALE,
+    username: "emma.wilson",
     role: USER_ROLES.REPORTER,
     department: DEPARTMENTS.EDUCATION_RESEARCH,
     status: USER_STATUSES.PENDING,
@@ -37,6 +51,9 @@ export const mockUsers: User[] = [
     department: DEPARTMENTS.CRIME_JUSTICE,
     status: USER_STATUSES.INACTIVE,
     avatarUrl: "https://i.pravatar.cc/150?u=michael",
+    phoneNumber: "+233 24 123 4567",
+    gender: GENDERS.MALE,
+    username: "michael.chen",
   },
   {
     id: "5",
@@ -46,5 +63,8 @@ export const mockUsers: User[] = [
     department: DEPARTMENTS.EDUCATION_RESEARCH,
     status: USER_STATUSES.ACTIVE,
     avatarUrl: "https://i.pravatar.cc/150?u=lisa",
+    phoneNumber: "+233 24 123 4567",
+    gender: GENDERS.FEMALE,
+    username: "lisa.anderson",
   },
 ];
