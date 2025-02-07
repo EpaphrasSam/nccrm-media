@@ -1,4 +1,17 @@
-import { UserRole, Department, UserStatus, Gender } from "@/lib/constants";
+export type UserStatus = "active" | "inactive" | "pending";
+
+export const USER_STATUSES = {
+  ACTIVE: "active" as UserStatus,
+  INACTIVE: "inactive" as UserStatus,
+  PENDING: "pending" as UserStatus,
+} as const;
+
+export type Gender = "male" | "female";
+
+export const GENDERS = {
+  MALE: "male" as Gender,
+  FEMALE: "female" as Gender,
+} as const;
 
 export interface User {
   id: string;
@@ -7,12 +20,18 @@ export interface User {
   phoneNumber: string;
   gender: Gender;
   username: string;
-  role: UserRole;
-  department: Department;
+  roleId: string;
+  role?: string; // For display purposes
+  departmentId: string;
+  department?: string; // For display purposes
   status: UserStatus;
   avatarUrl?: string;
+  createdAt: string;
 }
 
-// You can add more types as needed:
-// export type UserCreateInput = Omit<User, "id" | "createdAt">
-// export type UserUpdateInput = Partial<User>
+// For API requests
+export type UserCreateInput = Omit<
+  User,
+  "id" | "createdAt" | "avatarUrl" | "department" | "role"
+>;
+export type UserUpdateInput = Partial<Omit<User, "department" | "role">>;

@@ -10,20 +10,19 @@ import {
   User as HeroUser,
   Button,
   Skeleton,
-  Tooltip,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
 import { FaRegEdit, FaCheck } from "react-icons/fa";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
-import {
-  UserRole,
-  UserStatus,
-  ROLE_COLORS,
-  STATUS_COLORS,
-  USER_STATUSES,
-} from "@/lib/constants";
+import { STATUS_COLORS } from "@/lib/constants";
 import { useUsersStore } from "@/store/users";
 import { Pagination } from "@/components/common/navigation/Pagination";
 import { tableStyles } from "@/lib/styles";
+import { UserStatus } from "@/services/users/types";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -35,17 +34,66 @@ const columns = [
   { key: "actions", label: "Actions" },
 ] as const;
 
-const RoleChip = ({ role }: { role: UserRole }) => (
-  <div
-    style={{
-      backgroundColor: `${ROLE_COLORS[role]}20`,
-      color: ROLE_COLORS[role],
-    }}
-    className="inline-flex py-1.5 px-6 text-xs rounded-full"
-  >
-    {role}
-  </div>
-);
+// Store generated colors to ensure no repeats
+const generatedColors = new Map<string, { bg: string; text: string }>();
+
+// Generate a random hex color
+const generateRandomColor = () => {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
+
+// Get contrasting text color (black or white) based on background color
+const getContrastColor = (hexcolor: string) => {
+  // Convert hex to RGB
+  const r = parseInt(hexcolor.slice(1, 3), 16);
+  const g = parseInt(hexcolor.slice(3, 5), 16);
+  const b = parseInt(hexcolor.slice(5, 7), 16);
+
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.5 ? "#000000" : "#FFFFFF";
+};
+
+// Get or generate color for role
+const getColorForRole = (role: string) => {
+  if (generatedColors.has(role)) {
+    return generatedColors.get(role)!;
+  }
+
+  let bgColor: string;
+  do {
+    bgColor = generateRandomColor();
+  } while (
+    Array.from(generatedColors.values()).some((color) => color.bg === bgColor)
+  );
+
+  const textColor = getContrastColor(bgColor);
+  const colors = {
+    bg: bgColor,
+    text: textColor,
+  };
+
+  generatedColors.set(role, colors);
+  return colors;
+};
+
+const RoleChip = ({ role }: { role: string }) => {
+  const colors = getColorForRole(role);
+  return (
+    <div
+      className="inline-flex py-1.5 px-6 text-xs rounded-full"
+      style={{ backgroundColor: colors.bg, color: colors.text }}
+    >
+      {role}
+    </div>
+  );
+};
 
 const StatusText = ({ status }: { status: UserStatus }) => (
   <span style={{ color: STATUS_COLORS[status] }}>{status}</span>
@@ -122,9 +170,9 @@ export function UsersTable() {
                   />
                 </TableCell>
                 <TableCell>
-                  <RoleChip role={user.role} />
+                  <RoleChip role={user.role || "Unknown"} />
                 </TableCell>
-                <TableCell>{user.department}</TableCell>
+                <TableCell>{user.department || "Unknown"}</TableCell>
                 <TableCell>
                   <StatusText status={user.status} />
                 </TableCell>
@@ -138,35 +186,34 @@ export function UsersTable() {
                     >
                       <FaRegEdit size={18} color="blue" />
                     </Button>
-                    {user.status === USER_STATUSES.PENDING && (
-                      <>
-                        <Tooltip content="Approve User">
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
+                    {user.status === "pending" && (
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Button isIconOnly variant="light" size="sm">
+                            <BsThreeDotsVertical size={18} />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label="User Actions">
+                          <DropdownItem
+                            key="approve"
+                            color="success"
+                            className="text-brand-green"
+                            startContent={<FaCheck size={16} />}
                             onPress={() => approveUser(user.id)}
                           >
-                            <FaCheck
-                              size={18}
-                              className="text-brand-green-dark"
-                            />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip content="Reject User">
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
+                            Approve
+                          </DropdownItem>
+                          <DropdownItem
+                            key="reject"
+                            color="danger"
+                            className="text-brand-red-dark"
+                            startContent={<IoMdClose size={18} />}
                             onPress={() => rejectUser(user.id)}
                           >
-                            <IoMdClose
-                              size={20}
-                              className="text-brand-red-dark"
-                            />
-                          </Button>
-                        </Tooltip>
-                      </>
+                            Reject
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
                     )}
                   </div>
                 </TableCell>

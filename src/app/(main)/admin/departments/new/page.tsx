@@ -2,6 +2,7 @@
 
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { DepartmentForm } from "@/components/modules/admin/departments/DepartmentForm";
 
 export default function NewDepartmentPage() {
   return (
@@ -13,7 +14,9 @@ export default function NewDepartmentPage() {
         />
       }
     >
-      <div className="max-w-2xl">{/* Form will be added later */}</div>
+      <div className="max-w-2xl">
+        <DepartmentForm isNew />
+      </div>
     </AdminPageLayout>
   );
 }

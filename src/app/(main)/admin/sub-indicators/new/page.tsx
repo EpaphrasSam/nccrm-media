@@ -2,6 +2,7 @@
 
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { SubIndicatorForm } from "@/components/modules/admin/sub-indicators/SubIndicatorForm";
 
 export default function NewSubIndicatorPage() {
   return (
@@ -13,7 +14,9 @@ export default function NewSubIndicatorPage() {
         />
       }
     >
-      <div className="max-w-2xl">{/* Form will be added later */}</div>
+      <div className="max-w-2xl">
+        <SubIndicatorForm isNew />
+      </div>
     </AdminPageLayout>
   );
 }

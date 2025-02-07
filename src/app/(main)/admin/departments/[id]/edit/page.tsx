@@ -1,27 +1,34 @@
-"use client";
-
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { DepartmentForm } from "@/components/modules/admin/departments/DepartmentForm";
+import { InitializeDepartment } from "./initialize";
 
 interface EditDepartmentPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function EditDepartmentPage({
+export default async function EditDepartmentPage({
   params,
 }: EditDepartmentPageProps) {
+  const { id } = await params;
+
   return (
-    <AdminPageLayout
-      header={
-        <AdminPageHeader
-          title="Edit Department"
-          description="Modify department details."
-        />
-      }
-    >
-      <div className="max-w-2xl">{/* Form will be added later */}</div>
-    </AdminPageLayout>
+    <>
+      <InitializeDepartment id={id} />
+      <AdminPageLayout
+        header={
+          <AdminPageHeader
+            title="Edit Department"
+            description="Modify department details."
+          />
+        }
+      >
+        <div className="max-w-2xl">
+          <DepartmentForm />
+        </div>
+      </AdminPageLayout>
+    </>
   );
 }

@@ -23,7 +23,7 @@ export default async function EditRolePage({ params }: EditRolePageProps) {
           />
         }
       >
-        <RoleForm isNew={false} />
+        <RoleForm />
       </AdminPageLayout>
     </>
   );

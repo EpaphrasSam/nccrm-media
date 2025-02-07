@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import { Region } from "@/services/regions/types";
+import {
+  createRegion as createRegionApi,
+  updateRegion as updateRegionApi,
+} from "@/services/regions/api";
 
 interface RegionsState {
   // Data
   regions: Region[];
   totalRegions: number;
   filteredRegions: Region[];
+  currentRegion?: Region;
 
   // Search
   searchQuery: string;
@@ -21,6 +26,8 @@ interface RegionsState {
   addRegion: () => void;
   editRegion: (region: Region) => void;
   deleteRegion: (regionId: string) => Promise<void>;
+  createRegion: (region: Omit<Region, "id" | "createdAt">) => Promise<void>;
+  updateRegion: (id: string, region: Partial<Region>) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
@@ -42,6 +49,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   regions: [],
   totalRegions: 0,
   filteredRegions: [],
+  currentRegion: undefined,
 
   // Search
   searchQuery: "",
@@ -85,6 +93,51 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to delete region:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  createRegion: async (regionData) => {
+    try {
+      set({ isLoading: true });
+      const newRegion = await createRegionApi(regionData);
+      set((state) => {
+        const newRegions = [...state.regions, newRegion];
+        const filtered = filterRegions(newRegions, state.searchQuery);
+        return {
+          regions: newRegions,
+          filteredRegions: filtered,
+          totalRegions: filtered.length,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to create region:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  updateRegion: async (id, regionData) => {
+    try {
+      set({ isLoading: true });
+      const updatedRegion = await updateRegionApi(id, regionData);
+      set((state) => {
+        const newRegions = state.regions.map((r) =>
+          r.id === id ? updatedRegion : r
+        );
+        const filtered = filterRegions(newRegions, state.searchQuery);
+        return {
+          regions: newRegions,
+          filteredRegions: filtered,
+          totalRegions: filtered.length,
+          currentRegion: updatedRegion,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to update region:", error);
       set({ isLoading: false });
       throw error;
     }

@@ -3,19 +3,36 @@
 import { useCallback } from "react";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
 import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
-import { fetchSubIndicators } from "../../../../services/sub-indicators/api";
+import { fetchSubIndicators } from "@/services/sub-indicators/api";
+import { fetchMainIndicators } from "@/services/main-indicators/api";
+import { SubIndicatorWithMainIndicator } from "@/services/sub-indicators/types";
 
 export function InitializeSubIndicators() {
   const initializeSubIndicators = useCallback(async () => {
     useSubIndicatorsStore.setState({ isLoading: true });
 
     try {
-      const subIndicators = await fetchSubIndicators();
+      const [subIndicators, mainIndicators] = await Promise.all([
+        fetchSubIndicators(),
+        fetchMainIndicators(),
+      ]);
+
+      // Add main indicator names to sub indicators
+      const subIndicatorsWithMainIndicators: SubIndicatorWithMainIndicator[] =
+        subIndicators.map((indicator) => {
+          const mainIndicator = mainIndicators.find(
+            (main) => main.id === indicator.mainIndicatorId
+          );
+          return {
+            ...indicator,
+            mainIndicator: mainIndicator?.name || "Unknown",
+          };
+        });
 
       useSubIndicatorsStore.setState({
-        subIndicators,
-        filteredSubIndicators: subIndicators,
-        totalSubIndicators: subIndicators.length,
+        subIndicators: subIndicatorsWithMainIndicators,
+        filteredSubIndicators: subIndicatorsWithMainIndicators,
+        totalSubIndicators: subIndicatorsWithMainIndicators.length,
         isLoading: false,
       });
     } catch (error) {

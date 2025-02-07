@@ -1,25 +1,32 @@
-"use client";
-
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { RegionForm } from "@/components/modules/admin/regions/RegionForm";
+import { InitializeRegion } from "./initialize";
 
 interface EditRegionPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function EditRegionPage({ params }: EditRegionPageProps) {
+export default async function EditRegionPage({ params }: EditRegionPageProps) {
+  const { id } = await params;
+
   return (
-    <AdminPageLayout
-      header={
-        <AdminPageHeader
-          title="Edit Region"
-          description="Modify region details."
-        />
-      }
-    >
-      <div className="max-w-2xl">{/* Form will be added later */}</div>
-    </AdminPageLayout>
+    <>
+      <InitializeRegion id={id} />
+      <AdminPageLayout
+        header={
+          <AdminPageHeader
+            title="Edit Region"
+            description="Modify region details."
+          />
+        }
+      >
+        <div className="max-w-2xl">
+          <RegionForm isNew={false} />
+        </div>
+      </AdminPageLayout>
+    </>
   );
 }

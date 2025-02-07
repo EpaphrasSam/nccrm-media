@@ -1,7 +1,6 @@
-"use client";
-
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { RegionForm } from "@/components/modules/admin/regions/RegionForm";
 
 export default function NewRegionPage() {
   return (
@@ -13,7 +12,9 @@ export default function NewRegionPage() {
         />
       }
     >
-      <div className="max-w-2xl">{/* Form will be added later */}</div>
+      <div className="max-w-2xl">
+        <RegionForm isNew />
+      </div>
     </AdminPageLayout>
   );
 }

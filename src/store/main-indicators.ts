@@ -1,11 +1,16 @@
 import { create } from "zustand";
-import { MainIndicator } from "@/services/main-indicators/types";
+import { MainIndicatorWithThematicArea } from "@/services/main-indicators/types";
+import {
+  createMainIndicator as createMainIndicatorApi,
+  updateMainIndicator as updateMainIndicatorApi,
+} from "@/services/main-indicators/api";
 
 interface MainIndicatorsState {
   // Data
-  mainIndicators: MainIndicator[];
+  mainIndicators: MainIndicatorWithThematicArea[];
   totalMainIndicators: number;
-  filteredMainIndicators: MainIndicator[];
+  filteredMainIndicators: MainIndicatorWithThematicArea[];
+  currentMainIndicator?: MainIndicatorWithThematicArea;
 
   // Search
   searchQuery: string;
@@ -19,8 +24,15 @@ interface MainIndicatorsState {
 
   // Actions
   addMainIndicator: () => void;
-  editMainIndicator: (mainIndicator: MainIndicator) => void;
+  editMainIndicator: (mainIndicator: MainIndicatorWithThematicArea) => void;
   deleteMainIndicator: (mainIndicatorId: string) => Promise<void>;
+  createMainIndicator: (
+    mainIndicator: Omit<MainIndicatorWithThematicArea, "id" | "createdAt">
+  ) => Promise<void>;
+  updateMainIndicator: (
+    id: string,
+    mainIndicator: Partial<MainIndicatorWithThematicArea>
+  ) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
@@ -28,12 +40,13 @@ interface MainIndicatorsState {
 }
 
 const filterMainIndicators = (
-  mainIndicators: MainIndicator[],
+  mainIndicators: MainIndicatorWithThematicArea[],
   searchQuery: string
 ) => {
-  return mainIndicators.filter((mainIndicator) => {
+  return mainIndicators.filter((indicator) => {
     const matchesSearch = searchQuery
-      ? mainIndicator.name.toLowerCase().includes(searchQuery.toLowerCase())
+      ? indicator.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        indicator.description.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
     return matchesSearch;
@@ -46,6 +59,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>(
     mainIndicators: [],
     totalMainIndicators: 0,
     filteredMainIndicators: [],
+    currentMainIndicator: undefined,
 
     // Search
     searchQuery: "",
@@ -79,7 +93,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>(
         // TODO: Add API call to delete main indicator
         set((state) => {
           const newMainIndicators = state.mainIndicators.filter(
-            (m) => m.id !== mainIndicatorId
+            (t) => t.id !== mainIndicatorId
           );
           const filtered = filterMainIndicators(
             newMainIndicators,
@@ -94,6 +108,62 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>(
         });
       } catch (error) {
         console.error("Failed to delete main indicator:", error);
+        set({ isLoading: false });
+        throw error;
+      }
+    },
+
+    createMainIndicator: async (mainIndicatorData) => {
+      try {
+        set({ isLoading: true });
+        const newMainIndicator = await createMainIndicatorApi(
+          mainIndicatorData
+        );
+        set((state) => {
+          const newMainIndicators = [...state.mainIndicators, newMainIndicator];
+          const filtered = filterMainIndicators(
+            newMainIndicators,
+            state.searchQuery
+          );
+          return {
+            mainIndicators: newMainIndicators,
+            filteredMainIndicators: filtered,
+            totalMainIndicators: filtered.length,
+            isLoading: false,
+          };
+        });
+      } catch (error) {
+        console.error("Failed to create main indicator:", error);
+        set({ isLoading: false });
+        throw error;
+      }
+    },
+
+    updateMainIndicator: async (id, mainIndicatorData) => {
+      try {
+        set({ isLoading: true });
+        const updatedMainIndicator = await updateMainIndicatorApi(
+          id,
+          mainIndicatorData
+        );
+        set((state) => {
+          const newMainIndicators = state.mainIndicators.map((t) =>
+            t.id === id ? updatedMainIndicator : t
+          );
+          const filtered = filterMainIndicators(
+            newMainIndicators,
+            state.searchQuery
+          );
+          return {
+            mainIndicators: newMainIndicators,
+            filteredMainIndicators: filtered,
+            totalMainIndicators: filtered.length,
+            currentMainIndicator: updatedMainIndicator,
+            isLoading: false,
+          };
+        });
+      } catch (error) {
+        console.error("Failed to update main indicator:", error);
         set({ isLoading: false });
         throw error;
       }

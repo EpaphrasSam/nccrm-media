@@ -248,6 +248,7 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
                         }
                         radius="sm"
                         className={checkboxStyles}
+                        color="danger"
                       />
                       <span className="text-sm">
                         Can {permission}{" "}

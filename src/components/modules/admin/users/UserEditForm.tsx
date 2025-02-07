@@ -15,24 +15,20 @@ import {
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useUsersStore } from "@/store/users";
-import {
-  USER_ROLES,
-  DEPARTMENTS,
-  GENDERS,
-  UserRole,
-  Department,
-  Gender,
-} from "@/lib/constants";
+import { GENDERS, Gender } from "@/services/users/types";
 import { useState, useEffect, useRef } from "react";
 import { FaCamera } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { generateUsername, generatePassword } from "@/helpers/userHelpers";
+import useSWR from "swr";
+import { fetchDepartments } from "@/services/departments/api";
+import { fetchRoles } from "@/services/roles/api";
 
 // Section schemas
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  role: z.enum(Object.values(USER_ROLES) as [UserRole, ...UserRole[]]),
+  roleId: z.string().min(1, "Role is required"),
 });
 
 const personalInfoSchema = z.object({
@@ -44,9 +40,7 @@ const personalInfoSchema = z.object({
 
 const accountInfoSchema = z.object({
   username: z.string().min(1, "Username is required"),
-  department: z.enum(
-    Object.values(DEPARTMENTS) as [Department, ...Department[]]
-  ),
+  departmentId: z.string().min(1, "Department is required"),
   password: z.string().optional(),
 });
 
@@ -63,6 +57,13 @@ export function UserEditForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(false);
 
+  // Fetch departments and roles using SWR
+  const { data: departments, error: departmentsError } = useSWR(
+    "departments",
+    fetchDepartments
+  );
+  const { data: roles, error: rolesError } = useSWR("roles", fetchRoles);
+
   // Hidden file input for image upload
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,7 +73,7 @@ export function UserEditForm() {
     defaultValues: {
       name: currentUser?.name || "",
       email: currentUser?.email || "",
-      role: currentUser?.role,
+      roleId: currentUser?.roleId || "",
     },
   });
 
@@ -90,7 +91,7 @@ export function UserEditForm() {
     resolver: zodResolver(accountInfoSchema),
     defaultValues: {
       username: currentUser?.username || "",
-      department: currentUser?.department,
+      departmentId: currentUser?.departmentId || "",
       password: "",
     },
   });
@@ -101,7 +102,7 @@ export function UserEditForm() {
       profileForm.reset({
         name: currentUser.name,
         email: currentUser.email,
-        role: currentUser.role,
+        roleId: currentUser.roleId,
       });
       personalInfoForm.reset({
         phoneNumber: currentUser.phoneNumber || "",
@@ -109,7 +110,7 @@ export function UserEditForm() {
       });
       accountInfoForm.reset({
         username: currentUser.username || "",
-        department: currentUser.department,
+        departmentId: currentUser.departmentId || "",
         password: "",
       });
       setProfileImage(currentUser.avatarUrl);
@@ -172,7 +173,7 @@ export function UserEditForm() {
     }
   };
 
-  if (isLoading || localLoading) {
+  if (isLoading || localLoading || !departments || !roles) {
     return (
       <div className="space-y-8 max-w-5xl">
         {/* Profile Section Loading */}
@@ -219,6 +220,10 @@ export function UserEditForm() {
         </section>
       </div>
     );
+  }
+
+  if (departmentsError || rolesError) {
+    return <div>Error loading data</div>;
   }
 
   return (
@@ -293,7 +298,7 @@ export function UserEditForm() {
                   )}
                 />
                 <Controller
-                  name="role"
+                  name="roleId"
                   control={profileForm.control}
                   render={({ field }) => (
                     <Select
@@ -307,12 +312,14 @@ export function UserEditForm() {
                       placeholder="Select role"
                       variant="underlined"
                       classNames={{ label: "text-base font-medium" }}
-                      isInvalid={!!profileForm.formState.errors.role}
-                      errorMessage={profileForm.formState.errors.role?.message}
+                      isInvalid={!!profileForm.formState.errors.roleId}
+                      errorMessage={
+                        profileForm.formState.errors.roleId?.message
+                      }
                     >
-                      {Object.values(USER_ROLES).map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
                         </SelectItem>
                       ))}
                     </Select>
@@ -488,7 +495,7 @@ export function UserEditForm() {
             />
 
             <Controller
-              name="department"
+              name="departmentId"
               control={accountInfoForm.control}
               render={({ field }) => (
                 <Select
@@ -502,14 +509,14 @@ export function UserEditForm() {
                   placeholder="Select department"
                   variant="bordered"
                   classNames={inputStyles}
-                  isInvalid={!!accountInfoForm.formState.errors.department}
+                  isInvalid={!!accountInfoForm.formState.errors.departmentId}
                   errorMessage={
-                    accountInfoForm.formState.errors.department?.message
+                    accountInfoForm.formState.errors.departmentId?.message
                   }
                 >
-                  {Object.values(DEPARTMENTS).map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
                     </SelectItem>
                   ))}
                 </Select>

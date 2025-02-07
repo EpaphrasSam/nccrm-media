@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { User } from "@/services/users/types";
+import { User, UserCreateInput, UserUpdateInput } from "@/services/users/types";
 import {
   createUser as createUserApi,
   updateUser as updateUserApi,
@@ -29,10 +29,8 @@ interface UsersState {
   addUser: () => void;
   editUser: (user: User) => void;
   deleteUser: (userId: string) => Promise<void>;
-  createUser: (
-    user: Omit<User, "id" | "createdAt" | "avatarUrl">
-  ) => Promise<void>;
-  updateUser: (id: string, user: Partial<User>) => Promise<void>;
+  createUser: (user: UserCreateInput) => Promise<void>;
+  updateUser: (id: string, user: UserUpdateInput) => Promise<void>;
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
 

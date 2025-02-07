@@ -1,7 +1,6 @@
-"use client";
-
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
+import { MainIndicatorForm } from "@/components/modules/admin/main-indicators/MainIndicatorForm";
 
 export default function NewMainIndicatorPage() {
   return (
@@ -13,7 +12,9 @@ export default function NewMainIndicatorPage() {
         />
       }
     >
-      <div className="max-w-2xl">{/* Form will be added later */}</div>
+      <div className="max-w-2xl">
+        <MainIndicatorForm isNew />
+      </div>
     </AdminPageLayout>
   );
 }

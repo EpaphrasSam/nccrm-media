@@ -4,7 +4,12 @@ export interface MainIndicator {
   id: string;
   name: string;
   description: string;
-  thematicArea: string;
-  createdAt: string;
+  thematicAreaId: string;
   status: MainIndicatorStatus;
+  createdAt: string;
+}
+
+// For display purposes (like in tables)
+export interface MainIndicatorWithThematicArea extends MainIndicator {
+  thematicArea?: string;
 }

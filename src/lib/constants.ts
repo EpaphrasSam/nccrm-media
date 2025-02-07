@@ -53,8 +53,8 @@ export const ROLE_COLORS: Record<UserRole, string> = {
 };
 
 // Status color mapping
-export const STATUS_COLORS: Record<UserStatus, string> = {
-  [USER_STATUSES.ACTIVE]: COLORS.green,
-  [USER_STATUSES.INACTIVE]: COLORS.red,
-  [USER_STATUSES.PENDING]: COLORS.yellow,
-};
+export const STATUS_COLORS = {
+  active: COLORS.green,
+  inactive: COLORS.red,
+  pending: COLORS.yellow,
+} as const;

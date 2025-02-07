@@ -1,11 +1,16 @@
 import { create } from "zustand";
-import { SubIndicator } from "@/services/sub-indicators/types";
+import { SubIndicatorWithMainIndicator } from "@/services/sub-indicators/types";
+import {
+  createSubIndicator as createSubIndicatorApi,
+  updateSubIndicator as updateSubIndicatorApi,
+} from "@/services/sub-indicators/api";
 
 interface SubIndicatorsState {
   // Data
-  subIndicators: SubIndicator[];
+  subIndicators: SubIndicatorWithMainIndicator[];
   totalSubIndicators: number;
-  filteredSubIndicators: SubIndicator[];
+  filteredSubIndicators: SubIndicatorWithMainIndicator[];
+  currentSubIndicator?: SubIndicatorWithMainIndicator;
 
   // Search
   searchQuery: string;
@@ -19,8 +24,15 @@ interface SubIndicatorsState {
 
   // Actions
   addSubIndicator: () => void;
-  editSubIndicator: (subIndicator: SubIndicator) => void;
+  editSubIndicator: (subIndicator: SubIndicatorWithMainIndicator) => void;
   deleteSubIndicator: (subIndicatorId: string) => Promise<void>;
+  createSubIndicator: (
+    subIndicator: Omit<SubIndicatorWithMainIndicator, "id" | "createdAt">
+  ) => Promise<void>;
+  updateSubIndicator: (
+    id: string,
+    subIndicator: Partial<SubIndicatorWithMainIndicator>
+  ) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
@@ -28,12 +40,12 @@ interface SubIndicatorsState {
 }
 
 const filterSubIndicators = (
-  subIndicators: SubIndicator[],
+  subIndicators: SubIndicatorWithMainIndicator[],
   searchQuery: string
 ) => {
-  return subIndicators.filter((subIndicator) => {
+  return subIndicators.filter((indicator) => {
     const matchesSearch = searchQuery
-      ? subIndicator.name.toLowerCase().includes(searchQuery.toLowerCase())
+      ? indicator.name.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
     return matchesSearch;
@@ -45,6 +57,7 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
   subIndicators: [],
   totalSubIndicators: 0,
   filteredSubIndicators: [],
+  currentSubIndicator: undefined,
 
   // Search
   searchQuery: "",
@@ -78,7 +91,7 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
       // TODO: Add API call to delete sub indicator
       set((state) => {
         const newSubIndicators = state.subIndicators.filter(
-          (s) => s.id !== subIndicatorId
+          (t) => t.id !== subIndicatorId
         );
         const filtered = filterSubIndicators(
           newSubIndicators,
@@ -93,6 +106,60 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to delete sub indicator:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  createSubIndicator: async (subIndicatorData) => {
+    try {
+      set({ isLoading: true });
+      const newSubIndicator = await createSubIndicatorApi(subIndicatorData);
+      set((state) => {
+        const newSubIndicators = [...state.subIndicators, newSubIndicator];
+        const filtered = filterSubIndicators(
+          newSubIndicators,
+          state.searchQuery
+        );
+        return {
+          subIndicators: newSubIndicators,
+          filteredSubIndicators: filtered,
+          totalSubIndicators: filtered.length,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to create sub indicator:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  updateSubIndicator: async (id, subIndicatorData) => {
+    try {
+      set({ isLoading: true });
+      const updatedSubIndicator = await updateSubIndicatorApi(
+        id,
+        subIndicatorData
+      );
+      set((state) => {
+        const newSubIndicators = state.subIndicators.map((t) =>
+          t.id === id ? updatedSubIndicator : t
+        );
+        const filtered = filterSubIndicators(
+          newSubIndicators,
+          state.searchQuery
+        );
+        return {
+          subIndicators: newSubIndicators,
+          filteredSubIndicators: filtered,
+          totalSubIndicators: filtered.length,
+          currentSubIndicator: updatedSubIndicator,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to update sub indicator:", error);
       set({ isLoading: false });
       throw error;
     }

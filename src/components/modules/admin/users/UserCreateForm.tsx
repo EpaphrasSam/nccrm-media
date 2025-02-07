@@ -3,54 +3,40 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input, Button, Select, SelectItem, Checkbox } from "@heroui/react";
+import {
+  Input,
+  Button,
+  Select,
+  SelectItem,
+  Checkbox,
+  Skeleton,
+} from "@heroui/react";
 import { buttonStyles, checkboxStyles, inputStyles } from "@/lib/styles";
 import { useUsersStore } from "@/store/users";
 import { useRouter } from "next/navigation";
-import {
-  USER_ROLES,
-  DEPARTMENTS,
-  GENDERS,
-  USER_STATUSES,
-  UserRole,
-  Department,
-  UserStatus,
-  Gender,
-} from "@/lib/constants";
+import { GENDERS, Gender, UserStatus } from "@/services/users/types";
 import { generateUsername, generatePassword } from "@/helpers/userHelpers";
 import { useState, useEffect } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { User } from "@/services/users/types";
+import useSWR from "swr";
+import { fetchDepartments } from "@/services/departments/api";
+import { fetchRoles } from "@/services/roles/api";
 
-// Extract values from constants for validation
-const roleValues = Object.values(USER_ROLES) as [UserRole, ...UserRole[]];
-const departmentValues = Object.values(DEPARTMENTS) as [
-  Department,
-  ...Department[]
-];
-const statusValues = Object.values(USER_STATUSES) as [
-  UserStatus,
-  ...UserStatus[]
-];
-
-const userCreateSchema = z
-  .object({
-    name: z.string().min(1, "Name is required"),
-    email: z.string().email("Invalid email address"),
-    phoneNumber: z.string().min(1, "Phone number is required"),
-    gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]) as z.ZodEnum<
-      [Gender, ...Gender[]]
-    >,
-    username: z.string().min(1, "Username is required"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    role: z.enum(roleValues),
-    department: z.enum(departmentValues),
-    status: z.enum(statusValues),
-  })
-  .transform((data) => ({
-    ...data,
-    status: data.status ?? USER_STATUSES.ACTIVE,
-  })) satisfies z.ZodType<Omit<User, "id" | "avatarUrl">>;
+const userCreateSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(1, "Phone number is required"),
+  gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]) as z.ZodEnum<
+    [Gender, ...Gender[]]
+  >,
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  roleId: z.string().min(1, "Role is required"),
+  departmentId: z.string().min(1, "Department is required"),
+  status: z.enum(["active", "inactive", "pending"]) as z.ZodEnum<
+    [UserStatus, ...UserStatus[]]
+  >,
+});
 
 type UserCreateFormData = z.infer<typeof userCreateSchema>;
 
@@ -59,6 +45,13 @@ export function UserCreateForm() {
   const { createUser } = useUsersStore();
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(true);
+
+  // Fetch departments and roles using SWR
+  const { data: departments, error: departmentsError } = useSWR(
+    "departments",
+    fetchDepartments
+  );
+  const { data: roles, error: rolesError } = useSWR("roles", fetchRoles);
 
   const {
     control,
@@ -69,7 +62,7 @@ export function UserCreateForm() {
   } = useForm<UserCreateFormData>({
     resolver: zodResolver(userCreateSchema),
     defaultValues: {
-      status: USER_STATUSES.ACTIVE,
+      status: "active",
     },
   });
 
@@ -94,6 +87,69 @@ export function UserCreateForm() {
       console.error("Failed to create user:", error);
     }
   };
+
+  if (!departments || !roles) {
+    return (
+      <div className="space-y-12 max-w-5xl mx-auto">
+        {/* Personal Information Section Loading */}
+        <section className="space-y-6">
+          <Skeleton className="h-6 w-48" />
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+        </section>
+
+        {/* Account Details Section Loading */}
+        <section className="space-y-6">
+          <Skeleton className="h-6 w-48" />
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-8 w-32" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+        </section>
+
+        <div className="flex justify-center gap-3">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+    );
+  }
+
+  if (departmentsError || rolesError) {
+    return <div>Error loading data</div>;
+  }
 
   return (
     <form
@@ -211,6 +267,7 @@ export function UserCreateForm() {
                     onValueChange={setAutoGenerateUsername}
                     size="sm"
                     className={checkboxStyles}
+                    color="danger"
                   >
                     Auto-generate from full name
                   </Checkbox>
@@ -263,7 +320,7 @@ export function UserCreateForm() {
           />
 
           <Controller
-            name="role"
+            name="roleId"
             control={control}
             render={({ field }) => (
               <Select
@@ -277,12 +334,12 @@ export function UserCreateForm() {
                 placeholder="Select a role"
                 variant="bordered"
                 classNames={inputStyles}
-                isInvalid={!!errors.role}
-                errorMessage={errors.role?.message}
+                isInvalid={!!errors.roleId}
+                errorMessage={errors.roleId?.message}
               >
-                {roleValues.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
                   </SelectItem>
                 ))}
               </Select>
@@ -290,7 +347,7 @@ export function UserCreateForm() {
           />
 
           <Controller
-            name="department"
+            name="departmentId"
             control={control}
             render={({ field }) => (
               <Select
@@ -304,12 +361,12 @@ export function UserCreateForm() {
                 placeholder="Select a department"
                 variant="bordered"
                 classNames={inputStyles}
-                isInvalid={!!errors.department}
-                errorMessage={errors.department?.message}
+                isInvalid={!!errors.departmentId}
+                errorMessage={errors.departmentId?.message}
               >
-                {departmentValues.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.id}>
+                    {dept.name}
                   </SelectItem>
                 ))}
               </Select>

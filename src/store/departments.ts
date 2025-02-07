@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import { Department } from "@/services/departments/types";
+import {
+  createDepartment as createDepartmentApi,
+  updateDepartment as updateDepartmentApi,
+} from "@/services/departments/api";
 
 interface DepartmentsState {
   // Data
   departments: Department[];
   totalDepartments: number;
   filteredDepartments: Department[];
+  currentDepartment?: Department;
 
   // Search
   searchQuery: string;
@@ -21,6 +26,13 @@ interface DepartmentsState {
   addDepartment: () => void;
   editDepartment: (department: Department) => void;
   deleteDepartment: (departmentId: string) => Promise<void>;
+  createDepartment: (
+    department: Omit<Department, "id" | "createdAt">
+  ) => Promise<void>;
+  updateDepartment: (
+    id: string,
+    department: Partial<Department>
+  ) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
@@ -42,6 +54,7 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
   departments: [],
   totalDepartments: 0,
   filteredDepartments: [],
+  currentDepartment: undefined,
 
   // Search
   searchQuery: "",
@@ -87,6 +100,51 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to delete department:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  createDepartment: async (departmentData) => {
+    try {
+      set({ isLoading: true });
+      const newDepartment = await createDepartmentApi(departmentData);
+      set((state) => {
+        const newDepartments = [...state.departments, newDepartment];
+        const filtered = filterDepartments(newDepartments, state.searchQuery);
+        return {
+          departments: newDepartments,
+          filteredDepartments: filtered,
+          totalDepartments: filtered.length,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to create department:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  updateDepartment: async (id, departmentData) => {
+    try {
+      set({ isLoading: true });
+      const updatedDepartment = await updateDepartmentApi(id, departmentData);
+      set((state) => {
+        const newDepartments = state.departments.map((d) =>
+          d.id === id ? updatedDepartment : d
+        );
+        const filtered = filterDepartments(newDepartments, state.searchQuery);
+        return {
+          departments: newDepartments,
+          filteredDepartments: filtered,
+          totalDepartments: filtered.length,
+          currentDepartment: updatedDepartment,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to update department:", error);
       set({ isLoading: false });
       throw error;
     }
