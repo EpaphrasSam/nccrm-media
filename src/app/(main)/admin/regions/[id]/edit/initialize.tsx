@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useRegionsStore } from "@/store/regions";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchRegionById } from "@/services/regions/api";
 
 export function InitializeRegion({ id }: { id: string }) {

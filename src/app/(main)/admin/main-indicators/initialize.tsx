@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchMainIndicators } from "@/services/main-indicators/api";
 import { fetchThematicAreas } from "@/services/thematic-areas/api";
 import { MainIndicatorWithThematicArea } from "@/services/main-indicators/types";

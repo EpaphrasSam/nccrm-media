@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useDepartmentsStore } from "@/store/departments";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchDepartments } from "../../../../services/departments/api";
 
 export function InitializeDepartments() {

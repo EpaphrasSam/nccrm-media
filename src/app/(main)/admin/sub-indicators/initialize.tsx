@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchSubIndicators } from "@/services/sub-indicators/api";
 import { fetchMainIndicators } from "@/services/main-indicators/api";
 import { SubIndicatorWithMainIndicator } from "@/services/sub-indicators/types";

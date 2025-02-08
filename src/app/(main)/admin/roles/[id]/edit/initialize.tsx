@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useRolesStore } from "@/store/roles";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchRoleById } from "@/services/roles/api";
 
 interface InitializeRoleEditProps {

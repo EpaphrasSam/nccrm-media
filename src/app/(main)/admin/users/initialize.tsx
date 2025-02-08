@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useUsersStore } from "@/store/users";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchUsers } from "@/services/users/api";
 import { fetchDepartments } from "@/services/departments/api";
 import { fetchRoles } from "@/services/roles/api";

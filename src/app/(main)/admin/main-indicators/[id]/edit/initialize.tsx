@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchMainIndicatorById } from "@/services/main-indicators/api";
 
 export function InitializeMainIndicator({ id }: { id: string }) {

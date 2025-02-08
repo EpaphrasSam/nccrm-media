@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useThematicAreasStore } from "@/store/thematic-areas";
-import { InitializeStore } from "@/components/modules/admin/layout/InitializeStore";
+import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchThematicAreas } from "../../../../services/thematic-areas/api";
 
 export function InitializeThematicAreas() {

@@ -1,5 +1,3 @@
-"use client";
-
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { UserCreateForm } from "@/components/modules/admin/users/UserCreateForm";
