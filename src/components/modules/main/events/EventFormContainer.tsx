@@ -33,13 +33,15 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-8">
+    <div className="flex flex-col md:flex-row gap-8 md:min-h-screen">
       <StepTracker
         currentStep={currentStep}
         onStepClick={setCurrentStep}
         isEditing={!!eventId}
       />
-      <div className="w-full mx-auto">{renderCurrentStep()}</div>
+      <div className="w-full mx-auto h-[calc(100vh-200px)] md:h-auto overflow-y-auto md:overflow-visible max-md:pt-4">
+        {renderCurrentStep()}
+      </div>
     </div>
   );
 }

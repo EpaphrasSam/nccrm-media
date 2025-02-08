@@ -20,21 +20,20 @@ const steps: { key: EventFormStep; label: string }[] = [
 
 // Custom styled components for the stepper
 const CustomStepper = styled(Stepper)(() => ({
-  "& .MuiStepConnector-line": {
-    borderColor: "#C9C9C9",
-  },
-  "& .MuiStepConnector-active": {
+  "& .MuiStepConnector-root": {
     "& .MuiStepConnector-line": {
+      borderColor: "#C9C9C9",
+      marginBottom: "5px",
+      marginTop: "5px",
+    },
+    "&.Mui-active .MuiStepConnector-line": {
       borderColor: "#AC0000",
     },
-  },
-  "& .MuiStepConnector-completed": {
-    "& .MuiStepConnector-line": {
+    "&.Mui-completed .MuiStepConnector-line": {
       borderColor: "#AC0000",
     },
   },
   "& .MuiStep-root": {
-    cursor: "pointer",
     padding: 0,
   },
   "& .MuiStepLabel-root": {
@@ -42,8 +41,10 @@ const CustomStepper = styled(Stepper)(() => ({
   },
   "& .MuiStepIcon-root": {
     color: "#C9C9C9",
+    cursor: "pointer",
     "&.Mui-active": {
       color: "#AC0000",
+      cursor: "auto",
     },
     "&.Mui-completed": {
       color: "#AC0000",
@@ -75,7 +76,7 @@ export function StepTracker({
   };
 
   return (
-    <div className="w-full md:w-[200px] py-6 px-4 md:sticky md:top-6">
+    <div className="w-full md:h-fit md:sticky md:top-6 md:w-[200px] py-6 px-4 bg-[#D30D0D08] z-10">
       {/* Mobile View */}
       <div className="block md:hidden">
         <CustomStepper activeStep={currentStepIndex} alternativeLabel>
