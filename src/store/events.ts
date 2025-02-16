@@ -150,7 +150,7 @@ const filterEvents = (
 
 export const useEventsStore = create<EventsState>((set, get) => ({
   currentStep: "event",
-  isLoading: false,
+  isLoading: true,
   isExporting: false,
   currentEvent: null,
   formData: {

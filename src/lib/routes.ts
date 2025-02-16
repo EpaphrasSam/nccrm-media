@@ -97,7 +97,7 @@ export const bottomRoutes: Route[] = [
   },
   {
     label: "Logout",
-    path: "/auth/logout",
+    path: "/login",
     icon: FiLogOut,
   },
 ];

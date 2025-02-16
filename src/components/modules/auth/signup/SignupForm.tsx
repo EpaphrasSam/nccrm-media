@@ -9,6 +9,7 @@ import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Logo } from "@/components/common/misc/Logo";
 import { inputStyles } from "@/lib/styles";
+import { useRouter } from "next/navigation";
 
 const signupSchema = z
   .object({
@@ -42,6 +43,7 @@ export function SignupForm() {
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
+  const router = useRouter();
 
   const onSubmit = (data: SignupFormData) => {
     console.log(data);
@@ -231,6 +233,7 @@ export function SignupForm() {
             type="submit"
             radius="sm"
             className="w-full lg:w-4/5 h-12 bg-brand-red-dark text-white"
+            onClick={() => router.push("/login")}
           >
             Sign Up
           </Button>
