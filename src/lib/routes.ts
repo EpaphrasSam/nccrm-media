@@ -15,9 +15,10 @@ import { IconType } from "react-icons";
 
 export interface Route {
   label: string;
-  path: string;
+  path?: string;
   icon: IconType;
   requiredRole?: "admin" | "user";
+  action?: () => void;
 }
 
 export interface RouteGroup {
@@ -97,7 +98,7 @@ export const bottomRoutes: Route[] = [
   },
   {
     label: "Logout",
-    path: "/login",
     icon: FiLogOut,
+    action: () => true,
   },
 ];

@@ -1,58 +1,48 @@
-import { Department } from "./types";
-import { mockDepartments } from "./mock-data";
+import axios from "@/utils/axios";
+import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
+import type { Department } from "./types";
 
-// Simulating API call with mock data
-export async function fetchDepartments(): Promise<Department[]> {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) =>
-    setTimeout(() => resolve(mockDepartments), 1000)
-  );
-}
+export const departmentService = {
+  fetchAll(isServer = false) {
+    const promise = axios
+      .get<Department[]>("/admin/all-departments")
+      .then((res) => res.data);
+    return isServer ? serverApiCall(promise, []) : clientApiCall(promise, []);
+  },
 
-export async function fetchDepartmentById(
-  id: string
-): Promise<Department | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const department = mockDepartments.find((d) => d.id === id);
-      resolve(department || null);
-    }, 1000);
-  });
-}
+  fetchById(id: string, isServer = false) {
+    const promise = axios
+      .get<Department>(`/admin/department/${id}`)
+      .then((res) => res.data);
+    return isServer
+      ? serverApiCall(promise, {} as Department)
+      : clientApiCall(promise, {} as Department);
+  },
 
-export async function createDepartment(
-  department: Omit<Department, "id" | "createdAt">
-): Promise<Department> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newDepartment: Department = {
-        ...department,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString(),
-      };
-      resolve(newDepartment);
-    }, 1000);
-  });
-}
+  add(department: Omit<Department, "id" | "createdAt">, isServer = false) {
+    const promise = axios
+      .post<Department>("/admin/add-department", department)
+      .then((res) => res.data);
+    return isServer
+      ? serverApiCall(promise, {} as Department)
+      : clientApiCall(promise, {} as Department);
+  },
 
-export async function updateDepartment(
-  id: string,
-  department: Partial<Department>
-): Promise<Department> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const existingDepartment = mockDepartments.find((d) => d.id === id);
-      if (!existingDepartment) {
-        reject(new Error("Department not found"));
-        return;
-      }
-      const updatedDepartment = { ...existingDepartment, ...department };
-      resolve(updatedDepartment);
-    }, 1000);
-  });
-}
+  update(id: string, department: Partial<Department>, isServer = false) {
+    const promise = axios
+      .patch<Department>(`/admin/update-department/${id}`, department)
+      .then((res) => res.data);
+    return isServer
+      ? serverApiCall(promise, {} as Department)
+      : clientApiCall(promise, {} as Department);
+  },
 
-// Add more API functions as needed:
-// export async function createDepartment(department: Omit<Department, "id">): Promise<Department>
-// export async function updateDepartment(id: string, department: Partial<Department>): Promise<Department>
-// export async function deleteDepartment(id: string): Promise<void>
+  delete(id: string, isServer = false) {
+    const promise = axios
+      .delete<void>(`/admin/delete-department/${id}`)
+      .then((res) => res.data);
+    return isServer
+      ? serverApiCall(promise, undefined)
+      : clientApiCall(promise, undefined);
+  },
+};

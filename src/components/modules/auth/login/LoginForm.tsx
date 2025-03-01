@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Input, Button } from "@heroui/react";
+import { Input, Button, addToast } from "@heroui/react";
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Logo } from "@/components/common/misc/Logo";
 import { inputStyles } from "@/lib/styles";
+import { authService } from "@/services/auth/api";
 import { useRouter } from "next/navigation";
 
 const loginSchema = z.object({
@@ -20,6 +21,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const {
     control,
     handleSubmit,
@@ -27,10 +30,21 @@ export function LoginForm() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
-  const router = useRouter();
 
-  const onSubmit = (data: LoginFormData) => {
-    console.log(data);
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      setIsLoading(true);
+      await authService.login(data);
+      addToast({
+        title: "Login successful",
+        description: "You are now logged in",
+        variant: "solid",
+        color: "success",
+      });
+      router.push("/");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -118,7 +132,7 @@ export function LoginForm() {
             type="submit"
             radius="sm"
             className="w-full lg:w-4/5 h-12 bg-brand-red-dark text-white"
-            onClick={() => router.push("/")}
+            isLoading={isLoading}
           >
             Login
           </Button>

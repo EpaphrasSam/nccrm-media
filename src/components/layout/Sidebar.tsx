@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { routes, bottomRoutes, Route, RouteGroup } from "@/lib/routes";
+import { authService } from "@/services/auth/api";
+import { useState } from "react";
+import { Spinner } from "@heroui/react";
+import { useSession } from "next-auth/react";
 
 interface SidebarProps {
   className?: string;
@@ -11,26 +15,63 @@ interface SidebarProps {
 
 export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
   const pathname = usePathname();
-  const isAdmin = true;
+  const session = useSession();
+  const isAdmin = session.data?.user?.role === "admin";
+  console.log(session.data?.user);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const isRouteActive = (path: string) => pathname === path;
 
-  const renderRoute = (route: Route) => (
-    <Link
-      key={route.path}
-      href={route.path}
-      className={`flex items-center gap-4 px-6 py-3.5 rounded-md transition-colors text-sm-plus font-extrabold leading-117 text-brand-black ${
-        isRouteActive(route.path)
-          ? "bg-brand-gray-light"
-          : "hover:bg-brand-gray-light"
-      } ${!isDrawer && "md:justify-center md:px-2 lg:justify-start lg:px-6"}`}
-    >
-      <route.icon />
-      <span className={isDrawer ? "block" : "md:hidden lg:block"}>
-        {route.label}
-      </span>
-    </Link>
-  );
+  const handleLogout = async () => {
+    try {
+      setIsLoading(true);
+      await authService.logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderRoute = (route: Route) => {
+    if (route.action) {
+      return (
+        <button
+          key={route.label}
+          onClick={handleLogout}
+          className={`flex text-brand-red-dark items-center gap-4 px-6 py-3.5 rounded-md transition-colors text-sm-plus font-extrabold leading-117 hover:bg-red-200 w-full ${
+            !isDrawer && "md:justify-center md:px-2 lg:justify-start lg:px-6"
+          }`}
+          disabled={isLoading}
+        >
+          <route.icon />
+          <span className={isDrawer ? "block" : "md:hidden lg:block"}>
+            {route.label}
+          </span>
+          {isLoading && <Spinner size="sm" color="danger" />}
+        </button>
+      );
+    }
+
+    return (
+      <Link
+        key={route.path}
+        href={route.path!}
+        className={`flex items-center gap-4 px-6 py-3.5 rounded-md transition-colors text-sm-plus font-extrabold leading-117 text-brand-black ${
+          isRouteActive(route.path!)
+            ? "bg-brand-gray-light"
+            : "hover:bg-brand-gray-light"
+        } ${!isDrawer && "md:justify-center md:px-2 lg:justify-start lg:px-6"}`}
+      >
+        <route.icon />
+        <span className={isDrawer ? "block" : "md:hidden lg:block"}>
+          {route.label}
+        </span>
+      </Link>
+    );
+  };
 
   const renderAdminSection = (group: RouteGroup) => (
     <div key={group.label} className="space-y-4">

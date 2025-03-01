@@ -7,9 +7,13 @@ import * as z from "zod";
 import { Input, Select, SelectItem, Button } from "@heroui/react";
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import useSWR from "swr";
 import { Logo } from "@/components/common/misc/Logo";
 import { inputStyles } from "@/lib/styles";
 import { useRouter } from "next/navigation";
+import { authService } from "@/services/auth/api";
+import type { SignupData } from "@/services/auth/types";
+import type { Department } from "@/services/departments/types";
 
 const signupSchema = z
   .object({
@@ -36,6 +40,7 @@ export function SignupForm() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const {
     control,
     handleSubmit,
@@ -45,8 +50,27 @@ export function SignupForm() {
   });
   const router = useRouter();
 
-  const onSubmit = (data: SignupFormData) => {
-    console.log(data);
+  // Fetch departments
+  const { data: departments } = useSWR<Department[]>(
+    "departments",
+    () => authService.getDepartment() as Promise<Department[]>
+  );
+
+  const onSubmit = async (data: SignupFormData) => {
+    setIsLoading(true);
+    const signupData: SignupData = {
+      email: data.email,
+      fullName: data.fullName,
+      department: data.department,
+      phoneNumber: data.phoneNumber,
+      password: data.password,
+    };
+
+    const result = await authService.signup(signupData);
+    if (result) {
+      router.push("/login");
+    }
+    setIsLoading(false);
   };
 
   const togglePasswordVisibility = () => {
@@ -58,7 +82,7 @@ export function SignupForm() {
   };
 
   return (
-    <div className="w-full backdrop-blur-sm  lg:p-8 p-4 max-sm:px-0 space-y-8">
+    <div className="w-full backdrop-blur-sm lg:p-8 p-4 max-sm:px-0 space-y-8">
       <Logo className="mb-8 justify-center" hideTextOnMobile={false} />
       <div className="space-y-3">
         <h1 className="text-title font-bold">Account Creation</h1>
@@ -125,16 +149,10 @@ export function SignupForm() {
               classNames={inputStyles}
               errorMessage={errors.department?.message}
               isInvalid={!!errors.department}
+              isLoading={!departments}
+              items={departments || []}
             >
-              <SelectItem key="news" value="news">
-                News
-              </SelectItem>
-              <SelectItem key="sports" value="sports">
-                Sports
-              </SelectItem>
-              <SelectItem key="entertainment" value="entertainment">
-                Entertainment
-              </SelectItem>
+              {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
             </Select>
           )}
         />
@@ -233,7 +251,7 @@ export function SignupForm() {
             type="submit"
             radius="sm"
             className="w-full lg:w-4/5 h-12 bg-brand-red-dark text-white"
-            onClick={() => router.push("/login")}
+            isLoading={isLoading}
           >
             Sign Up
           </Button>
