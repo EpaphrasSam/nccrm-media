@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { routes, bottomRoutes, Route, RouteGroup } from "@/lib/routes";
 import { authService } from "@/services/auth/api";
 import { useState } from "react";
-import { Spinner } from "@heroui/react";
+import { Spinner, Skeleton } from "@heroui/react";
 import { useSession } from "next-auth/react";
 
 interface SidebarProps {
@@ -15,9 +15,8 @@ interface SidebarProps {
 
 export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
   const pathname = usePathname();
-  const session = useSession();
-  const isAdmin = session.data?.user?.role === "admin";
-  console.log(session.data?.user);
+  const { data: session, status } = useSession();
+  const isAdmin = session?.user?.role?.name === "superadmin";
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -73,20 +72,42 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
     );
   };
 
-  const renderAdminSection = (group: RouteGroup) => (
-    <div key={group.label} className="space-y-4">
-      <div
-        className={`sticky top-0 bg-white px-6 text-sm-plus font-extrabold text-brand-gray border-b pb-2 ${
-          isDrawer ? "block" : "md:hidden lg:block"
-        }`}
-      >
-        {group.label}
+  const renderAdminSection = (group: RouteGroup) => {
+    if (status === "loading")
+      return (
+        <div key={group.label} className="space-y-4">
+          <div
+            className={`sticky top-0 bg-white px-6 text-sm-plus font-extrabold text-brand-gray border-b pb-2 ${
+              isDrawer ? "block" : "md:hidden lg:block"
+            }`}
+          >
+            {group.label}
+          </div>
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-6 py-3.5">
+                <Skeleton className="h-5 w-5 rounded-md" />
+                <Skeleton className="h-4 w-32 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    return (
+      <div key={group.label} className="space-y-4">
+        <div
+          className={`sticky top-0 bg-white px-6 text-sm-plus font-extrabold text-brand-gray border-b pb-2 ${
+            isDrawer ? "block" : "md:hidden lg:block"
+          }`}
+        >
+          {group.label}
+        </div>
+        <div className="space-y-2">
+          {group.routes.map((route) => renderRoute(route))}
+        </div>
       </div>
-      <div className="space-y-2">
-        {group.routes.map((route) => renderRoute(route))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const mainRoutes = routes.filter((route) => !("routes" in route));
   const adminGroup = isAdmin

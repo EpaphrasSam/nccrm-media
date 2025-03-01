@@ -1,26 +1,20 @@
 import type { DefaultSession } from "next-auth";
+import type { AuthResponse } from "@/services/auth/types";
 
 declare module "next-auth" {
   interface Session {
-    user: {
-      id: string;
-      role: string;
-      token: string;
-    } & DefaultSession["user"];
+    user: AuthResponse & DefaultSession["user"];
   }
 
-  interface User {
-    id: string;
-    role: string;
-    token: string;
-  }
+  type User = AuthResponse;
 }
 
 declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: string;
-    token: string;
+  interface JWT extends AuthResponse {
+    exp?: number;
+    iat?: number;
+    jti?: string;
+    sub?: string;
   }
 }
 

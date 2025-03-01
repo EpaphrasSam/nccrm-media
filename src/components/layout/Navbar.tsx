@@ -7,16 +7,12 @@ import {
   Button,
   Drawer,
   DrawerContent,
+  Skeleton,
 } from "@heroui/react";
 import { FiMenu } from "react-icons/fi";
 import { Logo } from "@/components/common/misc/Logo";
 import { Sidebar } from "./Sidebar";
-
-interface User {
-  name: string;
-  role: "admin" | "user";
-  initials: string;
-}
+import { useSession } from "next-auth/react";
 
 interface NavbarProps {
   className?: string;
@@ -24,12 +20,14 @@ interface NavbarProps {
 
 export function Navbar({ className = "" }: NavbarProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { data: session, status } = useSession();
 
-  // This will later come from your auth context/store
-  const user: User = {
-    name: "Sarah Ibrahim",
-    role: "admin",
-    initials: "SI",
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
@@ -45,23 +43,37 @@ export function Navbar({ className = "" }: NavbarProps) {
             >
               <FiMenu className="w-5 h-5" />
             </Button>
-            <Logo hideTextOnMobile/>
+            <Logo hideTextOnMobile />
           </div>
           <div className="flex items-center gap-3">
-            <Avatar
-              fallback={user.initials}
-              isBordered
-              size="md"
-              className="cursor-pointer"
-            />
-            <div className="space-y-0.5 mt-1">
-              <p className="text-sm-plus font-extrabold text-brand-black-dark">
-                {user.name}
-              </p>
-              <p className="text-xs-plus text-brand-green-dark font-extrabold capitalize">
-                {user.role}
-              </p>
-            </div>
+            {status === "loading" ? (
+              <>
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="space-y-0.5 mt-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </>
+            ) : (
+              <>
+                <Avatar
+                  fallback={
+                    session?.user?.name ? getInitials(session.user.name) : ""
+                  }
+                  isBordered
+                  size="md"
+                  className="cursor-pointer"
+                />
+                <div className="space-y-0.5 mt-1">
+                  <p className="text-sm-plus font-extrabold text-brand-black-dark">
+                    {session?.user?.name}
+                  </p>
+                  <p className="text-xs-plus text-brand-green-dark font-extrabold capitalize">
+                    {session?.user?.role?.name}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </HeroNavbar>

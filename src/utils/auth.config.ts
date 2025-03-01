@@ -4,15 +4,59 @@ import type { AuthResponse, LoginCredentials } from "@/services/auth/types";
 import { AuthErrorClasses } from "@/services/auth/errors";
 import axios from "./axios";
 
+interface LoginResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: {
+      id: string;
+      name: string;
+      functions: AuthResponse["role"]["functions"];
+    };
+    department: string | null;
+    gender: string | null;
+    image: string | null;
+    phone_number: string | null;
+    status: string;
+    username: string;
+    created_at: string;
+    updated_at: string;
+  };
+  token: string;
+}
+
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 
 async function loginWithCredentials(
   credentials: LoginCredentials
 ): Promise<AuthResponse> {
   try {
-    const response = await axios.post<AuthResponse>("/auth/login", credentials);
-    console.log("user", response.data);
-    return response.data;
+    const response = await axios.post<LoginResponse>(
+      "/auth/login",
+      credentials
+    );
+    const { user, token } = response.data;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: {
+        id: user.role.id,
+        name: user.role.name,
+        functions: user.role.functions,
+      },
+      token,
+      department: user.department,
+      gender: user.gender,
+      image: user.image,
+      phone_number: user.phone_number,
+      status: user.status,
+      username: user.username,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+    };
   } catch (error) {
     throw error;
   }
@@ -31,7 +75,7 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAdmin = auth?.user?.role === "admin";
+      const isAdmin = auth?.user?.role?.name === "superadmin";
       const isAuthRoute = authRoutes.some((route) =>
         nextUrl.pathname.startsWith(route)
       );
@@ -66,11 +110,7 @@ export const authConfig = {
     async session({ session, token }) {
       session.user = {
         ...session.user,
-        id: token.id as string,
-        email: token.email as string,
-        name: token.name as string,
-        role: token.role as string,
-        token: token.token as string,
+        ...(token as unknown as AuthResponse),
       };
       return session;
     },
