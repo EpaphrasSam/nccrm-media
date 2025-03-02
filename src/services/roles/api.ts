@@ -1,54 +1,67 @@
-import { Role } from "./types";
-import { mockRoles } from "./mock-data";
+import axios from "@/utils/axios";
+import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
+import type {
+  Role,
+  RoleListResponse,
+  RoleDetailResponse,
+  RoleCreateInput,
+  RoleUpdateInput,
+  RoleQueryParams,
+} from "./types";
 
-// Simulating API call with mock data
-export async function fetchRoles(): Promise<Role[]> {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) => setTimeout(() => resolve(mockRoles), 1000));
-}
+export const roleService = {
+  fetchAll(params: RoleQueryParams = {}, isServer = false) {
+    const promise = axios
+      .get<RoleListResponse>("/admin/all-roles", {
+        params: {
+          page: params.page || 1,
+          limit: params.limit || 20,
+        },
+      })
+      .then((res) => res.data);
 
-export async function fetchRoleById(id: string): Promise<Role | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const role = mockRoles.find((r) => r.id === id);
-      resolve(role || null);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, { message: "", roles: [] })
+      : clientApiCall(promise, { message: "", roles: [] }, false);
+  },
 
-export async function createRole(
-  role: Omit<Role, "id" | "createdAt">
-): Promise<Role> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newRole: Role = {
-        ...role,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString(),
-      };
-      resolve(newRole);
-    }, 1000);
-  });
-}
+  fetchById(id: string, isServer = false) {
+    const promise = axios
+      .get<RoleDetailResponse>(`/admin/role/${id}`)
+      .then((res) => res.data);
 
-export async function updateRole(
-  id: string,
-  role: Partial<Role>
-): Promise<Role> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const existingRole = mockRoles.find((r) => r.id === id);
-      if (!existingRole) {
-        reject(new Error("Role not found"));
-        return;
-      }
-      const updatedRole = { ...existingRole, ...role };
-      resolve(updatedRole);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, { message: "", role: {} as Role })
+      : clientApiCall(promise, { message: "", role: {} as Role }, false);
+  },
 
-// Add more API functions as needed:
-// export async function createRole(role: Omit<Role, "id">): Promise<Role>
-// export async function updateRole(id: string, role: Partial<Role>): Promise<Role>
-// export async function deleteRole(id: string): Promise<void>
+  create(role: RoleCreateInput, isServer = false) {
+    const promise = axios
+      .post<{ message: string }>("/admin/add-role", role)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  update(id: string, role: RoleUpdateInput, isServer = false) {
+    const promise = axios
+      .put<{ message: string }>(`/admin/edit-role/${id}`, role)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  delete(id: string, isServer = false) {
+    const promise = axios
+      .delete<{ message: string }>(`/admin/delete-role/${id}`)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+};

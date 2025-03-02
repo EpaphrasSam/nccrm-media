@@ -1,13 +1,42 @@
+import { Suspense } from "react";
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { UsersToolbar } from "@/components/modules/admin/users/UsersToolbar";
 import { UsersTable } from "@/components/modules/admin/users/UsersTable";
-import { InitializeUsers } from "@/app/(main)/admin/users/initialize";
+import { InitializeUsers } from "./initialize";
 
-export default function UsersPage() {
+function getStringParam(
+  param: string | string[] | undefined
+): string | undefined {
+  return typeof param === "string" ? param : undefined;
+}
+
+function getNumberParam(
+  param: string | string[] | undefined
+): number | undefined {
+  const value = getStringParam(param);
+  return value ? Number(value) : undefined;
+}
+
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function UsersPage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+
+  const initialFilters = {
+    page: getNumberParam(resolvedParams.page),
+    limit: getNumberParam(resolvedParams.limit),
+    department: getStringParam(resolvedParams.department),
+    role: getStringParam(resolvedParams.role),
+  };
+
   return (
     <>
-      <InitializeUsers />
+      <Suspense fallback={null}>
+        <InitializeUsers initialFilters={initialFilters} />
+      </Suspense>
       <AdminPageLayout
         header={
           <AdminPageHeader

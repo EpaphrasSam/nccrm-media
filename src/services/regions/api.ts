@@ -1,54 +1,67 @@
-import { Region } from "./types";
-import { mockRegions } from "./mock-data";
+import axios from "@/utils/axios";
+import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
+import type {
+  Region,
+  RegionListResponse,
+  RegionDetailResponse,
+  RegionCreateInput,
+  RegionUpdateInput,
+  RegionQueryParams,
+} from "./types";
 
-// Simulating API call with mock data
-export async function fetchRegions(): Promise<Region[]> {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) => setTimeout(() => resolve(mockRegions), 1000));
-}
+export const regionService = {
+  fetchAll(params: RegionQueryParams = {}, isServer = false) {
+    const promise = axios
+      .get<RegionListResponse>("/admin/all-regions", {
+        params: {
+          page: params.page || 1,
+          limit: params.limit || 20,
+        },
+      })
+      .then((res) => res.data);
 
-export async function fetchRegionById(id: string): Promise<Region | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const region = mockRegions.find((r) => r.id === id);
-      resolve(region || null);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, { message: "", regions: [] })
+      : clientApiCall(promise, { message: "", regions: [] }, false);
+  },
 
-export async function createRegion(
-  region: Omit<Region, "id" | "createdAt">
-): Promise<Region> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newRegion: Region = {
-        ...region,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString(),
-      };
-      resolve(newRegion);
-    }, 1000);
-  });
-}
+  fetchById(id: string, isServer = false) {
+    const promise = axios
+      .get<RegionDetailResponse>(`/admin/region/${id}`)
+      .then((res) => res.data);
 
-export async function updateRegion(
-  id: string,
-  region: Partial<Region>
-): Promise<Region> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const existingRegion = mockRegions.find((r) => r.id === id);
-      if (!existingRegion) {
-        reject(new Error("Region not found"));
-        return;
-      }
-      const updatedRegion = { ...existingRegion, ...region };
-      resolve(updatedRegion);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, { message: "", region: {} as Region })
+      : clientApiCall(promise, { message: "", region: {} as Region }, false);
+  },
 
-// Add more API functions as needed:
-// export async function createRegion(region: Omit<Region, "id">): Promise<Region>
-// export async function updateRegion(id: string, region: Partial<Region>): Promise<Region>
-// export async function deleteRegion(id: string): Promise<void>
+  create(region: RegionCreateInput, isServer = false) {
+    const promise = axios
+      .post<{ message: string }>("/admin/add-region", region)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  update(id: string, region: RegionUpdateInput, isServer = false) {
+    const promise = axios
+      .put<{ message: string }>(`/admin/edit-region/${id}`, region)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  delete(id: string, isServer = false) {
+    const promise = axios
+      .delete<{ message: string }>(`/admin/delete-region/${id}`)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+};

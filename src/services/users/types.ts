@@ -1,11 +1,3 @@
-export type UserStatus = "active" | "inactive" | "pending";
-
-export const USER_STATUSES = {
-  ACTIVE: "active" as UserStatus,
-  INACTIVE: "inactive" as UserStatus,
-  PENDING: "pending" as UserStatus,
-} as const;
-
 export type Gender = "male" | "female";
 
 export const GENDERS = {
@@ -13,25 +5,75 @@ export const GENDERS = {
   FEMALE: "female" as Gender,
 } as const;
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  gender: Gender;
-  username: string;
-  roleId: string;
-  role?: string; // For display purposes
-  departmentId: string;
-  department?: string; // For display purposes
-  status: UserStatus;
-  avatarUrl?: string;
-  createdAt: string;
+// API Response Types
+export interface UserListResponse {
+  message: string;
+  users: UserListItem[];
+  totalUsers: number;
+  totalPages: number;
 }
 
-// For API requests
-export type UserCreateInput = Omit<
-  User,
-  "id" | "createdAt" | "avatarUrl" | "department" | "role"
->;
-export type UserUpdateInput = Partial<Omit<User, "department" | "role">>;
+export interface UserListItem {
+  id: string;
+  name: string;
+  status: string;
+  department: {
+    name: string;
+  };
+  role: {
+    name: string;
+  };
+}
+
+export interface UserDetailResponse {
+  message: string;
+  user: UserDetail;
+}
+
+export interface UserDetail {
+  id: string;
+  name: string;
+  status: string;
+  email: string;
+  username: string;
+  phone_number: string;
+  gender: Gender;
+  department: {
+    id: string;
+    name: string;
+  };
+  role: {
+    id: string;
+    name: string;
+  };
+}
+
+// Request Types
+export interface UserCreateInput {
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+  phone_number: string;
+  gender: Gender;
+  department_id: string;
+  role_id: string;
+}
+
+export interface UserUpdateInput
+  extends Partial<Omit<UserCreateInput, "password">> {
+  password?: string;
+  image?: File;
+}
+
+export interface UserValidateInput {
+  status: "approved" | "rejected";
+}
+
+// Query Parameters
+export interface UserQueryParams {
+  page?: number;
+  limit?: number;
+  department?: string;
+  role?: string;
+}

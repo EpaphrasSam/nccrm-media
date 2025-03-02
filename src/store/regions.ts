@@ -1,74 +1,63 @@
 import { create } from "zustand";
-import { Region } from "@/services/regions/types";
-import {
-  createRegion as createRegionApi,
-  updateRegion as updateRegionApi,
-} from "@/services/regions/api";
+import type {
+  Region,
+  RegionCreateInput,
+  RegionUpdateInput,
+  RegionQueryParams,
+} from "@/services/regions/types";
+import { regionService } from "@/services/regions/api";
 
 interface RegionsState {
   // Data
   regions: Region[];
   totalRegions: number;
-  filteredRegions: Region[];
+  totalPages: number;
   currentRegion?: Region;
+
+  // Filters & Pagination
+  filters: RegionQueryParams;
+  setFilters: (filters: Partial<RegionQueryParams>) => void;
+  resetFilters: () => void;
 
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
-  // Pagination
-  currentPage: number;
-  pageSize: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-
   // Actions
   addRegion: () => void;
   editRegion: (region: Region) => void;
   deleteRegion: (regionId: string) => Promise<void>;
-  createRegion: (region: Omit<Region, "id" | "createdAt">) => Promise<void>;
-  updateRegion: (id: string, region: Partial<Region>) => Promise<void>;
+  createRegion: (region: RegionCreateInput) => Promise<void>;
+  updateRegion: (id: string, region: RegionUpdateInput) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
   setLoading: (loading: boolean) => void;
 }
 
-const filterRegions = (regions: Region[], searchQuery: string) => {
-  return regions.filter((region) => {
-    const matchesSearch = searchQuery
-      ? region.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-
-    return matchesSearch;
-  });
+const DEFAULT_FILTERS: RegionQueryParams = {
+  page: 1,
+  limit: 20,
 };
 
-export const useRegionsStore = create<RegionsState>((set, get) => ({
+export const useRegionsStore = create<RegionsState>((set) => ({
   // Initial Data
   regions: [],
   totalRegions: 0,
-  filteredRegions: [],
+  totalPages: 0,
   currentRegion: undefined,
+
+  // Filters & Pagination
+  filters: DEFAULT_FILTERS,
+  setFilters: (newFilters) =>
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    })),
+  resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
   // Search
   searchQuery: "",
-  setSearchQuery: (query) => {
-    set({ searchQuery: query });
-    const state = get();
-    const filtered = filterRegions(state.regions, query);
-    set({
-      filteredRegions: filtered,
-      totalRegions: filtered.length,
-      currentPage: 1,
-    });
-  },
-
-  // Pagination
-  currentPage: 1,
-  pageSize: 10,
-  setCurrentPage: (page) => set({ currentPage: page }),
-  setPageSize: (size) => set({ pageSize: size }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
 
   // Actions
   addRegion: () => {
@@ -80,17 +69,12 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   deleteRegion: async (regionId) => {
     try {
       set({ isLoading: true });
-      // TODO: Add API call to delete region
-      set((state) => {
-        const newRegions = state.regions.filter((r) => r.id !== regionId);
-        const filtered = filterRegions(newRegions, state.searchQuery);
-        return {
-          regions: newRegions,
-          filteredRegions: filtered,
-          totalRegions: filtered.length,
-          isLoading: false,
-        };
-      });
+      await regionService.delete(regionId);
+      set((state) => ({
+        regions: state.regions.filter((r) => r.id !== regionId),
+        totalRegions: state.totalRegions - 1,
+        isLoading: false,
+      }));
     } catch (error) {
       console.error("Failed to delete region:", error);
       set({ isLoading: false });
@@ -101,17 +85,10 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   createRegion: async (regionData) => {
     try {
       set({ isLoading: true });
-      const newRegion = await createRegionApi(regionData);
-      set((state) => {
-        const newRegions = [...state.regions, newRegion];
-        const filtered = filterRegions(newRegions, state.searchQuery);
-        return {
-          regions: newRegions,
-          filteredRegions: filtered,
-          totalRegions: filtered.length,
-          isLoading: false,
-        };
-      });
+      await regionService.create(regionData);
+      set({ isLoading: false });
+      // Navigate to regions list after creation
+      window.location.href = "/admin/regions";
     } catch (error) {
       console.error("Failed to create region:", error);
       set({ isLoading: false });
@@ -122,20 +99,10 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   updateRegion: async (id, regionData) => {
     try {
       set({ isLoading: true });
-      const updatedRegion = await updateRegionApi(id, regionData);
-      set((state) => {
-        const newRegions = state.regions.map((r) =>
-          r.id === id ? updatedRegion : r
-        );
-        const filtered = filterRegions(newRegions, state.searchQuery);
-        return {
-          regions: newRegions,
-          filteredRegions: filtered,
-          totalRegions: filtered.length,
-          currentRegion: updatedRegion,
-          isLoading: false,
-        };
-      });
+      await regionService.update(id, regionData);
+      set({ isLoading: false });
+      // Navigate to regions list after update
+      window.location.href = "/admin/regions";
     } catch (error) {
       console.error("Failed to update region:", error);
       set({ isLoading: false });
@@ -144,6 +111,6 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   },
 
   // Loading States
-  isLoading: true,
+  isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
 }));

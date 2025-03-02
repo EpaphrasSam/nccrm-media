@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { Department } from "@/services/departments/types";
-import {
-  createDepartment as createDepartmentApi,
-  updateDepartment as updateDepartmentApi,
-} from "@/services/departments/api";
+import type {
+  Department,
+  DepartmentCreateInput,
+  DepartmentUpdateInput,
+} from "@/services/departments/types";
+import { departmentService } from "@/services/departments/api";
 
 interface DepartmentsState {
   // Data
@@ -26,12 +27,10 @@ interface DepartmentsState {
   addDepartment: () => void;
   editDepartment: (department: Department) => void;
   deleteDepartment: (departmentId: string) => Promise<void>;
-  createDepartment: (
-    department: Omit<Department, "id" | "createdAt">
-  ) => Promise<void>;
+  createDepartment: (department: DepartmentCreateInput) => Promise<void>;
   updateDepartment: (
     id: string,
-    department: Partial<Department>
+    department: DepartmentUpdateInput
   ) => Promise<void>;
 
   // Loading States
@@ -42,7 +41,8 @@ interface DepartmentsState {
 const filterDepartments = (departments: Department[], searchQuery: string) => {
   return departments.filter((department) => {
     const matchesSearch = searchQuery
-      ? department.name.toLowerCase().includes(searchQuery.toLowerCase())
+      ? department.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        department.description.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
     return matchesSearch;
@@ -85,7 +85,7 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
   deleteDepartment: async (departmentId) => {
     try {
       set({ isLoading: true });
-      // TODO: Add API call to delete department
+      await departmentService.delete(departmentId);
       set((state) => {
         const newDepartments = state.departments.filter(
           (d) => d.id !== departmentId
@@ -98,6 +98,8 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
           isLoading: false,
         };
       });
+      // Navigate to departments list after deletion
+      window.location.href = "/admin/departments";
     } catch (error) {
       console.error("Failed to delete department:", error);
       set({ isLoading: false });
@@ -105,20 +107,13 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
     }
   },
 
-  createDepartment: async (departmentData) => {
+  createDepartment: async (department) => {
     try {
       set({ isLoading: true });
-      const newDepartment = await createDepartmentApi(departmentData);
-      set((state) => {
-        const newDepartments = [...state.departments, newDepartment];
-        const filtered = filterDepartments(newDepartments, state.searchQuery);
-        return {
-          departments: newDepartments,
-          filteredDepartments: filtered,
-          totalDepartments: filtered.length,
-          isLoading: false,
-        };
-      });
+      await departmentService.create(department);
+      set({ isLoading: false });
+      // Navigate to departments list after creation
+      window.location.href = "/admin/departments";
     } catch (error) {
       console.error("Failed to create department:", error);
       set({ isLoading: false });
@@ -126,23 +121,13 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
     }
   },
 
-  updateDepartment: async (id, departmentData) => {
+  updateDepartment: async (id, department) => {
     try {
       set({ isLoading: true });
-      const updatedDepartment = await updateDepartmentApi(id, departmentData);
-      set((state) => {
-        const newDepartments = state.departments.map((d) =>
-          d.id === id ? updatedDepartment : d
-        );
-        const filtered = filterDepartments(newDepartments, state.searchQuery);
-        return {
-          departments: newDepartments,
-          filteredDepartments: filtered,
-          totalDepartments: filtered.length,
-          currentDepartment: updatedDepartment,
-          isLoading: false,
-        };
-      });
+      await departmentService.update(id, department);
+      set({ isLoading: false });
+      // Navigate to departments list after update
+      window.location.href = "/admin/departments";
     } catch (error) {
       console.error("Failed to update department:", error);
       set({ isLoading: false });
@@ -151,6 +136,6 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
   },
 
   // Loading States
-  isLoading: true,
+  isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
 }));

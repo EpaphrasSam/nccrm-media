@@ -1,37 +1,38 @@
 import { create } from "zustand";
-import { MainIndicatorWithThematicArea } from "@/services/main-indicators/types";
-import {
-  createMainIndicator as createMainIndicatorApi,
-  updateMainIndicator as updateMainIndicatorApi,
-} from "@/services/main-indicators/api";
+import type {
+  MainIndicatorWithThematicArea,
+  MainIndicatorCreateInput,
+  MainIndicatorUpdateInput,
+  MainIndicatorQueryParams,
+} from "@/services/main-indicators/types";
+import { mainIndicatorService } from "@/services/main-indicators/api";
 
 interface MainIndicatorsState {
   // Data
   mainIndicators: MainIndicatorWithThematicArea[];
   totalMainIndicators: number;
-  filteredMainIndicators: MainIndicatorWithThematicArea[];
+  totalPages: number;
   currentMainIndicator?: MainIndicatorWithThematicArea;
+
+  // Filters & Pagination
+  filters: MainIndicatorQueryParams;
+  setFilters: (filters: Partial<MainIndicatorQueryParams>) => void;
+  resetFilters: () => void;
 
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-
-  // Pagination
-  currentPage: number;
-  pageSize: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
 
   // Actions
   addMainIndicator: () => void;
   editMainIndicator: (mainIndicator: MainIndicatorWithThematicArea) => void;
   deleteMainIndicator: (mainIndicatorId: string) => Promise<void>;
   createMainIndicator: (
-    mainIndicator: Omit<MainIndicatorWithThematicArea, "id" | "createdAt">
+    mainIndicator: MainIndicatorCreateInput
   ) => Promise<void>;
   updateMainIndicator: (
     id: string,
-    mainIndicator: Partial<MainIndicatorWithThematicArea>
+    mainIndicator: MainIndicatorUpdateInput
   ) => Promise<void>;
 
   // Loading States
@@ -39,138 +40,84 @@ interface MainIndicatorsState {
   setLoading: (loading: boolean) => void;
 }
 
-const filterMainIndicators = (
-  mainIndicators: MainIndicatorWithThematicArea[],
-  searchQuery: string
-) => {
-  return mainIndicators.filter((indicator) => {
-    const matchesSearch = searchQuery
-      ? indicator.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        indicator.description.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-
-    return matchesSearch;
-  });
+const DEFAULT_FILTERS: MainIndicatorQueryParams = {
+  page: 1,
+  limit: 20,
 };
 
-export const useMainIndicatorsStore = create<MainIndicatorsState>(
-  (set, get) => ({
-    // Initial Data
-    mainIndicators: [],
-    totalMainIndicators: 0,
-    filteredMainIndicators: [],
-    currentMainIndicator: undefined,
+export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
+  // Initial Data
+  mainIndicators: [],
+  totalMainIndicators: 0,
+  totalPages: 0,
+  currentMainIndicator: undefined,
 
-    // Search
-    searchQuery: "",
-    setSearchQuery: (query) => {
-      set({ searchQuery: query });
-      const state = get();
-      const filtered = filterMainIndicators(state.mainIndicators, query);
-      set({
-        filteredMainIndicators: filtered,
-        totalMainIndicators: filtered.length,
-        currentPage: 1,
-      });
-    },
+  // Filters & Pagination
+  filters: DEFAULT_FILTERS,
+  setFilters: (newFilters) =>
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    })),
+  resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
-    // Pagination
-    currentPage: 1,
-    pageSize: 10,
-    setCurrentPage: (page) => set({ currentPage: page }),
-    setPageSize: (size) => set({ pageSize: size }),
+  // Search
+  searchQuery: "",
+  setSearchQuery: (query) => set({ searchQuery: query }),
 
-    // Actions
-    addMainIndicator: () => {
-      window.location.href = "/admin/main-indicators/new";
-    },
-    editMainIndicator: (mainIndicator) => {
-      window.location.href = `/admin/main-indicators/${mainIndicator.id}/edit`;
-    },
-    deleteMainIndicator: async (mainIndicatorId) => {
-      try {
-        set({ isLoading: true });
-        // TODO: Add API call to delete main indicator
-        set((state) => {
-          const newMainIndicators = state.mainIndicators.filter(
-            (t) => t.id !== mainIndicatorId
-          );
-          const filtered = filterMainIndicators(
-            newMainIndicators,
-            state.searchQuery
-          );
-          return {
-            mainIndicators: newMainIndicators,
-            filteredMainIndicators: filtered,
-            totalMainIndicators: filtered.length,
-            isLoading: false,
-          };
-        });
-      } catch (error) {
-        console.error("Failed to delete main indicator:", error);
-        set({ isLoading: false });
-        throw error;
-      }
-    },
+  // Actions
+  addMainIndicator: () => {
+    window.location.href = "/admin/main-indicators/new";
+  },
+  editMainIndicator: (mainIndicator) => {
+    window.location.href = `/admin/main-indicators/${mainIndicator.id}/edit`;
+  },
+  deleteMainIndicator: async (mainIndicatorId) => {
+    try {
+      set({ isLoading: true });
+      await mainIndicatorService.delete(mainIndicatorId);
+      set((state) => ({
+        mainIndicators: state.mainIndicators.filter(
+          (t) => t.id !== mainIndicatorId
+        ),
+        totalMainIndicators: state.totalMainIndicators - 1,
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("Failed to delete main indicator:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
 
-    createMainIndicator: async (mainIndicatorData) => {
-      try {
-        set({ isLoading: true });
-        const newMainIndicator = await createMainIndicatorApi(
-          mainIndicatorData
-        );
-        set((state) => {
-          const newMainIndicators = [...state.mainIndicators, newMainIndicator];
-          const filtered = filterMainIndicators(
-            newMainIndicators,
-            state.searchQuery
-          );
-          return {
-            mainIndicators: newMainIndicators,
-            filteredMainIndicators: filtered,
-            totalMainIndicators: filtered.length,
-            isLoading: false,
-          };
-        });
-      } catch (error) {
-        console.error("Failed to create main indicator:", error);
-        set({ isLoading: false });
-        throw error;
-      }
-    },
+  createMainIndicator: async (mainIndicatorData) => {
+    try {
+      set({ isLoading: true });
+      await mainIndicatorService.create(mainIndicatorData);
+      set({ isLoading: false });
+      // Navigate to main indicators list after creation
+      window.location.href = "/admin/main-indicators";
+    } catch (error) {
+      console.error("Failed to create main indicator:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
 
-    updateMainIndicator: async (id, mainIndicatorData) => {
-      try {
-        set({ isLoading: true });
-        const updatedMainIndicator = await updateMainIndicatorApi(
-          id,
-          mainIndicatorData
-        );
-        set((state) => {
-          const newMainIndicators = state.mainIndicators.map((t) =>
-            t.id === id ? updatedMainIndicator : t
-          );
-          const filtered = filterMainIndicators(
-            newMainIndicators,
-            state.searchQuery
-          );
-          return {
-            mainIndicators: newMainIndicators,
-            filteredMainIndicators: filtered,
-            totalMainIndicators: filtered.length,
-            currentMainIndicator: updatedMainIndicator,
-            isLoading: false,
-          };
-        });
-      } catch (error) {
-        console.error("Failed to update main indicator:", error);
-        set({ isLoading: false });
-        throw error;
-      }
-    },
+  updateMainIndicator: async (id, mainIndicatorData) => {
+    try {
+      set({ isLoading: true });
+      await mainIndicatorService.update(id, mainIndicatorData);
+      set({ isLoading: false });
+      // Navigate to main indicators list after update
+      window.location.href = "/admin/main-indicators";
+    } catch (error) {
+      console.error("Failed to update main indicator:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
 
-    // Loading States
-    isLoading: true,
-    setLoading: (loading) => set({ isLoading: loading }),
-  })
-);
+  // Loading States
+  isLoading: false,
+  setLoading: (loading) => set({ isLoading: loading }),
+}));

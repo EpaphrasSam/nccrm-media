@@ -1,59 +1,96 @@
-import { MainIndicator } from "./types";
-import { mockMainIndicators } from "./mock-data";
+import axios from "@/utils/axios";
+import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
+import type {
+  MainIndicatorWithThematicArea,
+  MainIndicatorListResponse,
+  MainIndicatorDetailResponse,
+  MainIndicatorCreateInput,
+  MainIndicatorUpdateInput,
+  MainIndicatorQueryParams,
+} from "./types";
 
-// Simulating API call with mock data
-export async function fetchMainIndicators(): Promise<MainIndicator[]> {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) =>
-    setTimeout(() => resolve(mockMainIndicators), 1000)
-  );
-}
+export const mainIndicatorService = {
+  fetchAll(params: MainIndicatorQueryParams = {}, isServer = false) {
+    const promise = axios
+      .get<MainIndicatorListResponse>("/admin/all-main-indicators", {
+        params: {
+          page: params.page || 1,
+          limit: params.limit || 20,
+          thematic_area_id: params.thematic_area_id,
+        },
+      })
+      .then((res) => res.data);
 
-export async function fetchMainIndicatorById(
-  id: string
-): Promise<MainIndicator | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const mainIndicator = mockMainIndicators.find((t) => t.id === id);
-      resolve(mainIndicator || null);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, {
+          message: "",
+          mainIndicators: [],
+          totalMainIndicators: 0,
+          totalPages: 0,
+        })
+      : clientApiCall(
+          promise,
+          {
+            message: "",
+            mainIndicators: [],
+            totalMainIndicators: 0,
+            totalPages: 0,
+          },
+          false
+        );
+  },
 
-export async function createMainIndicator(
-  mainIndicator: Omit<MainIndicator, "id" | "createdAt">
-): Promise<MainIndicator> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newMainIndicator: MainIndicator = {
-        ...mainIndicator,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString(),
-      };
-      resolve(newMainIndicator);
-    }, 1000);
-  });
-}
+  fetchById(id: string, isServer = false) {
+    const promise = axios
+      .get<MainIndicatorDetailResponse>(`/admin/main-indicator/${id}`)
+      .then((res) => res.data);
 
-export async function updateMainIndicator(
-  id: string,
-  mainIndicator: Partial<MainIndicator>
-): Promise<MainIndicator> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const existingMainIndicator = mockMainIndicators.find((t) => t.id === id);
-      if (!existingMainIndicator) {
-        reject(new Error("Main Indicator not found"));
-        return;
-      }
-      const updatedMainIndicator = {
-        ...existingMainIndicator,
-        ...mainIndicator,
-      };
-      resolve(updatedMainIndicator);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, {
+          message: "",
+          mainIndicator: {} as MainIndicatorWithThematicArea,
+        })
+      : clientApiCall(
+          promise,
+          { message: "", mainIndicator: {} as MainIndicatorWithThematicArea },
+          false
+        );
+  },
 
-// Add more API functions as needed:
-// export async function deleteMainIndicator(id: string): Promise<void>
+  create(mainIndicator: MainIndicatorCreateInput, isServer = false) {
+    const promise = axios
+      .post<{ message: string }>("/admin/add-main-indicator", mainIndicator)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  update(
+    id: string,
+    mainIndicator: MainIndicatorUpdateInput,
+    isServer = false
+  ) {
+    const promise = axios
+      .put<{ message: string }>(
+        `/admin/edit-main-indicator/${id}`,
+        mainIndicator
+      )
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  delete(id: string, isServer = false) {
+    const promise = axios
+      .delete<{ message: string }>(`/admin/delete-main-indicator/${id}`)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+};

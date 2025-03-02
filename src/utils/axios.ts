@@ -2,6 +2,8 @@ import axiosBase from "axios";
 
 export const BASE_URL = "http://localhost:3035";
 
+const authUrl = process.env.AUTH_URL || process.env.NEXT_PUBLIC_AUTH_URL;
+
 // Create main instance with auth interceptors
 const axios = axiosBase.create({
   baseURL: BASE_URL,
@@ -11,12 +13,12 @@ const axios = axiosBase.create({
 // Use dynamic imports to break circular dependency
 axios.interceptors.request.use(async (config) => {
   // Use absolute URL for session fetch
-  const session = await fetch(`${process.env.AUTH_URL}/api/auth/session`).then(
-    (res) => res.json()
+  const session = await fetch(`${authUrl}/api/auth/session`).then((res) =>
+    res.json()
   );
 
   if (session?.user) {
-    config.headers.Authorization = `Bearer ${session.user.token}`;
+    config.headers.Authorization = `${session.user.token}`;
   }
   return config;
 });
@@ -29,21 +31,10 @@ axios.interceptors.response.use(
       await fetch(`${process.env.AUTH_URL}/api/auth/signout`, {
         method: "POST",
       });
-      window.location.href = "/login";
+      return Response.redirect("/login");
     }
     return Promise.reject(error);
   }
 );
-
-axios.interceptors.response.use((response) => {
-  if (response.data && typeof response.data === "object") {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { message, ...rest } = response.data;
-    // If there's only one property in rest, return that
-    const values = Object.values(rest);
-    response.data = values.length === 1 ? values[0] : rest;
-  }
-  return response;
-});
 
 export default axios;

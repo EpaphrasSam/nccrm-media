@@ -1,58 +1,74 @@
-import { ThematicArea } from "./types";
-import { mockThematicAreas } from "./mock-data";
+import axios from "@/utils/axios";
+import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
+import type {
+  ThematicArea,
+  ThematicAreaListResponse,
+  ThematicAreaDetailResponse,
+  ThematicAreaCreateInput,
+  ThematicAreaUpdateInput,
+  ThematicAreaQueryParams,
+} from "./types";
 
-// Simulating API call with mock data
-export async function fetchThematicAreas(): Promise<ThematicArea[]> {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) =>
-    setTimeout(() => resolve(mockThematicAreas), 1000)
-  );
-}
+export const thematicAreaService = {
+  fetchAll(params: ThematicAreaQueryParams = {}, isServer = false) {
+    const promise = axios
+      .get<ThematicAreaListResponse>("/admin/all-thematic-areas", {
+        params: {
+          page: params.page || 1,
+          limit: params.limit || 20,
+        },
+      })
+      .then((res) => res.data);
 
-export async function fetchThematicAreaById(
-  id: string
-): Promise<ThematicArea | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const thematicArea = mockThematicAreas.find((t) => t.id === id);
-      resolve(thematicArea || null);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, { message: "", thematicAreas: [] })
+      : clientApiCall(promise, { message: "", thematicAreas: [] }, false);
+  },
 
-export async function createThematicArea(
-  thematicArea: Omit<ThematicArea, "id" | "createdAt">
-): Promise<ThematicArea> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newThematicArea: ThematicArea = {
-        ...thematicArea,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString(),
-      };
-      resolve(newThematicArea);
-    }, 1000);
-  });
-}
+  fetchById(id: string, isServer = false) {
+    const promise = axios
+      .get<ThematicAreaDetailResponse>(`/admin/thematic-area/${id}`)
+      .then((res) => res.data);
 
-export async function updateThematicArea(
-  id: string,
-  thematicArea: Partial<ThematicArea>
-): Promise<ThematicArea> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const existingThematicArea = mockThematicAreas.find((t) => t.id === id);
-      if (!existingThematicArea) {
-        reject(new Error("Thematic Area not found"));
-        return;
-      }
-      const updatedThematicArea = { ...existingThematicArea, ...thematicArea };
-      resolve(updatedThematicArea);
-    }, 1000);
-  });
-}
+    return isServer
+      ? serverApiCall(promise, {
+          message: "",
+          thematicArea: {} as ThematicArea,
+        })
+      : clientApiCall(
+          promise,
+          { message: "", thematicArea: {} as ThematicArea },
+          false
+        );
+  },
 
-// Add more API functions as needed:
-// export async function createThematicArea(area: Omit<ThematicArea, "id">): Promise<ThematicArea>
-// export async function updateThematicArea(id: string, area: Partial<ThematicArea>): Promise<ThematicArea>
-// export async function deleteThematicArea(id: string): Promise<void>
+  create(thematicArea: ThematicAreaCreateInput, isServer = false) {
+    const promise = axios
+      .post<{ message: string }>("/admin/add-thematic-area", thematicArea)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  update(id: string, thematicArea: ThematicAreaUpdateInput, isServer = false) {
+    const promise = axios
+      .put<{ message: string }>(`/admin/edit-thematic-area/${id}`, thematicArea)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+
+  delete(id: string, isServer = false) {
+    const promise = axios
+      .delete<{ message: string }>(`/admin/delete-thematic-area/${id}`)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
+  },
+};

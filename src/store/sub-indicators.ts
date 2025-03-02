@@ -1,37 +1,36 @@
 import { create } from "zustand";
-import { SubIndicatorWithMainIndicator } from "@/services/sub-indicators/types";
-import {
-  createSubIndicator as createSubIndicatorApi,
-  updateSubIndicator as updateSubIndicatorApi,
-} from "@/services/sub-indicators/api";
+import type {
+  SubIndicatorWithMainIndicator,
+  SubIndicatorCreateInput,
+  SubIndicatorUpdateInput,
+  SubIndicatorQueryParams,
+} from "@/services/sub-indicators/types";
+import { subIndicatorService } from "@/services/sub-indicators/api";
 
 interface SubIndicatorsState {
   // Data
   subIndicators: SubIndicatorWithMainIndicator[];
   totalSubIndicators: number;
-  filteredSubIndicators: SubIndicatorWithMainIndicator[];
+  totalPages: number;
   currentSubIndicator?: SubIndicatorWithMainIndicator;
+
+  // Filters & Pagination
+  filters: SubIndicatorQueryParams;
+  setFilters: (filters: Partial<SubIndicatorQueryParams>) => void;
+  resetFilters: () => void;
 
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
-  // Pagination
-  currentPage: number;
-  pageSize: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-
   // Actions
   addSubIndicator: () => void;
   editSubIndicator: (subIndicator: SubIndicatorWithMainIndicator) => void;
   deleteSubIndicator: (subIndicatorId: string) => Promise<void>;
-  createSubIndicator: (
-    subIndicator: Omit<SubIndicatorWithMainIndicator, "id" | "createdAt">
-  ) => Promise<void>;
+  createSubIndicator: (subIndicator: SubIndicatorCreateInput) => Promise<void>;
   updateSubIndicator: (
     id: string,
-    subIndicator: Partial<SubIndicatorWithMainIndicator>
+    subIndicator: SubIndicatorUpdateInput
   ) => Promise<void>;
 
   // Loading States
@@ -39,44 +38,29 @@ interface SubIndicatorsState {
   setLoading: (loading: boolean) => void;
 }
 
-const filterSubIndicators = (
-  subIndicators: SubIndicatorWithMainIndicator[],
-  searchQuery: string
-) => {
-  return subIndicators.filter((indicator) => {
-    const matchesSearch = searchQuery
-      ? indicator.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-
-    return matchesSearch;
-  });
+const DEFAULT_FILTERS: SubIndicatorQueryParams = {
+  page: 1,
+  limit: 20,
 };
 
-export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
+export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
   // Initial Data
   subIndicators: [],
   totalSubIndicators: 0,
-  filteredSubIndicators: [],
+  totalPages: 0,
   currentSubIndicator: undefined,
+
+  // Filters & Pagination
+  filters: DEFAULT_FILTERS,
+  setFilters: (newFilters) =>
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    })),
+  resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
   // Search
   searchQuery: "",
-  setSearchQuery: (query) => {
-    set({ searchQuery: query });
-    const state = get();
-    const filtered = filterSubIndicators(state.subIndicators, query);
-    set({
-      filteredSubIndicators: filtered,
-      totalSubIndicators: filtered.length,
-      currentPage: 1,
-    });
-  },
-
-  // Pagination
-  currentPage: 1,
-  pageSize: 10,
-  setCurrentPage: (page) => set({ currentPage: page }),
-  setPageSize: (size) => set({ pageSize: size }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
 
   // Actions
   addSubIndicator: () => {
@@ -88,22 +72,14 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
   deleteSubIndicator: async (subIndicatorId) => {
     try {
       set({ isLoading: true });
-      // TODO: Add API call to delete sub indicator
-      set((state) => {
-        const newSubIndicators = state.subIndicators.filter(
+      await subIndicatorService.delete(subIndicatorId);
+      set((state) => ({
+        subIndicators: state.subIndicators.filter(
           (t) => t.id !== subIndicatorId
-        );
-        const filtered = filterSubIndicators(
-          newSubIndicators,
-          state.searchQuery
-        );
-        return {
-          subIndicators: newSubIndicators,
-          filteredSubIndicators: filtered,
-          totalSubIndicators: filtered.length,
-          isLoading: false,
-        };
-      });
+        ),
+        totalSubIndicators: state.totalSubIndicators - 1,
+        isLoading: false,
+      }));
     } catch (error) {
       console.error("Failed to delete sub indicator:", error);
       set({ isLoading: false });
@@ -114,20 +90,10 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
   createSubIndicator: async (subIndicatorData) => {
     try {
       set({ isLoading: true });
-      const newSubIndicator = await createSubIndicatorApi(subIndicatorData);
-      set((state) => {
-        const newSubIndicators = [...state.subIndicators, newSubIndicator];
-        const filtered = filterSubIndicators(
-          newSubIndicators,
-          state.searchQuery
-        );
-        return {
-          subIndicators: newSubIndicators,
-          filteredSubIndicators: filtered,
-          totalSubIndicators: filtered.length,
-          isLoading: false,
-        };
-      });
+      await subIndicatorService.create(subIndicatorData);
+      set({ isLoading: false });
+      // Navigate to sub indicators list after creation
+      window.location.href = "/admin/sub-indicators";
     } catch (error) {
       console.error("Failed to create sub indicator:", error);
       set({ isLoading: false });
@@ -138,26 +104,10 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
   updateSubIndicator: async (id, subIndicatorData) => {
     try {
       set({ isLoading: true });
-      const updatedSubIndicator = await updateSubIndicatorApi(
-        id,
-        subIndicatorData
-      );
-      set((state) => {
-        const newSubIndicators = state.subIndicators.map((t) =>
-          t.id === id ? updatedSubIndicator : t
-        );
-        const filtered = filterSubIndicators(
-          newSubIndicators,
-          state.searchQuery
-        );
-        return {
-          subIndicators: newSubIndicators,
-          filteredSubIndicators: filtered,
-          totalSubIndicators: filtered.length,
-          currentSubIndicator: updatedSubIndicator,
-          isLoading: false,
-        };
-      });
+      await subIndicatorService.update(id, subIndicatorData);
+      set({ isLoading: false });
+      // Navigate to sub indicators list after update
+      window.location.href = "/admin/sub-indicators";
     } catch (error) {
       console.error("Failed to update sub indicator:", error);
       set({ isLoading: false });
@@ -166,6 +116,6 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set, get) => ({
   },
 
   // Loading States
-  isLoading: true,
+  isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
 }));

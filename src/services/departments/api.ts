@@ -1,48 +1,71 @@
 import axios from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
-import type { Department } from "./types";
+import type {
+  Department,
+  DepartmentListResponse,
+  DepartmentDetailResponse,
+  DepartmentCreateInput,
+  DepartmentUpdateInput,
+  DepartmentQueryParams,
+} from "./types";
 
 export const departmentService = {
-  fetchAll(isServer = false) {
+  fetchAll(params: DepartmentQueryParams = {}, isServer = false) {
     const promise = axios
-      .get<Department[]>("/admin/all-departments")
+      .get<DepartmentListResponse>("/admin/all-departments", {
+        params: {
+          page: params.page || 1,
+          limit: params.limit || 20,
+        },
+      })
       .then((res) => res.data);
-    return isServer ? serverApiCall(promise, []) : clientApiCall(promise, []);
+
+    return isServer
+      ? serverApiCall(promise, { message: "", departments: [] })
+      : clientApiCall(promise, { message: "", departments: [] }, false);
   },
 
   fetchById(id: string, isServer = false) {
     const promise = axios
-      .get<Department>(`/admin/department/${id}`)
+      .get<DepartmentDetailResponse>(`/admin/department/${id}`)
       .then((res) => res.data);
+
     return isServer
-      ? serverApiCall(promise, {} as Department)
-      : clientApiCall(promise, {} as Department);
+      ? serverApiCall(promise, { message: "", department: {} as Department })
+      : clientApiCall(
+          promise,
+          { message: "", department: {} as Department },
+          false
+        );
   },
 
-  add(department: Omit<Department, "id" | "createdAt">, isServer = false) {
+  create(department: DepartmentCreateInput, isServer = false) {
     const promise = axios
-      .post<Department>("/admin/add-department", department)
+      .post<{ message: string }>("/admin/add-department", department)
       .then((res) => res.data);
+
     return isServer
-      ? serverApiCall(promise, {} as Department)
-      : clientApiCall(promise, {} as Department);
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
   },
 
-  update(id: string, department: Partial<Department>, isServer = false) {
+  update(id: string, department: DepartmentUpdateInput, isServer = false) {
     const promise = axios
-      .patch<Department>(`/admin/update-department/${id}`, department)
+      .put<{ message: string }>(`/admin/edit-department/${id}`, department)
       .then((res) => res.data);
+
     return isServer
-      ? serverApiCall(promise, {} as Department)
-      : clientApiCall(promise, {} as Department);
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
   },
 
   delete(id: string, isServer = false) {
     const promise = axios
-      .delete<void>(`/admin/delete-department/${id}`)
+      .delete<{ message: string }>(`/admin/delete-department/${id}`)
       .then((res) => res.data);
+
     return isServer
-      ? serverApiCall(promise, undefined)
-      : clientApiCall(promise, undefined);
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" });
   },
 };

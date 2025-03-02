@@ -24,14 +24,12 @@ export const authService = {
       }
       return result;
     });
-    return clientApiCall(promise, null);
+    return clientApiCall(promise, null, false);
   },
 
   logout() {
-    const promise = signOut().then(() => {
-      return null;
-    });
-    return clientApiCall(promise, null);
+    const promise = signOut().then(() => null);
+    return clientApiCall(promise, null, false);
   },
 
   signup(signupData: SignupData) {
@@ -66,6 +64,6 @@ export const authService = {
     const promise = axios
       .get<Department[]>("/get-departments")
       .then((res) => res.data);
-    return clientApiCall(promise, []);
+    return clientApiCall(promise, [], false);
   },
 };

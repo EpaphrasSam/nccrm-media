@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { Role } from "@/services/roles/types";
-import {
-  createRole as createRoleApi,
-  updateRole as updateRoleApi,
-} from "@/services/roles/api";
+import type {
+  Role,
+  RoleCreateInput,
+  RoleUpdateInput,
+} from "@/services/roles/types";
+import { roleService } from "@/services/roles/api";
 
 interface RolesState {
   // Data
@@ -26,8 +27,8 @@ interface RolesState {
   addRole: () => void;
   editRole: (role: Role) => void;
   deleteRole: (roleId: string) => Promise<void>;
-  createRole: (role: Omit<Role, "id" | "createdAt">) => Promise<void>;
-  updateRole: (id: string, role: Partial<Role>) => Promise<void>;
+  createRole: (role: RoleCreateInput) => Promise<void>;
+  updateRole: (id: string, role: RoleUpdateInput) => Promise<void>;
 
   // Loading States
   isLoading: boolean;
@@ -81,7 +82,7 @@ export const useRolesStore = create<RolesState>((set, get) => ({
   deleteRole: async (roleId) => {
     try {
       set({ isLoading: true });
-      // TODO: Add API call to delete role
+      await roleService.delete(roleId);
       set((state) => {
         const newRoles = state.roles.filter((r) => r.id !== roleId);
         const filtered = filterRoles(newRoles, state.searchQuery);
@@ -92,6 +93,8 @@ export const useRolesStore = create<RolesState>((set, get) => ({
           isLoading: false,
         };
       });
+      // Navigate to roles list after deletion
+      window.location.href = "/admin/roles";
     } catch (error) {
       console.error("Failed to delete role:", error);
       set({ isLoading: false });
@@ -102,17 +105,10 @@ export const useRolesStore = create<RolesState>((set, get) => ({
   createRole: async (role) => {
     try {
       set({ isLoading: true });
-      const newRole = await createRoleApi(role);
-      set((state) => {
-        const newRoles = [...state.roles, newRole];
-        const filtered = filterRoles(newRoles, state.searchQuery);
-        return {
-          roles: newRoles,
-          filteredRoles: filtered,
-          totalRoles: filtered.length,
-          isLoading: false,
-        };
-      });
+      await roleService.create(role);
+      set({ isLoading: false });
+      // Navigate to roles list after creation
+      window.location.href = "/admin/roles";
     } catch (error) {
       console.error("Failed to create role:", error);
       set({ isLoading: false });
@@ -123,20 +119,10 @@ export const useRolesStore = create<RolesState>((set, get) => ({
   updateRole: async (id, role) => {
     try {
       set({ isLoading: true });
-      const updatedRole = await updateRoleApi(id, role);
-      set((state) => {
-        const newRoles = state.roles.map((r) =>
-          r.id === id ? updatedRole : r
-        );
-        const filtered = filterRoles(newRoles, state.searchQuery);
-        return {
-          roles: newRoles,
-          filteredRoles: filtered,
-          totalRoles: filtered.length,
-          currentRole: updatedRole,
-          isLoading: false,
-        };
-      });
+      await roleService.update(id, role);
+      set({ isLoading: false });
+      // Navigate to roles list after update
+      window.location.href = "/admin/roles";
     } catch (error) {
       console.error("Failed to update role:", error);
       set({ isLoading: false });
@@ -145,6 +131,6 @@ export const useRolesStore = create<RolesState>((set, get) => ({
   },
 
   // Loading States
-  isLoading: true,
+  isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
 }));

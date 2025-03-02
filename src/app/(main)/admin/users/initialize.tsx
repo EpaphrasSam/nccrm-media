@@ -1,53 +1,118 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useUsersStore } from "@/store/users";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
 import { fetchUsers } from "@/services/users/api";
-import { fetchDepartments } from "@/services/departments/api";
-import { fetchRoles } from "@/services/roles/api";
-import { User } from "@/services/users/types";
+import { departmentService } from "@/services/departments/api";
+import { roleService } from "@/services/roles/api";
+import type { UserQueryParams } from "@/services/users/types";
+import { urlSync } from "@/utils/url-sync";
 
-export function InitializeUsers() {
-  const initializeUsers = useCallback(async () => {
-    useUsersStore.setState({ isLoading: true });
+interface InitializeUsersProps {
+  initialFilters: Partial<UserQueryParams>;
+}
 
-    try {
-      const [users, departments, roles] = await Promise.all([
-        fetchUsers(),
-        fetchDepartments(),
-        fetchRoles(),
-      ]);
+const DEFAULT_FILTERS: UserQueryParams = {
+  page: 1,
+  limit: 10,
+};
 
-      // Add department and role names to users
-      const usersWithDetails: User[] = users.map((user) => {
-        const department = departments.find(
-          (dept) => dept.id === user.departmentId
-        );
-        const role = roles.find((r) => r.id === user.roleId);
-        return {
-          ...user,
-          department: department?.name || "Unknown",
-          role: role?.name || "Unknown",
-        };
-      });
+export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
+  const { filters, setFilters, setTableLoading, setFiltersLoading } =
+    useUsersStore();
 
-      useUsersStore.setState({
-        users: usersWithDetails,
-        filteredUsers: usersWithDetails,
-        totalUsers: usersWithDetails.length,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-      useUsersStore.setState({
-        isLoading: false,
-        users: [],
-        filteredUsers: [],
-        totalUsers: 0,
-      });
+  // Set initial filters from URL or defaults
+  useEffect(() => {
+    const hasInitialFilters = Object.keys(initialFilters).length > 0;
+    if (hasInitialFilters) {
+      setFilters(initialFilters);
+    } else {
+      // If no URL params exist, set defaults and push to URL
+      setFilters(DEFAULT_FILTERS);
+      urlSync.pushToUrl(DEFAULT_FILTERS);
     }
-  }, []);
+  }, [initialFilters, setFilters]);
 
-  return <InitializeStore onInitialize={initializeUsers} />;
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false, // Disable automatic retries
+  };
+
+  // Fetch filter options (departments and roles)
+  const { isLoading: isFilterOptionsLoading } = useSWR(
+    "filterOptions",
+    async () => {
+      try {
+        const [deptResponse, rolesResponse] = await Promise.all([
+          departmentService.fetchAll(undefined),
+          roleService.fetchAll(undefined),
+        ]);
+
+        return {
+          departments:
+            "data" in deptResponse
+              ? deptResponse.data.departments
+              : deptResponse.departments,
+          roles:
+            "data" in rolesResponse
+              ? rolesResponse.data.roles
+              : rolesResponse.roles,
+        };
+      } finally {
+        // Only update loading state after initial load
+        if (isFilterOptionsLoading) {
+          setFiltersLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
+
+  // Fetch users data - will refetch when filters change
+  const { isLoading: isUsersLoading } = useSWR(
+    ["users", filters],
+    async () => {
+      try {
+        const response = await fetchUsers(filters);
+        const data = "data" in response ? response.data : response;
+
+        useUsersStore.setState({
+          users: data.users,
+          totalUsers: data.totalUsers,
+          totalPages: data.totalPages,
+        });
+
+        return data;
+      } finally {
+        // Only update loading state after initial load
+        if (isUsersLoading) {
+          setTableLoading(false);
+        }
+      }
+    },
+    {
+      ...swrConfig,
+      keepPreviousData: true,
+    }
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isFilterOptionsLoading) {
+      setFiltersLoading(true);
+    }
+  }, [isFilterOptionsLoading, setFiltersLoading]);
+
+  useEffect(() => {
+    if (isUsersLoading) {
+      setTableLoading(true);
+    }
+  }, [isUsersLoading, setTableLoading]);
+
+  return null;
 }

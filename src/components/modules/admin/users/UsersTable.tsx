@@ -3,41 +3,31 @@
 import {
   Table,
   TableHeader,
-  TableColumn,
   TableBody,
+  TableColumn,
   TableRow,
   TableCell,
-  User as HeroUser,
-  Button,
   Skeleton,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
+  Button,
+  Pagination,
 } from "@heroui/react";
-import { FaRegEdit, FaCheck } from "react-icons/fa";
-import { BsThreeDotsVertical } from "react-icons/bs";
-import { IoMdClose } from "react-icons/io";
-import { STATUS_COLORS } from "@/lib/constants";
+import { FiEdit2, FiCheck, FiX, FiUser } from "react-icons/fi";
 import { useUsersStore } from "@/store/users";
-import { Pagination } from "@/components/common/navigation/Pagination";
 import { tableStyles } from "@/lib/styles";
-import { UserStatus } from "@/services/users/types";
+import { useState } from "react";
+import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
   { key: "name", label: "Name" },
-  { key: "role", label: "Role" },
   { key: "department", label: "Department" },
+  { key: "role", label: "Role" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
-] as const;
+];
 
-// Store generated colors to ensure no repeats
-const generatedColors = new Map<string, { bg: string; text: string }>();
-
-// Generate a random hex color
+// Helper functions for colors
 const generateRandomColor = () => {
   const letters = "0123456789ABCDEF";
   let color = "#";
@@ -47,74 +37,96 @@ const generateRandomColor = () => {
   return color;
 };
 
-// Get contrasting text color (black or white) based on background color
 const getContrastColor = (hexcolor: string) => {
-  // Convert hex to RGB
   const r = parseInt(hexcolor.slice(1, 3), 16);
   const g = parseInt(hexcolor.slice(3, 5), 16);
   const b = parseInt(hexcolor.slice(5, 7), 16);
-
-  // Calculate relative luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  return luminance > 0.5 ? "#000000" : "#FFFFFF";
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "#000000" : "#FFFFFF";
 };
 
-// Get or generate color for role
+// Store generated colors to ensure consistency
+const roleColors: Record<string, string> = {};
+const statusColors: Record<string, string> = {};
+
 const getColorForRole = (role: string) => {
-  if (generatedColors.has(role)) {
-    return generatedColors.get(role)!;
+  if (!roleColors[role]) {
+    roleColors[role] = generateRandomColor();
   }
+  return roleColors[role];
+};
 
-  let bgColor: string;
-  do {
-    bgColor = generateRandomColor();
-  } while (
-    Array.from(generatedColors.values()).some((color) => color.bg === bgColor)
-  );
-
-  const textColor = getContrastColor(bgColor);
-  const colors = {
-    bg: bgColor,
-    text: textColor,
-  };
-
-  generatedColors.set(role, colors);
-  return colors;
+const getColorForStatus = (status: string) => {
+  if (!statusColors[status]) {
+    statusColors[status] = generateRandomColor();
+  }
+  return statusColors[status];
 };
 
 const RoleChip = ({ role }: { role: string }) => {
-  const colors = getColorForRole(role);
+  const backgroundColor = getColorForRole(role);
+  const textColor = getContrastColor(backgroundColor);
+
   return (
-    <div
-      className="inline-flex py-1.5 px-6 text-xs rounded-full"
-      style={{ backgroundColor: colors.bg, color: colors.text }}
+    <span
+      className="px-2 py-1 rounded-full text-xs font-semibold"
+      style={{ backgroundColor, color: textColor }}
     >
       {role}
-    </div>
+    </span>
   );
 };
 
-const StatusText = ({ status }: { status: UserStatus }) => (
-  <span style={{ color: STATUS_COLORS[status] }}>{status}</span>
-);
+const StatusText = ({ status }: { status: string }) => {
+  const color = getColorForStatus(status);
+  return <span style={{ color }}>{status}</span>;
+};
 
 export function UsersTable() {
   const {
-    filteredUsers,
+    users,
     editUser,
-    isLoading,
-    currentPage,
-    pageSize,
-    setCurrentPage,
-    totalUsers,
-    approveUser,
-    rejectUser,
+    deleteUser,
+    isTableLoading,
+    filters,
+    setFilters,
+    totalPages,
+    validateUser,
   } = useUsersStore();
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handlePageChange = (page: number) => {
+    setFilters({ page });
+  };
+
+  const handleDeleteClick = (userId: string) => {
+    setSelectedUserId(userId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedUserId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteUser(selectedUserId);
+      setDeleteModalOpen(false);
+    } finally {
+      setIsDeleting(false);
+      setSelectedUserId(null);
+    }
+  };
+
+  const handleApprove = (userId: string) => {
+    validateUser(userId, { status: "approved" });
+  };
+
+  const handleReject = (userId: string) => {
+    validateUser(userId, { status: "rejected" });
+  };
 
   return (
     <div className="space-y-4">
@@ -126,7 +138,7 @@ export function UsersTable() {
         </TableHeader>
 
         <TableBody emptyContent="No users found">
-          {isLoading ? (
+          {isTableLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -141,16 +153,17 @@ export function UsersTable() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-4 w-24" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-28" />
+                      <Skeleton className="h-6 w-20 rounded-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-6 w-24" />
+                      <Skeleton className="h-4 w-16" />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-9 w-9 rounded-lg" />
                         <Skeleton className="h-9 w-9 rounded-lg" />
                         <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
@@ -160,60 +173,61 @@ export function UsersTable() {
               )}
             </>
           ) : (
-            paginatedUsers.map((user) => (
+            users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <HeroUser
-                    name={user.name}
-                    description={user.email}
-                    avatarProps={{ src: user.avatarUrl }}
-                  />
+                  <div className="flex items-center gap-3">
+                    <FiUser className="w-10 h-10 text-brand-green-dark" />
+                    <div>
+                      <p className="font-semibold text-brand-black-dark">
+                        {user.name}
+                      </p>
+                    </div>
+                  </div>
                 </TableCell>
+                <TableCell>{user.department.name}</TableCell>
                 <TableCell>
-                  <RoleChip role={user.role || "Unknown"} />
+                  <RoleChip role={user.role.name} />
                 </TableCell>
-                <TableCell>{user.department || "Unknown"}</TableCell>
                 <TableCell>
                   <StatusText status={user.status} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-start gap-1">
+                  <div className="flex items-center gap-2">
                     <Button
                       isIconOnly
                       variant="light"
-                      size="sm"
                       onPress={() => editUser(user)}
                     >
-                      <FaRegEdit size={18} color="blue" />
+                      <FiEdit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      isIconOnly
+                      color="danger"
+                      variant="light"
+                      onPress={() => handleDeleteClick(user.id)}
+                    >
+                      <FiX className="w-4 h-4" />
                     </Button>
                     {user.status === "pending" && (
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Button isIconOnly variant="light" size="sm">
-                            <BsThreeDotsVertical size={18} />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label="User Actions">
-                          <DropdownItem
-                            key="approve"
-                            color="success"
-                            className="text-brand-green"
-                            startContent={<FaCheck size={16} />}
-                            onPress={() => approveUser(user.id)}
-                          >
-                            Approve
-                          </DropdownItem>
-                          <DropdownItem
-                            key="reject"
-                            color="danger"
-                            className="text-brand-red-dark"
-                            startContent={<IoMdClose size={18} />}
-                            onPress={() => rejectUser(user.id)}
-                          >
-                            Reject
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
+                      <>
+                        <Button
+                          isIconOnly
+                          color="success"
+                          variant="light"
+                          onPress={() => handleApprove(user.id)}
+                        >
+                          <FiCheck className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onPress={() => handleReject(user.id)}
+                        >
+                          <FiX className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </TableCell>
@@ -223,11 +237,23 @@ export function UsersTable() {
         </TableBody>
       </Table>
 
-      <Pagination
-        total={totalUsers}
-        pageSize={pageSize}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
+      {!isTableLoading && totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            total={totalPages}
+            page={filters.page || 1}
+            onChange={handlePageChange}
+          />
+        </div>
+      )}
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete User"
+        description="Are you sure you want to delete this user? This action cannot be undone."
+        isLoading={isDeleting}
       />
     </div>
   );

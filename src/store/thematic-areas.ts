@@ -1,37 +1,36 @@
 import { create } from "zustand";
-import { ThematicArea } from "@/services/thematic-areas/types";
-import {
-  createThematicArea as createThematicAreaApi,
-  updateThematicArea as updateThematicAreaApi,
-} from "@/services/thematic-areas/api";
+import type {
+  ThematicArea,
+  ThematicAreaCreateInput,
+  ThematicAreaUpdateInput,
+  ThematicAreaQueryParams,
+} from "@/services/thematic-areas/types";
+import { thematicAreaService } from "@/services/thematic-areas/api";
 
 interface ThematicAreasState {
   // Data
   thematicAreas: ThematicArea[];
   totalThematicAreas: number;
-  filteredThematicAreas: ThematicArea[];
+  totalPages: number;
   currentThematicArea?: ThematicArea;
+
+  // Filters & Pagination
+  filters: ThematicAreaQueryParams;
+  setFilters: (filters: Partial<ThematicAreaQueryParams>) => void;
+  resetFilters: () => void;
 
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
-  // Pagination
-  currentPage: number;
-  pageSize: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-
   // Actions
   addThematicArea: () => void;
   editThematicArea: (thematicArea: ThematicArea) => void;
   deleteThematicArea: (thematicAreaId: string) => Promise<void>;
-  createThematicArea: (
-    thematicArea: Omit<ThematicArea, "id" | "createdAt">
-  ) => Promise<void>;
+  createThematicArea: (thematicArea: ThematicAreaCreateInput) => Promise<void>;
   updateThematicArea: (
     id: string,
-    thematicArea: Partial<ThematicArea>
+    thematicArea: ThematicAreaUpdateInput
   ) => Promise<void>;
 
   // Loading States
@@ -39,45 +38,29 @@ interface ThematicAreasState {
   setLoading: (loading: boolean) => void;
 }
 
-const filterThematicAreas = (
-  thematicAreas: ThematicArea[],
-  searchQuery: string
-) => {
-  return thematicAreas.filter((area) => {
-    const matchesSearch = searchQuery
-      ? area.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        area.description.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-
-    return matchesSearch;
-  });
+const DEFAULT_FILTERS: ThematicAreaQueryParams = {
+  page: 1,
+  limit: 20,
 };
 
-export const useThematicAreasStore = create<ThematicAreasState>((set, get) => ({
+export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
   // Initial Data
   thematicAreas: [],
   totalThematicAreas: 0,
-  filteredThematicAreas: [],
+  totalPages: 0,
   currentThematicArea: undefined,
+
+  // Filters & Pagination
+  filters: DEFAULT_FILTERS,
+  setFilters: (newFilters) =>
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    })),
+  resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
   // Search
   searchQuery: "",
-  setSearchQuery: (query) => {
-    set({ searchQuery: query });
-    const state = get();
-    const filtered = filterThematicAreas(state.thematicAreas, query);
-    set({
-      filteredThematicAreas: filtered,
-      totalThematicAreas: filtered.length,
-      currentPage: 1,
-    });
-  },
-
-  // Pagination
-  currentPage: 1,
-  pageSize: 10,
-  setCurrentPage: (page) => set({ currentPage: page }),
-  setPageSize: (size) => set({ pageSize: size }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
 
   // Actions
   addThematicArea: () => {
@@ -89,22 +72,14 @@ export const useThematicAreasStore = create<ThematicAreasState>((set, get) => ({
   deleteThematicArea: async (thematicAreaId) => {
     try {
       set({ isLoading: true });
-      // TODO: Add API call to delete thematic area
-      set((state) => {
-        const newThematicAreas = state.thematicAreas.filter(
+      await thematicAreaService.delete(thematicAreaId);
+      set((state) => ({
+        thematicAreas: state.thematicAreas.filter(
           (t) => t.id !== thematicAreaId
-        );
-        const filtered = filterThematicAreas(
-          newThematicAreas,
-          state.searchQuery
-        );
-        return {
-          thematicAreas: newThematicAreas,
-          filteredThematicAreas: filtered,
-          totalThematicAreas: filtered.length,
-          isLoading: false,
-        };
-      });
+        ),
+        totalThematicAreas: state.totalThematicAreas - 1,
+        isLoading: false,
+      }));
     } catch (error) {
       console.error("Failed to delete thematic area:", error);
       set({ isLoading: false });
@@ -115,20 +90,10 @@ export const useThematicAreasStore = create<ThematicAreasState>((set, get) => ({
   createThematicArea: async (thematicAreaData) => {
     try {
       set({ isLoading: true });
-      const newThematicArea = await createThematicAreaApi(thematicAreaData);
-      set((state) => {
-        const newThematicAreas = [...state.thematicAreas, newThematicArea];
-        const filtered = filterThematicAreas(
-          newThematicAreas,
-          state.searchQuery
-        );
-        return {
-          thematicAreas: newThematicAreas,
-          filteredThematicAreas: filtered,
-          totalThematicAreas: filtered.length,
-          isLoading: false,
-        };
-      });
+      await thematicAreaService.create(thematicAreaData);
+      set({ isLoading: false });
+      // Navigate to thematic areas list after creation
+      window.location.href = "/admin/thematic-areas";
     } catch (error) {
       console.error("Failed to create thematic area:", error);
       set({ isLoading: false });
@@ -139,26 +104,10 @@ export const useThematicAreasStore = create<ThematicAreasState>((set, get) => ({
   updateThematicArea: async (id, thematicAreaData) => {
     try {
       set({ isLoading: true });
-      const updatedThematicArea = await updateThematicAreaApi(
-        id,
-        thematicAreaData
-      );
-      set((state) => {
-        const newThematicAreas = state.thematicAreas.map((t) =>
-          t.id === id ? updatedThematicArea : t
-        );
-        const filtered = filterThematicAreas(
-          newThematicAreas,
-          state.searchQuery
-        );
-        return {
-          thematicAreas: newThematicAreas,
-          filteredThematicAreas: filtered,
-          totalThematicAreas: filtered.length,
-          currentThematicArea: updatedThematicArea,
-          isLoading: false,
-        };
-      });
+      await thematicAreaService.update(id, thematicAreaData);
+      set({ isLoading: false });
+      // Navigate to thematic areas list after update
+      window.location.href = "/admin/thematic-areas";
     } catch (error) {
       console.error("Failed to update thematic area:", error);
       set({ isLoading: false });
@@ -167,6 +116,6 @@ export const useThematicAreasStore = create<ThematicAreasState>((set, get) => ({
   },
 
   // Loading States
-  isLoading: true,
+  isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
 }));
