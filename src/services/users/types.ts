@@ -1,4 +1,4 @@
-export type Gender = "male" | "female";
+import { Gender, UserStatus } from "@/lib/constants";
 
 export const GENDERS = {
   MALE: "male" as Gender,
@@ -16,7 +16,8 @@ export interface UserListResponse {
 export interface UserListItem {
   id: string;
   name: string;
-  status: string;
+  status: UserStatus;
+  image: string;
   department: {
     name: string;
   };
@@ -33,7 +34,7 @@ export interface UserDetailResponse {
 export interface UserDetail {
   id: string;
   name: string;
-  status: string;
+  status: UserStatus;
   email: string;
   username: string;
   phone_number: string;

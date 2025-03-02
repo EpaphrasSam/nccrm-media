@@ -1,60 +1,61 @@
 // Essential colors
 export const COLORS = {
-  blue: "#2563EB",
-  purple: "#9333EA",
-  teal: "#0D9488",
-  amber: "#F59E0B",
-  green: "#22C55E",
-  red: "#EF4444",
-  yellow: "#EAB308",
+  primary: "#2563EB",
+  success: "#22C55E",
+  warning: "#F59E0B",
+  danger: "#EF4444",
+  info: "#0EA5E9",
+  gray: "#6B7280",
 } as const;
 
-// User Roles
-export const USER_ROLES = {
-  ADMIN: "Admin",
-  EDITOR: "Editor",
-  REPORTER: "Reporter",
-  VIEWER: "Viewer",
-} as const;
-
-// Departments
-export const DEPARTMENTS = {
-  CRIME_JUSTICE: "Crime & Justice",
-  SPORTS_RECREATION: "Sports & Recreation",
-  EDUCATION_RESEARCH: "Education & Research",
-} as const;
-
-// User Statuses
-export const USER_STATUSES = {
-  ACTIVE: "Active",
-  INACTIVE: "Inactive",
-  PENDING: "Pending Verification",
-} as const;
-
-// Add to existing constants
+// Gender Types
 export const GENDERS = {
   MALE: "male",
   FEMALE: "female",
 } as const;
 
-type ValueOf<T> = T[keyof T];
-
-export type UserRole = ValueOf<typeof USER_ROLES>;
-export type Department = ValueOf<typeof DEPARTMENTS>;
-export type UserStatus = ValueOf<typeof USER_STATUSES>;
 export type Gender = (typeof GENDERS)[keyof typeof GENDERS];
 
-// Role color mapping
-export const ROLE_COLORS: Record<UserRole, string> = {
-  [USER_ROLES.ADMIN]: COLORS.blue,
-  [USER_ROLES.EDITOR]: COLORS.purple,
-  [USER_ROLES.REPORTER]: COLORS.teal,
-  [USER_ROLES.VIEWER]: COLORS.amber,
-};
-
-// Status color mapping
-export const STATUS_COLORS = {
-  active: COLORS.green,
-  inactive: COLORS.red,
-  pending: COLORS.yellow,
+// User Status Types
+export const USER_STATUSES = {
+  ACTIVE: "active",
+  PENDING_VERIFICATION: "pending_verification",
+  DEACTIVATED: "deactivated",
 } as const;
+
+export type UserStatus = (typeof USER_STATUSES)[keyof typeof USER_STATUSES];
+
+// General Status Types
+export const STATUSES = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+} as const;
+
+export type Status = (typeof STATUSES)[keyof typeof STATUSES];
+
+// Event Status Types
+export const EVENT_STATUSES = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+} as const;
+
+export type EventStatus = (typeof EVENT_STATUSES)[keyof typeof EVENT_STATUSES];
+
+// Status Color Mapping
+export const STATUS_COLORS: Record<string, string> = {
+  // User Statuses
+  [USER_STATUSES.ACTIVE]: COLORS.success,
+  [USER_STATUSES.PENDING_VERIFICATION]: COLORS.warning,
+  [USER_STATUSES.DEACTIVATED]: COLORS.danger,
+
+  // Event Statuses
+  [EVENT_STATUSES.PENDING]: COLORS.warning,
+  [EVENT_STATUSES.APPROVED]: COLORS.success,
+  [EVENT_STATUSES.REJECTED]: COLORS.danger,
+} as const;
+
+// Helper function to get status color
+export const getStatusColor = (status: string): string => {
+  return STATUS_COLORS[status.toLowerCase()] || COLORS.gray;
+};

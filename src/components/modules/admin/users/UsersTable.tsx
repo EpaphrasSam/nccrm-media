@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableHeader,
@@ -10,12 +11,18 @@ import {
   Skeleton,
   Button,
   Pagination,
+  Avatar,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
-import { FiEdit2, FiCheck, FiX, FiUser } from "react-icons/fi";
+import { FiCheck, FiX, FiUser, FiMoreVertical, FiTrash2 } from "react-icons/fi";
+import { FaRegEdit } from "react-icons/fa";
 import { useUsersStore } from "@/store/users";
 import { tableStyles } from "@/lib/styles";
-import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { getStatusColor, USER_STATUSES } from "@/lib/constants";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -27,7 +34,7 @@ const columns = [
   { key: "actions", label: "Actions" },
 ];
 
-// Helper functions for colors
+// Helper functions for role colors
 const generateRandomColor = () => {
   const letters = "0123456789ABCDEF";
   let color = "#";
@@ -47,7 +54,6 @@ const getContrastColor = (hexcolor: string) => {
 
 // Store generated colors to ensure consistency
 const roleColors: Record<string, string> = {};
-const statusColors: Record<string, string> = {};
 
 const getColorForRole = (role: string) => {
   if (!roleColors[role]) {
@@ -56,30 +62,30 @@ const getColorForRole = (role: string) => {
   return roleColors[role];
 };
 
-const getColorForStatus = (status: string) => {
-  if (!statusColors[status]) {
-    statusColors[status] = generateRandomColor();
-  }
-  return statusColors[status];
-};
-
 const RoleChip = ({ role }: { role: string }) => {
   const backgroundColor = getColorForRole(role);
   const textColor = getContrastColor(backgroundColor);
 
   return (
-    <span
-      className="px-2 py-1 rounded-full text-xs font-semibold"
-      style={{ backgroundColor, color: textColor }}
+    <div
+      className="px-3 py-1 rounded-full text-xs font-semibold inline-flex capitalize"
+      style={{
+        backgroundColor,
+        color: textColor,
+      }}
     >
       {role}
-    </span>
+    </div>
   );
 };
 
 const StatusText = ({ status }: { status: string }) => {
-  const color = getColorForStatus(status);
-  return <span style={{ color }}>{status}</span>;
+  const color = getStatusColor(status);
+  return (
+    <span className="text-sm font-semibold capitalize" style={{ color }}>
+      {status}
+    </span>
+  );
 };
 
 export function UsersTable() {
@@ -174,60 +180,77 @@ export function UsersTable() {
             </>
           ) : (
             users.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow key={user?.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <FiUser className="w-10 h-10 text-brand-green-dark" />
+                    <Avatar
+                      src={user?.image}
+                      fallback={
+                        <FiUser className="w-6 h-6 text-brand-green-dark" />
+                      }
+                      size="md"
+                      isBordered
+                    />
                     <div>
                       <p className="font-semibold text-brand-black-dark">
-                        {user.name}
+                        {user?.name}
                       </p>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{user.department.name}</TableCell>
+                <TableCell>{user?.department?.name}</TableCell>
                 <TableCell>
-                  <RoleChip role={user.role.name} />
+                  <RoleChip role={user?.role?.name} />
                 </TableCell>
                 <TableCell>
-                  <StatusText status={user.status} />
+                  <StatusText status={user?.status} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     <Button
                       isIconOnly
                       variant="light"
                       onPress={() => editUser(user)}
+                      className="text-brand-green-dark"
+                      size="sm"
                     >
-                      <FiEdit2 className="w-4 h-4" />
+                      <FaRegEdit className="w-4 h-4 " color="blue" />
                     </Button>
                     <Button
                       isIconOnly
                       color="danger"
                       variant="light"
-                      onPress={() => handleDeleteClick(user.id)}
+                      onPress={() => handleDeleteClick(user?.id)}
+                      size="sm"
                     >
-                      <FiX className="w-4 h-4" />
+                      <FiTrash2 className="w-4 h-4" />
                     </Button>
-                    {user.status === "pending" && (
-                      <>
-                        <Button
-                          isIconOnly
-                          color="success"
-                          variant="light"
-                          onPress={() => handleApprove(user.id)}
-                        >
-                          <FiCheck className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          color="danger"
-                          variant="light"
-                          onPress={() => handleReject(user.id)}
-                        >
-                          <FiX className="w-4 h-4" />
-                        </Button>
-                      </>
+                    {user?.status === USER_STATUSES.PENDING_VERIFICATION && (
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Button isIconOnly variant="light">
+                            <FiMoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label="User actions">
+                          <DropdownItem
+                            key="approve"
+                            startContent={<FiCheck className="w-4 h-4" />}
+                            onPress={() => handleApprove(user?.id)}
+                            className="text-success"
+                          >
+                            Approve
+                          </DropdownItem>
+                          <DropdownItem
+                            key="reject"
+                            startContent={<FiX className="w-4 h-4" />}
+                            onPress={() => handleReject(user?.id)}
+                            className="text-danger"
+                          >
+                            Reject
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
                     )}
                   </div>
                 </TableCell>
