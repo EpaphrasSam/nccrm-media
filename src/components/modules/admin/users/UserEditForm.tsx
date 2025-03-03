@@ -15,32 +15,32 @@ import {
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useUsersStore } from "@/store/users";
-import { GENDERS, Gender } from "@/services/users/types";
+import { GENDERS } from "@/lib/constants";
 import { useState, useEffect, useRef } from "react";
 import { FaCamera } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { generateUsername, generatePassword } from "@/helpers/userHelpers";
 import useSWR from "swr";
-import { fetchDepartments } from "@/services/departments/api";
-import { fetchRoles } from "@/services/roles/api";
+import { departmentService } from "@/services/departments/api";
+import { roleService } from "@/services/roles/api";
+import type { DepartmentListResponse } from "@/services/departments/types";
+import type { RoleListResponse } from "@/services/roles/types";
 
 // Section schemas
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  roleId: z.string().min(1, "Role is required"),
+  role_id: z.string().min(1, "Role is required"),
 });
 
 const personalInfoSchema = z.object({
-  phoneNumber: z.string().min(1, "Phone number is required"),
-  gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]) as z.ZodEnum<
-    [Gender, ...Gender[]]
-  >,
+  phone_number: z.string().min(1, "Phone number is required"),
+  gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]),
 });
 
 const accountInfoSchema = z.object({
   username: z.string().min(1, "Username is required"),
-  departmentId: z.string().min(1, "Department is required"),
+  department_id: z.string().min(1, "Department is required"),
   password: z.string().optional(),
 });
 
@@ -49,20 +49,33 @@ type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
 type AccountInfoFormData = z.infer<typeof accountInfoSchema>;
 
 export function UserEditForm() {
-  const { currentUser, updateUser, isLoading } = useUsersStore();
+  const { currentUser, updateUser, isFormLoading } = useUsersStore();
   const [localLoading, setLocalLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<string | undefined>(
-    currentUser?.avatarUrl
+    currentUser?.image
   );
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(false);
 
   // Fetch departments and roles using SWR
-  const { data: departments, error: departmentsError } = useSWR(
-    "departments",
-    fetchDepartments
+  const { data: departmentsResponse, error: departmentsError } =
+    useSWR<DepartmentListResponse>("departments", async () => {
+      const response = await departmentService.fetchAll();
+      return response as DepartmentListResponse;
+    });
+  const { data: rolesResponse, error: rolesError } = useSWR<RoleListResponse>(
+    "roles",
+    async () => {
+      const response = await roleService.fetchAll();
+      return response as RoleListResponse;
+    }
   );
-  const { data: roles, error: rolesError } = useSWR("roles", fetchRoles);
+
+  // Extract data from the wrapped responses
+  const departments = Array.isArray(departmentsResponse?.departments)
+    ? departmentsResponse.departments
+    : [];
+  const roles = Array.isArray(rolesResponse?.roles) ? rolesResponse.roles : [];
 
   // Hidden file input for image upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +86,7 @@ export function UserEditForm() {
     defaultValues: {
       name: currentUser?.name || "",
       email: currentUser?.email || "",
-      roleId: currentUser?.roleId || "",
+      role_id: currentUser?.role?.id || "",
     },
   });
 
@@ -81,8 +94,8 @@ export function UserEditForm() {
   const personalInfoForm = useForm<PersonalInfoFormData>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
-      phoneNumber: currentUser?.phoneNumber || "",
-      gender: currentUser?.gender,
+      phone_number: currentUser?.phone_number || "",
+      gender: currentUser?.gender || GENDERS.MALE,
     },
   });
 
@@ -91,35 +104,41 @@ export function UserEditForm() {
     resolver: zodResolver(accountInfoSchema),
     defaultValues: {
       username: currentUser?.username || "",
-      departmentId: currentUser?.departmentId || "",
+      department_id: currentUser?.department?.id || "",
       password: "",
     },
   });
 
   // Reset forms when currentUser changes
   useEffect(() => {
-    if (!isLoading && currentUser) {
+    if (!isFormLoading && currentUser) {
       profileForm.reset({
-        name: currentUser.name,
-        email: currentUser.email,
-        roleId: currentUser.roleId,
+        name: currentUser.name || "",
+        email: currentUser.email || "",
+        role_id: currentUser.role?.id || "",
       });
       personalInfoForm.reset({
-        phoneNumber: currentUser.phoneNumber || "",
-        gender: currentUser.gender,
+        phone_number: currentUser.phone_number || "",
+        gender: currentUser.gender || GENDERS.MALE,
       });
       accountInfoForm.reset({
         username: currentUser.username || "",
-        departmentId: currentUser.departmentId || "",
+        department_id: currentUser.department?.id || "",
         password: "",
       });
-      setProfileImage(currentUser.avatarUrl);
+      setProfileImage(currentUser.image || "");
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [currentUser, isLoading, profileForm, personalInfoForm, accountInfoForm]);
+  }, [
+    currentUser,
+    isFormLoading,
+    profileForm,
+    personalInfoForm,
+    accountInfoForm,
+  ]);
 
   // Auto-generate username when name changes and auto-generate is enabled
   useEffect(() => {
@@ -146,10 +165,15 @@ export function UserEditForm() {
   const handleProfileSubmit = async (data: ProfileFormData) => {
     if (!currentUser) return;
     try {
-      await updateUser(currentUser.id, {
-        ...data,
-        avatarUrl: profileImage,
-      });
+      const updateData = { ...data };
+      if (profileImage && profileImage !== currentUser.image) {
+        // Only include image if it has changed
+        const response = await fetch(profileImage);
+        const blob = await response.blob();
+        const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
+        Object.assign(updateData, { image: file });
+      }
+      await updateUser(currentUser.id, updateData);
     } catch (error) {
       console.error("Failed to update profile:", error);
     }
@@ -173,7 +197,7 @@ export function UserEditForm() {
     }
   };
 
-  if (isLoading || localLoading || !departments || !roles) {
+  if (isFormLoading || localLoading || !departments || !roles) {
     return (
       <div className="space-y-8 max-w-5xl">
         {/* Profile Section Loading */}
@@ -298,7 +322,7 @@ export function UserEditForm() {
                   )}
                 />
                 <Controller
-                  name="roleId"
+                  name="role_id"
                   control={profileForm.control}
                   render={({ field }) => (
                     <Select
@@ -312,13 +336,13 @@ export function UserEditForm() {
                       placeholder="Select role"
                       variant="underlined"
                       classNames={{ label: "text-base font-medium" }}
-                      isInvalid={!!profileForm.formState.errors.roleId}
+                      isInvalid={!!profileForm.formState.errors.role_id}
                       errorMessage={
-                        profileForm.formState.errors.roleId?.message
+                        profileForm.formState.errors.role_id?.message
                       }
                     >
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
+                      {roles.map((role: { id: string; name: string }) => (
+                        <SelectItem key={role.id} textValue={role.id}>
                           {role.name}
                         </SelectItem>
                       ))}
@@ -350,7 +374,7 @@ export function UserEditForm() {
         >
           <div className="grid grid-cols-2 gap-4">
             <Controller
-              name="phoneNumber"
+              name="phone_number"
               control={personalInfoForm.control}
               render={({ field }) => (
                 <Input
@@ -360,9 +384,9 @@ export function UserEditForm() {
                   placeholder="Enter phone number"
                   variant="bordered"
                   classNames={inputStyles}
-                  isInvalid={!!personalInfoForm.formState.errors.phoneNumber}
+                  isInvalid={!!personalInfoForm.formState.errors.phone_number}
                   errorMessage={
-                    personalInfoForm.formState.errors.phoneNumber?.message
+                    personalInfoForm.formState.errors.phone_number?.message
                   }
                 />
               )}
@@ -387,12 +411,11 @@ export function UserEditForm() {
                     personalInfoForm.formState.errors.gender?.message
                   }
                 >
-                  <SelectItem key={GENDERS.MALE} value={GENDERS.MALE}>
-                    Male
-                  </SelectItem>
-                  <SelectItem key={GENDERS.FEMALE} value={GENDERS.FEMALE}>
-                    Female
-                  </SelectItem>
+                  {Object.entries(GENDERS).map(([key, value]) => (
+                    <SelectItem key={value} textValue={value}>
+                      {key.charAt(0) + key.slice(1).toLowerCase()}
+                    </SelectItem>
+                  ))}
                 </Select>
               )}
             />
@@ -495,7 +518,7 @@ export function UserEditForm() {
             />
 
             <Controller
-              name="departmentId"
+              name="department_id"
               control={accountInfoForm.control}
               render={({ field }) => (
                 <Select
@@ -509,13 +532,13 @@ export function UserEditForm() {
                   placeholder="Select department"
                   variant="bordered"
                   classNames={inputStyles}
-                  isInvalid={!!accountInfoForm.formState.errors.departmentId}
+                  isInvalid={!!accountInfoForm.formState.errors.department_id}
                   errorMessage={
-                    accountInfoForm.formState.errors.departmentId?.message
+                    accountInfoForm.formState.errors.department_id?.message
                   }
                 >
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
+                  {departments.map((dept: { id: string; name: string }) => (
+                    <SelectItem key={dept.id} textValue={dept.id}>
                       {dept.name}
                     </SelectItem>
                   ))}

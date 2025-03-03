@@ -1,48 +1,42 @@
 "use client";
 
-import { useCallback } from "react";
 import { useUsersStore } from "@/store/users";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
+import useSWR from "swr";
 import { fetchUserById } from "@/services/users/api";
-import { fetchDepartments } from "@/services/departments/api";
-import { fetchRoles } from "@/services/roles/api";
 
-export function InitializeUser({ id }: { id: string }) {
-  const initializeUser = useCallback(async () => {
-    useUsersStore.setState({ isLoading: true });
+interface InitializeUserProps {
+  id: string;
+}
 
-    try {
-      const [user, departments, roles] = await Promise.all([
-        fetchUserById(id),
-        fetchDepartments(),
-        fetchRoles(),
-      ]);
+export function InitializeUser({ id }: InitializeUserProps) {
+  const { setFormLoading } = useUsersStore();
 
-      if (!user) throw new Error("User not found");
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false,
+  };
 
-      // Add department and role names to user
-      const department = departments.find(
-        (dept) => dept.id === user.departmentId
-      );
-      const role = roles.find((r) => r.id === user.roleId);
-      const userWithDetails = {
-        ...user,
-        department: department?.name || "Unknown",
-        role: role?.name || "Unknown",
-      };
+  // Fetch user data
+  const { isLoading: isUserLoading } = useSWR(
+    `user/${id}`,
+    async () => {
+      try {
+        const response = await fetchUserById(id);
+        const user = response && "data" in response ? response.data : response;
+        useUsersStore.setState({ currentUser: user || undefined });
+        return user;
+      } finally {
+        if (isUserLoading) {
+          setFormLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
 
-      useUsersStore.setState({
-        currentUser: userWithDetails,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch user:", error);
-      useUsersStore.setState({
-        currentUser: undefined,
-        isLoading: false,
-      });
-    }
-  }, [id]);
-
-  return <InitializeStore onInitialize={initializeUser} />;
+  return null;
 }

@@ -35,6 +35,7 @@ export interface UserDetail {
   id: string;
   name: string;
   status: UserStatus;
+  image: string;
   email: string;
   username: string;
   phone_number: string;

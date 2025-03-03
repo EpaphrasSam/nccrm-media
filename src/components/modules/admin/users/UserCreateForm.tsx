@@ -14,44 +14,54 @@ import {
 import { buttonStyles, checkboxStyles, inputStyles } from "@/lib/styles";
 import { useUsersStore } from "@/store/users";
 import { useRouter } from "next/navigation";
-import { GENDERS, Gender, UserStatus } from "@/services/users/types";
+import { GENDERS } from "@/lib/constants";
 import { generateUsername, generatePassword } from "@/helpers/userHelpers";
 import { useState, useEffect } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import useSWR from "swr";
-import { fetchDepartments } from "@/services/departments/api";
-import { fetchRoles } from "@/services/roles/api";
+import { departmentService } from "@/services/departments/api";
+import { roleService } from "@/services/roles/api";
+import type { DepartmentListResponse } from "@/services/departments/types";
+import type { RoleListResponse } from "@/services/roles/types";
 
 const userCreateSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
-  gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]) as z.ZodEnum<
-    [Gender, ...Gender[]]
-  >,
+  phone_number: z.string().min(1, "Phone number is required"),
+  gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]),
   username: z.string().min(1, "Username is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  roleId: z.string().min(1, "Role is required"),
-  departmentId: z.string().min(1, "Department is required"),
-  status: z.enum(["active", "inactive", "pending"]) as z.ZodEnum<
-    [UserStatus, ...UserStatus[]]
-  >,
+  role_id: z.string().min(1, "Role is required"),
+  department_id: z.string().min(1, "Department is required"),
 });
 
 type UserCreateFormData = z.infer<typeof userCreateSchema>;
 
 export function UserCreateForm() {
   const router = useRouter();
-  const { createUser } = useUsersStore();
+  const { createUser, isFormLoading } = useUsersStore();
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(true);
 
   // Fetch departments and roles using SWR
-  const { data: departments, error: departmentsError } = useSWR(
-    "departments",
-    fetchDepartments
+  const { data: departmentsResponse, error: departmentsError } =
+    useSWR<DepartmentListResponse>("departments", async () => {
+      const response = await departmentService.fetchAll();
+      return response as DepartmentListResponse;
+    });
+  const { data: rolesResponse, error: rolesError } = useSWR<RoleListResponse>(
+    "roles",
+    async () => {
+      const response = await roleService.fetchAll();
+      return response as RoleListResponse;
+    }
   );
-  const { data: roles, error: rolesError } = useSWR("roles", fetchRoles);
+
+  // Extract data from the wrapped responses
+  const departments = Array.isArray(departmentsResponse?.departments)
+    ? departmentsResponse.departments
+    : [];
+  const roles = Array.isArray(rolesResponse?.roles) ? rolesResponse.roles : [];
 
   const {
     control,
@@ -61,9 +71,6 @@ export function UserCreateForm() {
     formState: { errors, isSubmitting },
   } = useForm<UserCreateFormData>({
     resolver: zodResolver(userCreateSchema),
-    defaultValues: {
-      status: "active",
-    },
   });
 
   const fullName = watch("name");
@@ -88,7 +95,7 @@ export function UserCreateForm() {
     }
   };
 
-  if (!departments || !roles) {
+  if (isFormLoading || !departments || !roles) {
     return (
       <div className="space-y-12 max-w-5xl mx-auto">
         {/* Personal Information Section Loading */}
@@ -195,7 +202,7 @@ export function UserCreateForm() {
           />
 
           <Controller
-            name="phoneNumber"
+            name="phone_number"
             control={control}
             render={({ field }) => (
               <Input
@@ -205,8 +212,8 @@ export function UserCreateForm() {
                 placeholder="Enter phone number"
                 variant="bordered"
                 classNames={inputStyles}
-                isInvalid={!!errors.phoneNumber}
-                errorMessage={errors.phoneNumber?.message}
+                isInvalid={!!errors.phone_number}
+                errorMessage={errors.phone_number?.message}
               />
             )}
           />
@@ -229,12 +236,11 @@ export function UserCreateForm() {
                 isInvalid={!!errors.gender}
                 errorMessage={errors.gender?.message}
               >
-                <SelectItem key={GENDERS.MALE} value={GENDERS.MALE}>
-                  Male
-                </SelectItem>
-                <SelectItem key={GENDERS.FEMALE} value={GENDERS.FEMALE}>
-                  Female
-                </SelectItem>
+                {Object.entries(GENDERS).map(([key, value]) => (
+                  <SelectItem key={value} textValue={value}>
+                    {key.charAt(0) + key.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
               </Select>
             )}
           />
@@ -320,7 +326,7 @@ export function UserCreateForm() {
           />
 
           <Controller
-            name="roleId"
+            name="role_id"
             control={control}
             render={({ field }) => (
               <Select
@@ -334,11 +340,11 @@ export function UserCreateForm() {
                 placeholder="Select a role"
                 variant="bordered"
                 classNames={inputStyles}
-                isInvalid={!!errors.roleId}
-                errorMessage={errors.roleId?.message}
+                isInvalid={!!errors.role_id}
+                errorMessage={errors.role_id?.message}
               >
-                {roles.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
+                {roles.map((role: { id: string; name: string }) => (
+                  <SelectItem key={role.id} textValue={role.id}>
                     {role.name}
                   </SelectItem>
                 ))}
@@ -347,7 +353,7 @@ export function UserCreateForm() {
           />
 
           <Controller
-            name="departmentId"
+            name="department_id"
             control={control}
             render={({ field }) => (
               <Select
@@ -361,11 +367,11 @@ export function UserCreateForm() {
                 placeholder="Select a department"
                 variant="bordered"
                 classNames={inputStyles}
-                isInvalid={!!errors.departmentId}
-                errorMessage={errors.departmentId?.message}
+                isInvalid={!!errors.department_id}
+                errorMessage={errors.department_id?.message}
               >
-                {departments.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.id}>
+                {departments.map((dept: { id: string; name: string }) => (
+                  <SelectItem key={dept.id} textValue={dept.id}>
                     {dept.name}
                   </SelectItem>
                 ))}

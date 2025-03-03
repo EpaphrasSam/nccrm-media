@@ -5,6 +5,7 @@ export const inputStyles = {
   base: "border-brand-gray-light",
   error: "border-brand-red",
   focus: "focus:border-brand-green focus:ring-brand-green",
+  value: "capitalize",
 } as const;
 
 export const buttonStyles = "py-6 rounded-xlg border-none";

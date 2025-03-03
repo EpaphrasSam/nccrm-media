@@ -22,12 +22,6 @@ export function fetchUsers(params: UserQueryParams = {}, isServer = false) {
     })
     .then((res) => res.data);
 
-  const logPromise = async () => {
-    const awaitPromise = await promise;
-    console.log(awaitPromise);
-  };
-  logPromise();
-
   return isServer
     ? serverApiCall(promise, {
         message: "",

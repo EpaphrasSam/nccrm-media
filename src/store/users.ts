@@ -42,8 +42,10 @@ interface UsersState {
   // Loading States
   isTableLoading: boolean;
   isFiltersLoading: boolean;
+  isFormLoading: boolean;
   setTableLoading: (loading: boolean) => void;
   setFiltersLoading: (loading: boolean) => void;
+  setFormLoading: (loading: boolean) => void;
 }
 
 const DEFAULT_FILTERS: UserQueryParams = {
@@ -103,18 +105,10 @@ export const useUsersStore = create<UsersState>((set) => ({
   },
 
   // Loading States
-  isTableLoading: true,
-  isFiltersLoading: true,
-  setTableLoading: (loading) => {
-    // Only update if we're setting to false and current state is true
-    set((state) => ({
-      isTableLoading: state.isTableLoading && loading,
-    }));
-  },
-  setFiltersLoading: (loading) => {
-    // Only update if we're setting to false and current state is true
-    set((state) => ({
-      isFiltersLoading: state.isFiltersLoading && loading,
-    }));
-  },
+  isTableLoading: false,
+  isFiltersLoading: false,
+  isFormLoading: false,
+  setTableLoading: (loading) => set({ isTableLoading: loading }),
+  setFiltersLoading: (loading) => set({ isFiltersLoading: loading }),
+  setFormLoading: (loading) => set({ isFormLoading: loading }),
 }));
