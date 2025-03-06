@@ -1,33 +1,81 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useThematicAreasStore } from "@/store/thematic-areas";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchThematicAreas } from "../../../../services/thematic-areas/api";
+import { thematicAreaService } from "@/services/thematic-areas/api";
+import type { ThematicAreaQueryParams } from "@/services/thematic-areas/types";
+import { urlSync } from "@/utils/url-sync";
 
-export function InitializeThematicAreas() {
-  const initializeThematicAreas = useCallback(async () => {
-    useThematicAreasStore.setState({ isLoading: true });
+interface InitializeThematicAreasProps {
+  initialFilters: Partial<ThematicAreaQueryParams>;
+}
 
-    try {
-      const thematicAreas = await fetchThematicAreas();
+const DEFAULT_FILTERS: ThematicAreaQueryParams = {
+  page: 1,
+  limit: 10,
+};
 
-      useThematicAreasStore.setState({
-        thematicAreas,
-        filteredThematicAreas: thematicAreas,
-        totalThematicAreas: thematicAreas.length,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch thematic areas:", error);
-      useThematicAreasStore.setState({
-        isLoading: false,
-        thematicAreas: [],
-        filteredThematicAreas: [],
-        totalThematicAreas: 0,
-      });
+export function InitializeThematicAreas({
+  initialFilters,
+}: InitializeThematicAreasProps) {
+  const { filters, setFilters, setTableLoading } = useThematicAreasStore();
+
+  // Set initial filters from URL or defaults
+  useEffect(() => {
+    const hasInitialFilters = Object.keys(initialFilters).length > 0;
+    if (hasInitialFilters) {
+      setFilters(initialFilters);
+    } else {
+      // If no URL params exist, set defaults and push to URL
+      setFilters(DEFAULT_FILTERS);
+      urlSync.pushToUrl(DEFAULT_FILTERS);
     }
-  }, []);
+  }, [initialFilters, setFilters]);
 
-  return <InitializeStore onInitialize={initializeThematicAreas} />;
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false, // Disable automatic retries
+  };
+
+  // Fetch thematic areas data - will refetch when filters change
+  const { isLoading: isThematicAreasLoading } = useSWR(
+    ["thematicAreas", filters],
+    async () => {
+      try {
+        const response = await thematicAreaService.fetchAll(filters);
+        const data = "data" in response ? response.data : response;
+
+        useThematicAreasStore.setState({
+          thematicAreas: data.thematicAreas,
+          totalThematicAreas: data.totalThematicAreas,
+          totalPages: data.totalPages,
+        });
+
+        return data;
+      } finally {
+        // Only update loading state after initial load
+        if (isThematicAreasLoading) {
+          setTableLoading(false);
+        }
+      }
+    },
+    {
+      ...swrConfig,
+      keepPreviousData: true,
+    }
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isThematicAreasLoading) {
+      setTableLoading(true);
+    }
+  }, [isThematicAreasLoading, setTableLoading]);
+
+  return null;
 }

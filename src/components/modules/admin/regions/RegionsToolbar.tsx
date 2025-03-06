@@ -1,15 +1,19 @@
 "use client";
 
-import { AdminToolbar } from "@/components/modules/admin/layout/AdminToolbar";
 import { useRegionsStore } from "@/store/regions";
+import { AdminToolbar } from "../layout/AdminToolbar";
 
 export function RegionsToolbar() {
-  const { setSearchQuery, addRegion } = useRegionsStore();
+  const { setFilters, addRegion } = useRegionsStore();
+
+  const handleSearch = (query: string) => {
+    setFilters({ search: query, page: 1 }); // Reset to first page on search
+  };
 
   return (
     <AdminToolbar
       searchPlaceholder="Search regions..."
-      onSearch={setSearchQuery}
+      onSearch={handleSearch}
       addButtonLabel="Add Region"
       onAdd={addRegion}
     />

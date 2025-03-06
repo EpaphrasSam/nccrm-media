@@ -20,11 +20,11 @@ import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfir
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
-  { key: "name", label: "NAME" },
-  { key: "description", label: "DESCRIPTION" },
-  { key: "created_at", label: "CREATED AT" },
-  { key: "updated_at", label: "UPDATED AT" },
-  { key: "actions", label: "ACTIONS" },
+  { key: "name", label: "Name" },
+  { key: "description", label: "Description" },
+  { key: "created_at", label: "Date created" },
+  { key: "status", label: "Status" },
+  { key: "actions", label: "Actions" },
 ];
 
 const formatDate = (dateString: string) => {
@@ -98,7 +98,7 @@ export function DepartmentsTable() {
                       <Skeleton className="h-5 w-28" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-28" />
+                      <Skeleton className="h-5 w-20" />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -116,7 +116,17 @@ export function DepartmentsTable() {
                 <TableCell>{department.name}</TableCell>
                 <TableCell>{department.description}</TableCell>
                 <TableCell>{formatDate(department.created_at)}</TableCell>
-                <TableCell>{formatDate(department.updated_at)}</TableCell>
+                <TableCell>
+                  <span
+                    className={`text-sm font-semibold capitalize ${
+                      department.status === "active"
+                        ? "text-success"
+                        : "text-default-400"
+                    }`}
+                  >
+                    {department.status}
+                  </span>
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Button

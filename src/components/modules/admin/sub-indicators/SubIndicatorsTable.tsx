@@ -14,14 +14,19 @@ import { FaRegEdit } from "react-icons/fa";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
 import { Pagination } from "@/components/common/navigation/Pagination";
 import { tableStyles } from "@/lib/styles";
-import { SubIndicatorStatus } from "@/services/sub-indicators/types";
+import type {
+  SubIndicatorStatus,
+  SubIndicatorListItem,
+} from "@/services/sub-indicators/types";
 
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
   { key: "name", label: "Sub Indicator" },
-  { key: "mainIndicator", label: "Main Indicator" },
-  { key: "createdAt", label: "Date Created" },
+  { key: "description", label: "Description" },
+  { key: "main_indicator", label: "Main Indicator" },
+  { key: "thematic_area", label: "Thematic Area" },
+  { key: "created_at", label: "Date Created" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
 ] as const;
@@ -37,21 +42,17 @@ const StatusText = ({ status }: { status: SubIndicatorStatus }) => {
 
 export function SubIndicatorsTable() {
   const {
-    filteredSubIndicators,
+    subIndicators,
     editSubIndicator,
-    isLoading,
-    currentPage,
-    pageSize,
-    setCurrentPage,
-    totalSubIndicators,
+    isTableLoading,
+    filters,
+    setFilters,
+    totalPages,
   } = useSubIndicatorsStore();
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedSubIndicators = filteredSubIndicators.slice(
-    startIndex,
-    endIndex
-  );
+  const handlePageChange = (page: number) => {
+    setFilters({ ...filters, page });
+  };
 
   return (
     <div className="space-y-4">
@@ -63,7 +64,7 @@ export function SubIndicatorsTable() {
         </TableHeader>
 
         <TableBody emptyContent="No sub indicators found">
-          {isLoading ? (
+          {isTableLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -72,7 +73,13 @@ export function SubIndicatorsTable() {
                       <Skeleton className="h-5 w-32" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-5 w-96" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-28" />
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-5 w-28" />
@@ -83,7 +90,6 @@ export function SubIndicatorsTable() {
                     <TableCell>
                       <div className="flex items-center justify-start gap-1">
                         <Skeleton className="h-9 w-9 rounded-lg" />
-                        <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -91,14 +97,20 @@ export function SubIndicatorsTable() {
               )}
             </>
           ) : (
-            paginatedSubIndicators.map((subIndicator) => (
+            subIndicators.map((subIndicator: SubIndicatorListItem) => (
               <TableRow key={subIndicator.id}>
                 <TableCell className="font-medium">
                   {subIndicator.name}
                 </TableCell>
-                <TableCell>{subIndicator.mainIndicator}</TableCell>
+                <TableCell className="min-w-[300px] max-w-[400px] whitespace-normal">
+                  {subIndicator.description}
+                </TableCell>
+                <TableCell>{subIndicator.main_indicator.name}</TableCell>
                 <TableCell>
-                  {new Date(subIndicator.createdAt).toLocaleDateString(
+                  {subIndicator.main_indicator.thematic_area.name}
+                </TableCell>
+                <TableCell>
+                  {new Date(subIndicator.created_at).toLocaleDateString(
                     "en-US",
                     {
                       month: "long",
@@ -120,7 +132,6 @@ export function SubIndicatorsTable() {
                     >
                       <FaRegEdit size={18} color="blue" />
                     </Button>
-                   
                   </div>
                 </TableCell>
               </TableRow>
@@ -130,10 +141,10 @@ export function SubIndicatorsTable() {
       </Table>
 
       <Pagination
-        total={totalSubIndicators}
-        pageSize={pageSize}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
+        total={totalPages}
+        pageSize={filters.limit}
+        currentPage={filters.page}
+        onPageChange={handlePageChange}
       />
     </div>
   );

@@ -3,7 +3,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input, Button, Switch, Skeleton, Textarea } from "@heroui/react";
+import { Input, Button, Switch, Skeleton } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useThematicAreasStore } from "@/store/thematic-areas";
 import { useRouter } from "next/navigation";
@@ -29,10 +29,9 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     updateThematicArea,
     deleteThematicArea,
     currentThematicArea,
-    isLoading,
-    setLoading,
+    isFormLoading,
   } = useThematicAreasStore();
-  const [localLoading, setLocalLoading] = useState(true);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -57,41 +56,24 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
   useEffect(() => {
-    if (isNew) {
-      setLoading(false);
-      setLocalLoading(false);
-    } else if (!isLoading && currentThematicArea) {
+    if (!isNew && currentThematicArea) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
-  }, [
-    isNew,
-    currentThematicArea,
-    isLoading,
-    reset,
-    getDefaultValues,
-    setLoading,
-  ]);
+  }, [isNew, currentThematicArea, reset, getDefaultValues]);
 
   const onSubmit = async (data: ThematicAreaFormValues) => {
     try {
-      if (currentThematicArea) {
-        await updateThematicArea(currentThematicArea.id, {
+      if (isNew) {
+        await createThematicArea({
           name: data.name,
           description: data.description,
           status: data.status ? "active" : "inactive",
         });
-      } else {
-        await createThematicArea({
-          name: data.name,
-          description: data.description,
+      } else if (currentThematicArea) {
+        await updateThematicArea(currentThematicArea.id, {
+          newName: data.name,
+          newDescription: data.description,
           status: data.status ? "active" : "inactive",
         });
       }
@@ -116,100 +98,90 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     }
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading) {
     return (
-      <div className="flex flex-col min-h-[calc(100vh-14rem)]">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-32 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-16 w-full max-w-2xl rounded-lg" />
-          </div>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
-        <div className="flex justify-center mt-auto pt-8">
-          <Skeleton className="h-10 w-[110px]" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </div>
     );
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-col min-h-[calc(100vh-14rem)]"
-    >
-      <div className="space-y-6">
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              label="Thematic Area Name"
-              labelPlacement="outside"
-              placeholder="Enter thematic area name"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name?.message}
-            />
-          )}
-        />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <Controller
+        name="name"
+        control={control}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label="Name"
+            labelPlacement="outside"
+            placeholder="Enter thematic area name"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.name}
+            errorMessage={errors.name?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="description"
-          control={control}
-          render={({ field }) => (
-            <Textarea
-              {...field}
-              label="Description"
-              labelPlacement="outside"
-              placeholder="Enter thematic area description"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.description}
-              errorMessage={errors.description?.message}
-            />
-          )}
-        />
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label="Description"
+            labelPlacement="outside"
+            placeholder="Enter thematic area description"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.description}
+            errorMessage={errors.description?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="status"
-          control={control}
-          render={({ field }) => (
-            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <span className="text-sm font-medium">Status</span>
-                <div className="text-sm text-default-500">
-                  {field.value ? "Active" : "Inactive"}
-                </div>
+      <Controller
+        name="status"
+        control={control}
+        render={({ field }) => (
+          <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium">Status</span>
+              <div className="text-sm text-default-500">
+                {field.value ? "Active" : "Inactive"}
               </div>
-              <Switch
-                isSelected={field.value}
-                onValueChange={field.onChange}
-                classNames={inputStyles}
-                color="danger"
-              />
             </div>
-          )}
-        />
-      </div>
+            <Switch
+              isSelected={field.value}
+              onValueChange={field.onChange}
+              classNames={inputStyles}
+              color="danger"
+            />
+          </div>
+        )}
+      />
 
-      <div className="flex gap-3 justify-center mt-auto pt-8">
+      <div className="flex gap-3 justify-center pt-6">
         <Button
           type="submit"
           color="primary"
           isLoading={isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
-          {isNew ? "Save" : "Save Changes"}
+          {isNew ? "Create Thematic Area" : "Save Changes"}
         </Button>
         {!isNew && (
           <Button

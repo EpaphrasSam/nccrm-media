@@ -14,15 +14,18 @@ import { FaRegEdit } from "react-icons/fa";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
 import { Pagination } from "@/components/common/navigation/Pagination";
 import { tableStyles } from "@/lib/styles";
-import { MainIndicatorStatus } from "@/services/main-indicators/types";
+import type {
+  MainIndicatorStatus,
+  MainIndicatorListItem,
+} from "@/services/main-indicators/types";
 
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
   { key: "name", label: "Main Indicator" },
   { key: "description", label: "Description" },
-  { key: "thematicArea", label: "Thematic Area" },
-  { key: "createdAt", label: "Date Created" },
+  { key: "thematic_area", label: "Thematic Area" },
+  { key: "created_at", label: "Date Created" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
 ] as const;
@@ -38,21 +41,17 @@ const StatusText = ({ status }: { status: MainIndicatorStatus }) => {
 
 export function MainIndicatorsTable() {
   const {
-    filteredMainIndicators,
+    mainIndicators,
     editMainIndicator,
-    isLoading,
-    currentPage,
-    pageSize,
-    setCurrentPage,
-    totalMainIndicators,
+    isTableLoading,
+    filters,
+    setFilters,
+    totalPages,
   } = useMainIndicatorsStore();
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedMainIndicators = filteredMainIndicators.slice(
-    startIndex,
-    endIndex
-  );
+  const handlePageChange = (page: number) => {
+    setFilters({ ...filters, page });
+  };
 
   return (
     <div className="space-y-4">
@@ -64,7 +63,7 @@ export function MainIndicatorsTable() {
         </TableHeader>
 
         <TableBody emptyContent="No main indicators found">
-          {isLoading ? (
+          {isTableLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -87,7 +86,6 @@ export function MainIndicatorsTable() {
                     <TableCell>
                       <div className="flex items-center justify-start gap-1">
                         <Skeleton className="h-9 w-9 rounded-lg" />
-                        <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -95,7 +93,7 @@ export function MainIndicatorsTable() {
               )}
             </>
           ) : (
-            paginatedMainIndicators.map((mainIndicator) => (
+            mainIndicators.map((mainIndicator: MainIndicatorListItem) => (
               <TableRow key={mainIndicator.id}>
                 <TableCell className="font-medium">
                   {mainIndicator.name}
@@ -103,9 +101,9 @@ export function MainIndicatorsTable() {
                 <TableCell className="min-w-[300px] max-w-[400px] whitespace-normal">
                   {mainIndicator.description}
                 </TableCell>
-                <TableCell>{mainIndicator.thematicArea}</TableCell>
+                <TableCell>{mainIndicator.thematic_area.name}</TableCell>
                 <TableCell>
-                  {new Date(mainIndicator.createdAt).toLocaleDateString(
+                  {new Date(mainIndicator.created_at).toLocaleDateString(
                     "en-US",
                     {
                       month: "long",
@@ -136,10 +134,10 @@ export function MainIndicatorsTable() {
       </Table>
 
       <Pagination
-        total={totalMainIndicators}
-        pageSize={pageSize}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
+        total={totalPages}
+        pageSize={filters.limit}
+        currentPage={filters.page}
+        onPageChange={handlePageChange}
       />
     </div>
   );

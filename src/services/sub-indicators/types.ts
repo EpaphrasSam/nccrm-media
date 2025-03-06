@@ -1,18 +1,17 @@
+export type SubIndicatorStatus = "active" | "inactive";
+
 export interface SubIndicator {
   id: string;
   name: string;
   description: string;
-  status: string;
+  status: SubIndicatorStatus;
   main_indicator_id: string;
   created_at: string;
   updated_at: string;
-}
-
-// For display purposes (like in tables)
-export interface SubIndicatorWithMainIndicator extends SubIndicator {
-  main_indicator: {
+  main_indicator?: {
     id: string;
     name: string;
+    description: string;
     thematic_area: {
       id: string;
       name: string;
@@ -20,38 +19,52 @@ export interface SubIndicatorWithMainIndicator extends SubIndicator {
   };
 }
 
-// API Response Types
-export interface SubIndicatorListResponse {
-  message: string;
-  subIndicators: SubIndicatorWithMainIndicator[];
-  totalSubIndicators: number;
-  totalPages: number;
+// Type for list items (used in table/list views)
+export interface SubIndicatorListItem extends SubIndicator {
+  main_indicator: {
+    id: string;
+    name: string;
+    description: string;
+    thematic_area: {
+      id: string;
+      name: string;
+    };
+  };
 }
 
-export interface SubIndicatorDetailResponse {
-  message: string;
-  subIndicator: SubIndicatorWithMainIndicator;
+// Type for detailed view (used in forms/edit views)
+export interface SubIndicatorDetail extends SubIndicator {
+  main_indicator: {
+    id: string;
+    name: string;
+    description: string;
+    thematic_area: {
+      id: string;
+      name: string;
+    };
+  };
 }
 
-// Request Types
+// Type for creating a new sub indicator
 export interface SubIndicatorCreateInput {
   name: string;
   description: string;
-  status: string;
   main_indicator_id: string;
+  status: SubIndicatorStatus;
 }
 
+// Type for updating an existing sub indicator
 export interface SubIndicatorUpdateInput {
   newName?: string;
   newDescription?: string;
-  status?: string;
   main_indicator_id?: string;
+  status?: SubIndicatorStatus;
 }
 
-// Query Parameters
+// Type for query parameters
 export interface SubIndicatorQueryParams {
-  page?: number;
-  limit?: number;
-  main_indicator_id?: string;
-  thematic_area_id?: string;
+  page: number;
+  limit: number;
+  search?: string;
+  main_indicator?: string;
 }

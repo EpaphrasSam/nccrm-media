@@ -1,30 +1,53 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useThematicAreasStore } from "@/store/thematic-areas";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchThematicAreaById } from "@/services/thematic-areas/api";
+import { thematicAreaService } from "@/services/thematic-areas/api";
 
-export function InitializeThematicArea({ id }: { id: string }) {
-  const initializeThematicArea = useCallback(async () => {
-    useThematicAreasStore.setState({ isLoading: true });
+interface InitializeThematicAreaProps {
+  id: string;
+}
 
-    try {
-      const thematicArea = await fetchThematicAreaById(id);
-      if (!thematicArea) throw new Error("Thematic Area not found");
+export function InitializeThematicArea({ id }: InitializeThematicAreaProps) {
+  const { setFormLoading } = useThematicAreasStore();
 
-      useThematicAreasStore.setState({
-        currentThematicArea: thematicArea,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch thematic area:", error);
-      useThematicAreasStore.setState({
-        currentThematicArea: undefined,
-        isLoading: false,
-      });
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false,
+  };
+
+  // Fetch thematic area data
+  const { isLoading: isThematicAreaLoading } = useSWR(
+    `thematicArea/${id}`,
+    async () => {
+      try {
+        const response = await thematicAreaService.fetchById(id);
+        const thematicArea =
+          response && "data" in response ? response.data : response;
+        useThematicAreasStore.setState({
+          currentThematicArea: thematicArea?.thematicArea || undefined,
+        });
+        return thematicArea;
+      } finally {
+        if (isThematicAreaLoading) {
+          setFormLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isThematicAreaLoading) {
+      setFormLoading(true);
     }
-  }, [id]);
+  }, [isThematicAreaLoading, setFormLoading]);
 
-  return <InitializeStore onInitialize={initializeThematicArea} />;
+  return null;
 }

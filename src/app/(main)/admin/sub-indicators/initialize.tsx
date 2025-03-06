@@ -1,50 +1,81 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchSubIndicators } from "@/services/sub-indicators/api";
-import { fetchMainIndicators } from "@/services/main-indicators/api";
-import { SubIndicatorWithMainIndicator } from "@/services/sub-indicators/types";
+import { subIndicatorService } from "@/services/sub-indicators/api";
+import type { SubIndicatorQueryParams } from "@/services/sub-indicators/types";
+import { urlSync } from "@/utils/url-sync";
 
-export function InitializeSubIndicators() {
-  const initializeSubIndicators = useCallback(async () => {
-    useSubIndicatorsStore.setState({ isLoading: true });
+interface InitializeSubIndicatorsProps {
+  initialFilters: Partial<SubIndicatorQueryParams>;
+}
 
-    try {
-      const [subIndicators, mainIndicators] = await Promise.all([
-        fetchSubIndicators(),
-        fetchMainIndicators(),
-      ]);
+const DEFAULT_FILTERS: SubIndicatorQueryParams = {
+  page: 1,
+  limit: 10,
+};
 
-      // Add main indicator names to sub indicators
-      const subIndicatorsWithMainIndicators: SubIndicatorWithMainIndicator[] =
-        subIndicators.map((indicator) => {
-          const mainIndicator = mainIndicators.find(
-            (main) => main.id === indicator.mainIndicatorId
-          );
-          return {
-            ...indicator,
-            mainIndicator: mainIndicator?.name || "Unknown",
-          };
+export function InitializeSubIndicators({
+  initialFilters,
+}: InitializeSubIndicatorsProps) {
+  const { filters, setFilters, setTableLoading } = useSubIndicatorsStore();
+
+  // Set initial filters from URL or defaults
+  useEffect(() => {
+    const hasInitialFilters = Object.keys(initialFilters).length > 0;
+    if (hasInitialFilters) {
+      setFilters(initialFilters);
+    } else {
+      // If no URL params exist, set defaults and push to URL
+      setFilters(DEFAULT_FILTERS);
+      urlSync.pushToUrl(DEFAULT_FILTERS);
+    }
+  }, [initialFilters, setFilters]);
+
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false, // Disable automatic retries
+  };
+
+  // Fetch sub indicators data - will refetch when filters change
+  const { isLoading: isSubIndicatorsLoading } = useSWR(
+    ["subIndicators", filters],
+    async () => {
+      try {
+        const response = await subIndicatorService.fetchAll(filters);
+        const data = "data" in response ? response.data : response;
+
+        useSubIndicatorsStore.setState({
+          subIndicators: data.subIndicators,
+          totalSubIndicators: data.totalSubIndicators,
+          totalPages: data.totalPages,
         });
 
-      useSubIndicatorsStore.setState({
-        subIndicators: subIndicatorsWithMainIndicators,
-        filteredSubIndicators: subIndicatorsWithMainIndicators,
-        totalSubIndicators: subIndicatorsWithMainIndicators.length,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch sub indicators:", error);
-      useSubIndicatorsStore.setState({
-        isLoading: false,
-        subIndicators: [],
-        filteredSubIndicators: [],
-        totalSubIndicators: 0,
-      });
+        return data;
+      } finally {
+        // Only update loading state after initial load
+        if (isSubIndicatorsLoading) {
+          setTableLoading(false);
+        }
+      }
+    },
+    {
+      ...swrConfig,
+      keepPreviousData: true,
     }
-  }, []);
+  );
 
-  return <InitializeStore onInitialize={initializeSubIndicators} />;
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isSubIndicatorsLoading) {
+      setTableLoading(true);
+    }
+  }, [isSubIndicatorsLoading, setTableLoading]);
+
+  return null;
 }

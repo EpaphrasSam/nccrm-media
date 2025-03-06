@@ -1,31 +1,29 @@
 import { create } from "zustand";
 import type {
-  SubIndicatorWithMainIndicator,
+  SubIndicatorListItem,
+  SubIndicatorDetail,
   SubIndicatorCreateInput,
   SubIndicatorUpdateInput,
   SubIndicatorQueryParams,
 } from "@/services/sub-indicators/types";
 import { subIndicatorService } from "@/services/sub-indicators/api";
+import { urlSync } from "@/utils/url-sync";
 
 interface SubIndicatorsState {
   // Data
-  subIndicators: SubIndicatorWithMainIndicator[];
+  subIndicators: SubIndicatorListItem[];
   totalSubIndicators: number;
   totalPages: number;
-  currentSubIndicator?: SubIndicatorWithMainIndicator;
+  currentSubIndicator?: SubIndicatorDetail;
 
   // Filters & Pagination
   filters: SubIndicatorQueryParams;
   setFilters: (filters: Partial<SubIndicatorQueryParams>) => void;
   resetFilters: () => void;
 
-  // Search
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-
   // Actions
   addSubIndicator: () => void;
-  editSubIndicator: (subIndicator: SubIndicatorWithMainIndicator) => void;
+  editSubIndicator: (subIndicator: SubIndicatorListItem) => void;
   deleteSubIndicator: (subIndicatorId: string) => Promise<void>;
   createSubIndicator: (subIndicator: SubIndicatorCreateInput) => Promise<void>;
   updateSubIndicator: (
@@ -34,13 +32,18 @@ interface SubIndicatorsState {
   ) => Promise<void>;
 
   // Loading States
-  isLoading: boolean;
-  setLoading: (loading: boolean) => void;
+  isTableLoading: boolean;
+  isFiltersLoading: boolean;
+  isFormLoading: boolean;
+  setTableLoading: (loading: boolean) => void;
+  setFiltersLoading: (loading: boolean) => void;
+  setFormLoading: (loading: boolean) => void;
 }
 
 const DEFAULT_FILTERS: SubIndicatorQueryParams = {
   page: 1,
-  limit: 20,
+  limit: 10,
+  search: "",
 };
 
 export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
@@ -52,15 +55,16 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
 
   // Filters & Pagination
   filters: DEFAULT_FILTERS,
-  setFilters: (newFilters) =>
+  setFilters: (newFilters) => {
     set((state) => ({
       filters: { ...state.filters, ...newFilters },
-    })),
-  resetFilters: () => set({ filters: DEFAULT_FILTERS }),
-
-  // Search
-  searchQuery: "",
-  setSearchQuery: (query) => set({ searchQuery: query }),
+    }));
+    urlSync.pushToUrl(newFilters);
+  },
+  resetFilters: () => {
+    set({ filters: DEFAULT_FILTERS });
+    urlSync.pushToUrl({});
+  },
 
   // Actions
   addSubIndicator: () => {
@@ -70,52 +74,26 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
     window.location.href = `/admin/sub-indicators/${subIndicator.id}/edit`;
   },
   deleteSubIndicator: async (subIndicatorId) => {
-    try {
-      set({ isLoading: true });
-      await subIndicatorService.delete(subIndicatorId);
-      set((state) => ({
-        subIndicators: state.subIndicators.filter(
-          (t) => t.id !== subIndicatorId
-        ),
-        totalSubIndicators: state.totalSubIndicators - 1,
-        isLoading: false,
-      }));
-    } catch (error) {
-      console.error("Failed to delete sub indicator:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await subIndicatorService.delete(subIndicatorId);
+    set((state) => ({
+      subIndicators: state.subIndicators.filter((s) => s.id !== subIndicatorId),
+      totalSubIndicators: state.totalSubIndicators - 1,
+    }));
   },
-
   createSubIndicator: async (subIndicatorData) => {
-    try {
-      set({ isLoading: true });
-      await subIndicatorService.create(subIndicatorData);
-      set({ isLoading: false });
-      // Navigate to sub indicators list after creation
-      window.location.href = "/admin/sub-indicators";
-    } catch (error) {
-      console.error("Failed to create sub indicator:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await subIndicatorService.create(subIndicatorData);
+    window.location.href = "/admin/sub-indicators";
   },
-
   updateSubIndicator: async (id, subIndicatorData) => {
-    try {
-      set({ isLoading: true });
-      await subIndicatorService.update(id, subIndicatorData);
-      set({ isLoading: false });
-      // Navigate to sub indicators list after update
-      window.location.href = "/admin/sub-indicators";
-    } catch (error) {
-      console.error("Failed to update sub indicator:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await subIndicatorService.update(id, subIndicatorData);
+    window.location.href = "/admin/sub-indicators";
   },
 
   // Loading States
-  isLoading: false,
-  setLoading: (loading) => set({ isLoading: loading }),
+  isTableLoading: false,
+  isFiltersLoading: false,
+  isFormLoading: false,
+  setTableLoading: (loading) => set({ isTableLoading: loading }),
+  setFiltersLoading: (loading) => set({ isFiltersLoading: loading }),
+  setFormLoading: (loading) => set({ isFormLoading: loading }),
 }));

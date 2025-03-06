@@ -1,30 +1,53 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useRegionsStore } from "@/store/regions";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchRegionById } from "@/services/regions/api";
+import { regionService } from "@/services/regions/api";
 
-export function InitializeRegion({ id }: { id: string }) {
-  const initializeRegion = useCallback(async () => {
-    useRegionsStore.setState({ isLoading: true });
+interface InitializeRegionProps {
+  id: string;
+}
 
-    try {
-      const region = await fetchRegionById(id);
-      if (!region) throw new Error("Region not found");
+export function InitializeRegion({ id }: InitializeRegionProps) {
+  const { setFormLoading } = useRegionsStore();
 
-      useRegionsStore.setState({
-        currentRegion: region,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch region:", error);
-      useRegionsStore.setState({
-        currentRegion: undefined,
-        isLoading: false,
-      });
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false,
+  };
+
+  // Fetch region data
+  const { isLoading: isRegionLoading } = useSWR(
+    `region/${id}`,
+    async () => {
+      try {
+        const response = await regionService.fetchById(id);
+        const region =
+          response && "data" in response ? response.data : response;
+        useRegionsStore.setState({
+          currentRegion: region?.region || undefined,
+        });
+        return region;
+      } finally {
+        if (isRegionLoading) {
+          setFormLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isRegionLoading) {
+      setFormLoading(true);
     }
-  }, [id]);
+  }, [isRegionLoading, setFormLoading]);
 
-  return <InitializeStore onInitialize={initializeRegion} />;
+  return null;
 }

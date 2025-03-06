@@ -24,7 +24,7 @@ export default async function EditRegionPage({ params }: EditRegionPageProps) {
         }
       >
         <div className="max-w-2xl">
-          <RegionForm isNew={false} />
+          <RegionForm />
         </div>
       </AdminPageLayout>
     </>

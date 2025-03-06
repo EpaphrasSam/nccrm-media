@@ -1,30 +1,53 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchMainIndicatorById } from "@/services/main-indicators/api";
+import { mainIndicatorService } from "@/services/main-indicators/api";
 
-export function InitializeMainIndicator({ id }: { id: string }) {
-  const initializeMainIndicator = useCallback(async () => {
-    useMainIndicatorsStore.setState({ isLoading: true });
+interface InitializeMainIndicatorProps {
+  id: string;
+}
 
-    try {
-      const mainIndicator = await fetchMainIndicatorById(id);
-      if (!mainIndicator) throw new Error("Main Indicator not found");
+export function InitializeMainIndicator({ id }: InitializeMainIndicatorProps) {
+  const { setFormLoading } = useMainIndicatorsStore();
 
-      useMainIndicatorsStore.setState({
-        currentMainIndicator: mainIndicator,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch main indicator:", error);
-      useMainIndicatorsStore.setState({
-        currentMainIndicator: undefined,
-        isLoading: false,
-      });
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false,
+  };
+
+  // Fetch main indicator data
+  const { isLoading: isMainIndicatorLoading } = useSWR(
+    `mainIndicator/${id}`,
+    async () => {
+      try {
+        const response = await mainIndicatorService.fetchById(id);
+        const mainIndicator =
+          response && "data" in response ? response.data : response;
+        useMainIndicatorsStore.setState({
+          currentMainIndicator: mainIndicator?.mainIndicator || undefined,
+        });
+        return mainIndicator;
+      } finally {
+        if (isMainIndicatorLoading) {
+          setFormLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isMainIndicatorLoading) {
+      setFormLoading(true);
     }
-  }, [id]);
+  }, [isMainIndicatorLoading, setFormLoading]);
 
-  return <InitializeStore onInitialize={initializeMainIndicator} />;
+  return null;
 }

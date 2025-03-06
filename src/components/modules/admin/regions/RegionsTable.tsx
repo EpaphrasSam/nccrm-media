@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableHeader,
@@ -8,46 +9,67 @@ import {
   TableRow,
   TableCell,
   Button,
+  Pagination,
   Skeleton,
 } from "@heroui/react";
-import { FaRegEdit } from "react-icons/fa";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { useRegionsStore } from "@/store/regions";
-import { Pagination } from "@/components/common/navigation/Pagination";
-import { tableStyles } from "@/lib/styles";
-import { RegionStatus } from "@/services/regions/types";
+import { buttonStyles, tableStyles } from "@/lib/styles";
+import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
-  { key: "name", label: "Region" },
-  { key: "createdAt", label: "Date Created" },
+  { key: "name", label: "Name" },
+  { key: "created_at", label: "Date created" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
-] as const;
+];
 
-const StatusText = ({ status }: { status: RegionStatus }) => {
-  const color = status === "active" ? "text-success" : "text-default-400";
-  return (
-    <span className={color}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 export function RegionsTable() {
   const {
-    filteredRegions,
+    regions,
     editRegion,
-    isLoading,
-    currentPage,
-    pageSize,
-    setCurrentPage,
-    totalRegions,
+    deleteRegion,
+    isTableLoading,
+    filters,
+    setFilters,
+    totalPages,
   } = useRegionsStore();
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedRegions = filteredRegions.slice(startIndex, endIndex);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handlePageChange = (page: number) => {
+    setFilters({ page });
+  };
+
+  const handleDeleteClick = (regionId: string) => {
+    setSelectedRegionId(regionId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedRegionId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteRegion(selectedRegionId);
+      setDeleteModalOpen(false);
+    } finally {
+      setIsDeleting(false);
+      setSelectedRegionId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -57,9 +79,8 @@ export function RegionsTable() {
             <TableColumn key={column.key}>{column.label}</TableColumn>
           ))}
         </TableHeader>
-
         <TableBody emptyContent="No regions found">
-          {isLoading ? (
+          {isTableLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -71,10 +92,10 @@ export function RegionsTable() {
                       <Skeleton className="h-5 w-28" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-6 w-20 rounded-lg" />
+                      <Skeleton className="h-5 w-20" />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-start gap-1">
+                      <div className="flex items-center gap-2">
                         <Skeleton className="h-9 w-9 rounded-lg" />
                         <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
@@ -84,28 +105,39 @@ export function RegionsTable() {
               )}
             </>
           ) : (
-            paginatedRegions.map((region) => (
+            regions.map((region) => (
               <TableRow key={region.id}>
-                <TableCell className="font-medium">{region.name}</TableCell>
+                <TableCell>{region.name}</TableCell>
+                <TableCell>{formatDate(region.created_at)}</TableCell>
                 <TableCell>
-                  {new Date(region.createdAt).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  <span
+                    className={`text-sm font-semibold capitalize ${
+                      region.status === "active"
+                        ? "text-success"
+                        : "text-default-400"
+                    }`}
+                  >
+                    {region.status}
+                  </span>
                 </TableCell>
                 <TableCell>
-                  <StatusText status={region.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-start gap-1">
+                  <div className="flex items-center gap-2">
                     <Button
                       isIconOnly
                       variant="light"
-                      size="sm"
                       onPress={() => editRegion(region)}
+                      className={buttonStyles}
                     >
-                      <FaRegEdit size={18} color="blue" />
+                      <FiEdit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      isIconOnly
+                      variant="light"
+                      color="danger"
+                      onPress={() => handleDeleteClick(region.id)}
+                      className={buttonStyles}
+                    >
+                      <FiTrash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -115,11 +147,23 @@ export function RegionsTable() {
         </TableBody>
       </Table>
 
-      <Pagination
-        total={totalRegions}
-        pageSize={pageSize}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
+      {!isTableLoading && totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            total={totalPages}
+            page={filters.page || 1}
+            onChange={handlePageChange}
+          />
+        </div>
+      )}
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Region"
+        description="Are you sure you want to delete this region? This action cannot be undone."
+        isLoading={isDeleting}
       />
     </div>
   );

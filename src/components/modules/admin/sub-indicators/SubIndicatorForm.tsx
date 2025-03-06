@@ -7,22 +7,24 @@ import {
   Input,
   Button,
   Switch,
-  Skeleton,
   Select,
   SelectItem,
+  Skeleton,
+  Textarea,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
-import { fetchMainIndicators } from "@/services/main-indicators/api";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import useSWR from "swr";
-import { SubIndicatorStatus } from "@/services/sub-indicators/types";
+import { mainIndicatorService } from "@/services/main-indicators/api";
+import type { MainIndicatorListItem } from "@/services/main-indicators/types";
 
 const subIndicatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  mainIndicatorId: z.string().min(1, "Main Indicator is required"),
+  description: z.string().min(1, "Description is required"),
+  main_indicator_id: z.string().min(1, "Main Indicator is required"),
   status: z.boolean().default(true),
 });
 
@@ -39,24 +41,31 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     updateSubIndicator,
     deleteSubIndicator,
     currentSubIndicator,
-    isLoading,
-    setLoading,
+    isFormLoading,
   } = useSubIndicatorsStore();
 
-  // Fetch main indicators using SWR
-  const { data: mainIndicators } = useSWR(
-    "mainIndicators",
-    fetchMainIndicators
-  );
-
-  const [localLoading, setLocalLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch main indicators using SWR
+  const { data: mainIndicatorsResponse, error: mainIndicatorsError } = useSWR(
+    "mainIndicators",
+    async () => {
+      const response = await mainIndicatorService.fetchAll();
+      return response;
+    }
+  );
+
+  // Extract main indicators from the wrapped response
+  const mainIndicators = Array.isArray(mainIndicatorsResponse?.mainIndicators)
+    ? (mainIndicatorsResponse.mainIndicators as MainIndicatorListItem[])
+    : [];
 
   const getDefaultValues = useCallback(
     () => ({
       name: currentSubIndicator?.name || "",
-      mainIndicatorId: currentSubIndicator?.mainIndicatorId || "",
+      description: currentSubIndicator?.description || "",
+      main_indicator_id: currentSubIndicator?.main_indicator?.id || "",
       status: currentSubIndicator
         ? currentSubIndicator.status === "active"
         : true,
@@ -74,41 +83,28 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
   useEffect(() => {
-    if (isNew) {
-      setLoading(false);
-      setLocalLoading(false);
-    } else if (!isLoading && currentSubIndicator) {
+    if (!isNew && currentSubIndicator) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
-  }, [
-    isNew,
-    currentSubIndicator,
-    isLoading,
-    reset,
-    getDefaultValues,
-    setLoading,
-  ]);
+  }, [isNew, currentSubIndicator, reset, getDefaultValues]);
 
   const onSubmit = async (data: SubIndicatorFormValues) => {
     try {
-      const submitData = {
-        name: data.name,
-        mainIndicatorId: data.mainIndicatorId,
-        status: data.status ? "active" : ("inactive" as SubIndicatorStatus),
-      };
-
-      if (currentSubIndicator) {
-        await updateSubIndicator(currentSubIndicator.id, submitData);
-      } else {
-        await createSubIndicator(submitData);
+      if (isNew) {
+        await createSubIndicator({
+          name: data.name,
+          description: data.description,
+          main_indicator_id: data.main_indicator_id,
+          status: data.status ? "active" : "inactive",
+        });
+      } else if (currentSubIndicator) {
+        await updateSubIndicator(currentSubIndicator.id, {
+          newName: data.name,
+          newDescription: data.description,
+          main_indicator_id: data.main_indicator_id,
+          status: data.status ? "active" : "inactive",
+        });
       }
       router.push("/admin/sub-indicators");
     } catch (error) {
@@ -131,111 +127,130 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     }
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading || !mainIndicators) {
     return (
-      <div className="flex flex-col min-h-[calc(100vh-14rem)]">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-16 w-full max-w-2xl rounded-lg" />
-          </div>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
-        <div className="flex justify-center mt-auto pt-8">
-          <Skeleton className="h-10 w-[110px]" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </div>
     );
   }
 
+  if (mainIndicatorsError) {
+    return <div>Error loading main indicators</div>;
+  }
+
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-col min-h-[calc(100vh-14rem)]"
-    >
-      <div className="flex flex-col gap-6">
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              label="Sub Indicator Name"
-              labelPlacement="outside"
-              placeholder="Enter sub indicator name"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name?.message}
-            />
-          )}
-        />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <Controller
+        name="name"
+        control={control}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label="Name"
+            labelPlacement="outside"
+            placeholder="Enter sub indicator name"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.name}
+            errorMessage={errors.name?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="mainIndicatorId"
-          control={control}
-          render={({ field }) => (
-            <Select
-              selectedKeys={field.value ? [field.value] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
-              }}
-              label="Main Indicator"
-              labelPlacement="outside"
-              placeholder="Select a main indicator"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.mainIndicatorId}
-              errorMessage={errors.mainIndicatorId?.message}
-              items={mainIndicators || []}
-            >
-              {(indicator) => (
-                <SelectItem key={indicator.id} value={indicator.id}>
-                  {indicator.name}
-                </SelectItem>
-              )}
-            </Select>
-          )}
-        />
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <Textarea
+            {...field}
+            label="Description"
+            labelPlacement="outside"
+            placeholder="Enter sub indicator description"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.description}
+            errorMessage={errors.description?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="status"
-          control={control}
-          render={({ field }) => (
-            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <span className="text-sm font-medium">Status</span>
-                <div className="text-sm text-default-500">
-                  {field.value ? "Active" : "Inactive"}
+      <Controller
+        name="main_indicator_id"
+        control={control}
+        render={({ field }) => (
+          <Select
+            selectedKeys={field.value ? [field.value] : []}
+            onSelectionChange={(keys) => {
+              const value = Array.from(keys)[0]?.toString();
+              if (value) field.onChange(value);
+            }}
+            label="Main Indicator"
+            labelPlacement="outside"
+            placeholder="Select main indicator"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.main_indicator_id}
+            errorMessage={errors.main_indicator_id?.message}
+          >
+            {mainIndicators.map((indicator: MainIndicatorListItem) => (
+              <SelectItem key={indicator.id} textValue={indicator.id}>
+                <div className="flex flex-col">
+                  <span>{indicator.name}</span>
+                  <span className="text-tiny text-default-500">
+                    {indicator.thematic_area.name}
+                  </span>
                 </div>
-              </div>
-              <Switch
-                isSelected={field.value}
-                onValueChange={field.onChange}
-                classNames={inputStyles}
-                color="danger"
-              />
-            </div>
-          )}
-        />
-      </div>
+              </SelectItem>
+            ))}
+          </Select>
+        )}
+      />
 
-      <div className="flex gap-3 justify-center mt-auto pt-8">
+      <Controller
+        name="status"
+        control={control}
+        render={({ field }) => (
+          <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium">Status</span>
+              <div className="text-sm text-default-500">
+                {field.value ? "Active" : "Inactive"}
+              </div>
+            </div>
+            <Switch
+              isSelected={field.value}
+              onValueChange={field.onChange}
+              classNames={inputStyles}
+              color="danger"
+            />
+          </div>
+        )}
+      />
+
+      <div className="flex gap-3 justify-center pt-6">
         <Button
           type="submit"
           color="primary"
           isLoading={isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
-          {isNew ? "Save" : "Save Changes"}
+          {isNew ? "Create Sub Indicator" : "Save Changes"}
         </Button>
         {!isNew && (
           <Button

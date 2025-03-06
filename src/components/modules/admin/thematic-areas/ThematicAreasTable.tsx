@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableHeader,
@@ -8,59 +9,81 @@ import {
   TableRow,
   TableCell,
   Button,
+  Pagination,
   Skeleton,
 } from "@heroui/react";
-import { FaRegEdit } from "react-icons/fa";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { useThematicAreasStore } from "@/store/thematic-areas";
-import { Pagination } from "@/components/common/navigation/Pagination";
-import { tableStyles } from "@/lib/styles";
-import { ThematicAreaStatus } from "@/services/thematic-areas/types";
+import { buttonStyles, tableStyles } from "@/lib/styles";
+import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
-  { key: "name", label: "Thematic Area" },
+  { key: "name", label: "Name" },
   { key: "description", label: "Description" },
-  { key: "createdAt", label: "Date Created" },
+  { key: "created_at", label: "Date created" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
-] as const;
+];
 
-const StatusText = ({ status }: { status: ThematicAreaStatus }) => {
-  const color = status === "active" ? "text-success" : "text-default-400";
-  return (
-    <span className={color}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 export function ThematicAreasTable() {
   const {
-    filteredThematicAreas,
+    thematicAreas,
     editThematicArea,
-    isLoading,
-    currentPage,
-    pageSize,
-    setCurrentPage,
-    totalThematicAreas,
+    deleteThematicArea,
+    isTableLoading,
+    filters,
+    setFilters,
+    totalPages,
   } = useThematicAreasStore();
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedAreas = filteredThematicAreas.slice(startIndex, endIndex);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedThematicAreaId, setSelectedThematicAreaId] = useState<
+    string | null
+  >(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handlePageChange = (page: number) => {
+    setFilters({ page });
+  };
+
+  const handleDeleteClick = (thematicAreaId: string) => {
+    setSelectedThematicAreaId(thematicAreaId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedThematicAreaId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteThematicArea(selectedThematicAreaId);
+      setDeleteModalOpen(false);
+    } finally {
+      setIsDeleting(false);
+      setSelectedThematicAreaId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <Table aria-label="Thematic Areas table" classNames={tableStyles}>
+      <Table aria-label="Thematic areas table" classNames={tableStyles}>
         <TableHeader>
           {columns.map((column) => (
             <TableColumn key={column.key}>{column.label}</TableColumn>
           ))}
         </TableHeader>
-
         <TableBody emptyContent="No thematic areas found">
-          {isLoading ? (
+          {isTableLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -69,16 +92,16 @@ export function ThematicAreasTable() {
                       <Skeleton className="h-5 w-32" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-96" />
+                      <Skeleton className="h-5 w-48" />
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-5 w-28" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-6 w-20 rounded-lg" />
+                      <Skeleton className="h-5 w-20" />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-start gap-1">
+                      <div className="flex items-center gap-2">
                         <Skeleton className="h-9 w-9 rounded-lg" />
                         <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
@@ -88,35 +111,41 @@ export function ThematicAreasTable() {
               )}
             </>
           ) : (
-            paginatedAreas.map((area) => (
-              <TableRow key={area.id}>
-                <TableCell className="font-medium w-[200px]">
-                  {area.name}
+            thematicAreas.map((thematicArea) => (
+              <TableRow key={thematicArea.id}>
+                <TableCell>{thematicArea.name}</TableCell>
+                <TableCell>{thematicArea.description}</TableCell>
+                <TableCell>{formatDate(thematicArea.created_at)}</TableCell>
+                <TableCell>
+                  <span
+                    className={`text-sm font-semibold capitalize ${
+                      thematicArea.status === "active"
+                        ? "text-success"
+                        : "text-default-400"
+                    }`}
+                  >
+                    {thematicArea.status}
+                  </span>
                 </TableCell>
-                <TableCell className="min-w-[300px] max-w-[400px] whitespace-normal">
-                  {area.description}
-                </TableCell>
-                <TableCell className="w-[180px]">
-                  {new Date(area.createdAt).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </TableCell>
-                <TableCell className="w-[120px]">
-                  <StatusText status={area.status} />
-                </TableCell>
-                <TableCell className="w-[100px]">
-                  <div className="flex items-center justify-start gap-1">
+                <TableCell>
+                  <div className="flex items-center gap-2">
                     <Button
                       isIconOnly
                       variant="light"
-                      size="sm"
-                      onPress={() => editThematicArea(area)}
+                      onPress={() => editThematicArea(thematicArea)}
+                      className={buttonStyles}
                     >
-                      <FaRegEdit size={18} color="blue" />
+                      <FiEdit2 className="h-4 w-4" />
                     </Button>
-                    
+                    <Button
+                      isIconOnly
+                      variant="light"
+                      color="danger"
+                      onPress={() => handleDeleteClick(thematicArea.id)}
+                      className={buttonStyles}
+                    >
+                      <FiTrash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -125,11 +154,23 @@ export function ThematicAreasTable() {
         </TableBody>
       </Table>
 
-      <Pagination
-        total={totalThematicAreas}
-        pageSize={pageSize}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
+      {!isTableLoading && totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            total={totalPages}
+            page={filters.page || 1}
+            onChange={handlePageChange}
+          />
+        </div>
+      )}
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Thematic Area"
+        description="Are you sure you want to delete this thematic area? This action cannot be undone."
+        isLoading={isDeleting}
       />
     </div>
   );

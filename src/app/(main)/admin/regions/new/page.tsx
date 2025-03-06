@@ -1,3 +1,5 @@
+"use client";
+
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { RegionForm } from "@/components/modules/admin/regions/RegionForm";

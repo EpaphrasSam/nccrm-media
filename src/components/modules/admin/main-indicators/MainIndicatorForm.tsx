@@ -14,17 +14,17 @@ import {
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
-import { fetchThematicAreas } from "@/services/thematic-areas/api";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import useSWR from "swr";
-import { MainIndicatorStatus } from "@/services/main-indicators/types";
+import { thematicAreaService } from "@/services/thematic-areas/api";
+import type { ThematicAreaListResponse } from "@/services/thematic-areas/types";
 
 const mainIndicatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
-  thematicAreaId: z.string().min(1, "Thematic Area is required"),
+  thematic_area_id: z.string().min(1, "Thematic Area is required"),
   status: z.boolean().default(true),
 });
 
@@ -41,22 +41,29 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     updateMainIndicator,
     deleteMainIndicator,
     currentMainIndicator,
-    isLoading,
-    setLoading,
+    isFormLoading,
   } = useMainIndicatorsStore();
 
-  // Fetch thematic areas using SWR
-  const { data: thematicAreas } = useSWR("thematicAreas", fetchThematicAreas);
-
-  const [localLoading, setLocalLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch thematic areas using SWR
+  const { data: thematicAreasResponse, error: thematicAreasError } =
+    useSWR<ThematicAreaListResponse>("thematicAreas", async () => {
+      const response = await thematicAreaService.fetchAll();
+      return response as ThematicAreaListResponse;
+    });
+
+  // Extract thematic areas from the wrapped response
+  const thematicAreas = Array.isArray(thematicAreasResponse?.thematicAreas)
+    ? thematicAreasResponse.thematicAreas
+    : [];
 
   const getDefaultValues = useCallback(
     () => ({
       name: currentMainIndicator?.name || "",
       description: currentMainIndicator?.description || "",
-      thematicAreaId: currentMainIndicator?.thematicAreaId || "",
+      thematic_area_id: currentMainIndicator?.thematic_area?.id || "",
       status: currentMainIndicator
         ? currentMainIndicator.status === "active"
         : true,
@@ -74,42 +81,28 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
   useEffect(() => {
-    if (isNew) {
-      setLoading(false);
-      setLocalLoading(false);
-    } else if (!isLoading && currentMainIndicator) {
+    if (!isNew && currentMainIndicator) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
-  }, [
-    isNew,
-    currentMainIndicator,
-    isLoading,
-    reset,
-    getDefaultValues,
-    setLoading,
-  ]);
+  }, [isNew, currentMainIndicator, reset, getDefaultValues]);
 
   const onSubmit = async (data: MainIndicatorFormValues) => {
     try {
-      const submitData = {
-        name: data.name,
-        description: data.description,
-        thematicAreaId: data.thematicAreaId,
-        status: data.status ? "active" : ("inactive" as MainIndicatorStatus),
-      };
-
-      if (currentMainIndicator) {
-        await updateMainIndicator(currentMainIndicator.id, submitData);
-      } else {
-        await createMainIndicator(submitData);
+      if (isNew) {
+        await createMainIndicator({
+          name: data.name,
+          description: data.description,
+          thematic_area_id: data.thematic_area_id,
+          status: data.status ? "active" : "inactive",
+        });
+      } else if (currentMainIndicator) {
+        await updateMainIndicator(currentMainIndicator.id, {
+          newName: data.name,
+          newDescription: data.description,
+          thematic_area_id: data.thematic_area_id,
+          status: data.status ? "active" : "inactive",
+        });
       }
       router.push("/admin/main-indicators");
     } catch (error) {
@@ -132,132 +125,125 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     }
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading || !thematicAreas) {
     return (
-      <div className="flex flex-col min-h-[calc(100vh-14rem)]">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-32 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-16 w-full max-w-2xl rounded-lg" />
-          </div>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
-        <div className="flex justify-center mt-auto pt-8">
-          <Skeleton className="h-10 w-[110px]" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </div>
     );
   }
 
+  if (thematicAreasError) {
+    return <div>Error loading thematic areas</div>;
+  }
+
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-col min-h-[calc(100vh-14rem)]"
-    >
-      <div className="flex flex-col gap-6">
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              label="Main Indicator Name"
-              labelPlacement="outside"
-              placeholder="Enter main indicator name"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name?.message}
-            />
-          )}
-        />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <Controller
+        name="name"
+        control={control}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label="Name"
+            labelPlacement="outside"
+            placeholder="Enter main indicator name"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.name}
+            errorMessage={errors.name?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="description"
-          control={control}
-          render={({ field }) => (
-            <Textarea
-              {...field}
-              label="Description"
-              labelPlacement="outside"
-              placeholder="Enter main indicator description"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.description}
-              errorMessage={errors.description?.message}
-            />
-          )}
-        />
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <Textarea
+            {...field}
+            label="Description"
+            labelPlacement="outside"
+            placeholder="Enter main indicator description"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.description}
+            errorMessage={errors.description?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="thematicAreaId"
-          control={control}
-          render={({ field }) => (
-            <Select
-              selectedKeys={field.value ? [field.value] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
-              }}
-              label="Thematic Area"
-              labelPlacement="outside"
-              placeholder="Select a thematic area"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.thematicAreaId}
-              errorMessage={errors.thematicAreaId?.message}
-              items={thematicAreas || []}
-            >
-              {(area) => (
-                <SelectItem key={area.id} value={area.id}>
-                  {area.name}
-                </SelectItem>
-              )}
-            </Select>
-          )}
-        />
+      <Controller
+        name="thematic_area_id"
+        control={control}
+        render={({ field }) => (
+          <Select
+            selectedKeys={field.value ? [field.value] : []}
+            onSelectionChange={(keys) => {
+              const value = Array.from(keys)[0]?.toString();
+              if (value) field.onChange(value);
+            }}
+            label="Thematic Area"
+            labelPlacement="outside"
+            placeholder="Select thematic area"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.thematic_area_id}
+            errorMessage={errors.thematic_area_id?.message}
+          >
+            {thematicAreas.map((area) => (
+              <SelectItem key={area.id} textValue={area.id}>
+                {area.name}
+              </SelectItem>
+            ))}
+          </Select>
+        )}
+      />
 
-        <Controller
-          name="status"
-          control={control}
-          render={({ field }) => (
-            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <span className="text-sm font-medium">Status</span>
-                <div className="text-sm text-default-500">
-                  {field.value ? "Active" : "Inactive"}
-                </div>
+      <Controller
+        name="status"
+        control={control}
+        render={({ field }) => (
+          <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium">Status</span>
+              <div className="text-sm text-default-500">
+                {field.value ? "Active" : "Inactive"}
               </div>
-              <Switch
-                isSelected={field.value}
-                onValueChange={field.onChange}
-                classNames={inputStyles}
-                color="danger"
-              />
             </div>
-          )}
-        />
-      </div>
+            <Switch
+              isSelected={field.value}
+              onValueChange={field.onChange}
+              classNames={inputStyles}
+              color="danger"
+            />
+          </div>
+        )}
+      />
 
-      <div className="flex gap-3 justify-center mt-auto pt-8">
+      <div className="flex gap-3 justify-center pt-6">
         <Button
           type="submit"
           color="primary"
           isLoading={isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
-          {isNew ? "Save" : "Save Changes"}
+          {isNew ? "Create Main Indicator" : "Save Changes"}
         </Button>
         {!isNew && (
           <Button

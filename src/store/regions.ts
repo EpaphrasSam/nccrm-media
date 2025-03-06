@@ -1,43 +1,46 @@
 import { create } from "zustand";
 import type {
-  Region,
+  RegionListItem,
+  RegionDetail,
   RegionCreateInput,
   RegionUpdateInput,
   RegionQueryParams,
 } from "@/services/regions/types";
 import { regionService } from "@/services/regions/api";
+import { urlSync } from "@/utils/url-sync";
 
 interface RegionsState {
   // Data
-  regions: Region[];
+  regions: RegionListItem[];
   totalRegions: number;
   totalPages: number;
-  currentRegion?: Region;
+  currentRegion?: RegionDetail;
 
   // Filters & Pagination
   filters: RegionQueryParams;
   setFilters: (filters: Partial<RegionQueryParams>) => void;
   resetFilters: () => void;
 
-  // Search
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-
   // Actions
   addRegion: () => void;
-  editRegion: (region: Region) => void;
+  editRegion: (region: RegionListItem) => void;
   deleteRegion: (regionId: string) => Promise<void>;
   createRegion: (region: RegionCreateInput) => Promise<void>;
   updateRegion: (id: string, region: RegionUpdateInput) => Promise<void>;
 
   // Loading States
-  isLoading: boolean;
-  setLoading: (loading: boolean) => void;
+  isTableLoading: boolean;
+  isFiltersLoading: boolean;
+  isFormLoading: boolean;
+  setTableLoading: (loading: boolean) => void;
+  setFiltersLoading: (loading: boolean) => void;
+  setFormLoading: (loading: boolean) => void;
 }
 
 const DEFAULT_FILTERS: RegionQueryParams = {
   page: 1,
-  limit: 20,
+  limit: 10,
+  search: "",
 };
 
 export const useRegionsStore = create<RegionsState>((set) => ({
@@ -49,15 +52,16 @@ export const useRegionsStore = create<RegionsState>((set) => ({
 
   // Filters & Pagination
   filters: DEFAULT_FILTERS,
-  setFilters: (newFilters) =>
+  setFilters: (newFilters) => {
     set((state) => ({
       filters: { ...state.filters, ...newFilters },
-    })),
-  resetFilters: () => set({ filters: DEFAULT_FILTERS }),
-
-  // Search
-  searchQuery: "",
-  setSearchQuery: (query) => set({ searchQuery: query }),
+    }));
+    urlSync.pushToUrl(newFilters);
+  },
+  resetFilters: () => {
+    set({ filters: DEFAULT_FILTERS });
+    urlSync.pushToUrl({});
+  },
 
   // Actions
   addRegion: () => {
@@ -67,50 +71,26 @@ export const useRegionsStore = create<RegionsState>((set) => ({
     window.location.href = `/admin/regions/${region.id}/edit`;
   },
   deleteRegion: async (regionId) => {
-    try {
-      set({ isLoading: true });
-      await regionService.delete(regionId);
-      set((state) => ({
-        regions: state.regions.filter((r) => r.id !== regionId),
-        totalRegions: state.totalRegions - 1,
-        isLoading: false,
-      }));
-    } catch (error) {
-      console.error("Failed to delete region:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await regionService.delete(regionId);
+    set((state) => ({
+      regions: state.regions.filter((r) => r.id !== regionId),
+      totalRegions: state.totalRegions - 1,
+    }));
   },
-
   createRegion: async (regionData) => {
-    try {
-      set({ isLoading: true });
-      await regionService.create(regionData);
-      set({ isLoading: false });
-      // Navigate to regions list after creation
-      window.location.href = "/admin/regions";
-    } catch (error) {
-      console.error("Failed to create region:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await regionService.create(regionData);
+    window.location.href = "/admin/regions";
   },
-
   updateRegion: async (id, regionData) => {
-    try {
-      set({ isLoading: true });
-      await regionService.update(id, regionData);
-      set({ isLoading: false });
-      // Navigate to regions list after update
-      window.location.href = "/admin/regions";
-    } catch (error) {
-      console.error("Failed to update region:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await regionService.update(id, regionData);
+    window.location.href = "/admin/regions";
   },
 
   // Loading States
-  isLoading: false,
-  setLoading: (loading) => set({ isLoading: loading }),
+  isTableLoading: false,
+  isFiltersLoading: false,
+  isFormLoading: false,
+  setTableLoading: (loading) => set({ isTableLoading: loading }),
+  setFiltersLoading: (loading) => set({ isFiltersLoading: loading }),
+  setFormLoading: (loading) => set({ isFormLoading: loading }),
 }));

@@ -1,50 +1,81 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchMainIndicators } from "@/services/main-indicators/api";
-import { fetchThematicAreas } from "@/services/thematic-areas/api";
-import { MainIndicatorWithThematicArea } from "@/services/main-indicators/types";
+import { mainIndicatorService } from "@/services/main-indicators/api";
+import type { MainIndicatorQueryParams } from "@/services/main-indicators/types";
+import { urlSync } from "@/utils/url-sync";
 
-export function InitializeMainIndicators() {
-  const initializeMainIndicators = useCallback(async () => {
-    useMainIndicatorsStore.setState({ isLoading: true });
+interface InitializeMainIndicatorsProps {
+  initialFilters: Partial<MainIndicatorQueryParams>;
+}
 
-    try {
-      const [mainIndicators, thematicAreas] = await Promise.all([
-        fetchMainIndicators(),
-        fetchThematicAreas(),
-      ]);
+const DEFAULT_FILTERS: MainIndicatorQueryParams = {
+  page: 1,
+  limit: 10,
+};
 
-      // Add thematic area names to main indicators
-      const mainIndicatorsWithThematicAreas: MainIndicatorWithThematicArea[] =
-        mainIndicators.map((indicator) => {
-          const thematicArea = thematicAreas.find(
-            (area) => area.id === indicator.thematicAreaId
-          );
-          return {
-            ...indicator,
-            thematicArea: thematicArea?.name || "Unknown",
-          };
+export function InitializeMainIndicators({
+  initialFilters,
+}: InitializeMainIndicatorsProps) {
+  const { filters, setFilters, setTableLoading } = useMainIndicatorsStore();
+
+  // Set initial filters from URL or defaults
+  useEffect(() => {
+    const hasInitialFilters = Object.keys(initialFilters).length > 0;
+    if (hasInitialFilters) {
+      setFilters(initialFilters);
+    } else {
+      // If no URL params exist, set defaults and push to URL
+      setFilters(DEFAULT_FILTERS);
+      urlSync.pushToUrl(DEFAULT_FILTERS);
+    }
+  }, [initialFilters, setFilters]);
+
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false, // Disable automatic retries
+  };
+
+  // Fetch main indicators data - will refetch when filters change
+  const { isLoading: isMainIndicatorsLoading } = useSWR(
+    ["mainIndicators", filters],
+    async () => {
+      try {
+        const response = await mainIndicatorService.fetchAll(filters);
+        const data = "data" in response ? response.data : response;
+
+        useMainIndicatorsStore.setState({
+          mainIndicators: data.mainIndicators,
+          totalMainIndicators: data.totalMainIndicators,
+          totalPages: data.totalPages,
         });
 
-      useMainIndicatorsStore.setState({
-        mainIndicators: mainIndicatorsWithThematicAreas,
-        filteredMainIndicators: mainIndicatorsWithThematicAreas,
-        totalMainIndicators: mainIndicatorsWithThematicAreas.length,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch main indicators:", error);
-      useMainIndicatorsStore.setState({
-        isLoading: false,
-        mainIndicators: [],
-        filteredMainIndicators: [],
-        totalMainIndicators: 0,
-      });
+        return data;
+      } finally {
+        // Only update loading state after initial load
+        if (isMainIndicatorsLoading) {
+          setTableLoading(false);
+        }
+      }
+    },
+    {
+      ...swrConfig,
+      keepPreviousData: true,
     }
-  }, []);
+  );
 
-  return <InitializeStore onInitialize={initializeMainIndicators} />;
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isMainIndicatorsLoading) {
+      setTableLoading(true);
+    }
+  }, [isMainIndicatorsLoading, setTableLoading]);
+
+  return null;
 }

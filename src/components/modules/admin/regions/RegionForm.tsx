@@ -28,10 +28,9 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
     updateRegion,
     deleteRegion,
     currentRegion,
-    isLoading,
-    setLoading,
+    isFormLoading,
   } = useRegionsStore();
-  const [localLoading, setLocalLoading] = useState(true);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -53,32 +52,22 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
   useEffect(() => {
-    if (isNew) {
-      setLoading(false);
-      setLocalLoading(false);
-    } else if (!isLoading && currentRegion) {
+    if (!isNew && currentRegion) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
-  }, [isNew, currentRegion, isLoading, reset, getDefaultValues, setLoading]);
+  }, [isNew, currentRegion, reset, getDefaultValues]);
 
   const onSubmit = async (data: RegionFormValues) => {
     try {
-      if (currentRegion) {
-        await updateRegion(currentRegion.id, {
+      if (isNew) {
+        await createRegion({
           name: data.name,
           status: data.status ? "active" : "inactive",
         });
-      } else {
-        await createRegion({
-          name: data.name,
+      } else if (currentRegion) {
+        await updateRegion(currentRegion.id, {
+          newName: data.name,
           status: data.status ? "active" : "inactive",
         });
       }
@@ -103,79 +92,69 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
     }
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading) {
     return (
-      <div className="flex flex-col min-h-[calc(100vh-14rem)]">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-16 w-full max-w-2xl rounded-lg" />
-          </div>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
-        <div className="flex justify-center mt-auto pt-8">
-          <Skeleton className="h-10 w-[110px]" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </div>
     );
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-col min-h-[calc(100vh-14rem)]"
-    >
-      <div className="space-y-6">
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              label="Region Name"
-              labelPlacement="outside"
-              placeholder="Enter region name"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name?.message}
-            />
-          )}
-        />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <Controller
+        name="name"
+        control={control}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label="Name"
+            labelPlacement="outside"
+            placeholder="Enter region name"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.name}
+            errorMessage={errors.name?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="status"
-          control={control}
-          render={({ field }) => (
-            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <span className="text-sm font-medium">Status</span>
-                <div className="text-sm text-default-500">
-                  {field.value ? "Active" : "Inactive"}
-                </div>
+      <Controller
+        name="status"
+        control={control}
+        render={({ field }) => (
+          <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium">Status</span>
+              <div className="text-sm text-default-500">
+                {field.value ? "Active" : "Inactive"}
               </div>
-              <Switch
-                isSelected={field.value}
-                onValueChange={field.onChange}
-                classNames={inputStyles}
-                color="danger"
-              />
             </div>
-          )}
-        />
-      </div>
+            <Switch
+              isSelected={field.value}
+              onValueChange={field.onChange}
+              classNames={inputStyles}
+              color="danger"
+            />
+          </div>
+        )}
+      />
 
-      <div className="flex gap-3 justify-center mt-auto pt-8">
+      <div className="flex gap-3 justify-center pt-6">
         <Button
           type="submit"
           color="primary"
           isLoading={isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
-          {isNew ? "Save" : "Save Changes"}
+          {isNew ? "Create Region" : "Save Changes"}
         </Button>
         {!isNew && (
           <Button
