@@ -78,4 +78,5 @@ export interface UserQueryParams {
   limit?: number;
   department?: string;
   role?: string;
+  search?: string;
 }

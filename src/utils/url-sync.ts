@@ -22,13 +22,15 @@ export const urlSync = {
     // Only parse page and limit as numbers
     const page = searchParams.get("page");
     const limit = searchParams.get("limit");
+    const search = searchParams.get("search");
 
     if (page) params.page = Number(page);
     if (limit) params.limit = Number(limit);
+    if (search) params.search = search;
 
     // Get other params as strings
     searchParams.forEach((value, key) => {
-      if (key !== "page" && key !== "limit" && value !== "all") {
+      if (!["page", "limit", "search"].includes(key) && value !== "all") {
         params[key] = value;
       }
     });

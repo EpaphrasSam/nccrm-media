@@ -51,6 +51,7 @@ interface UsersState {
 const DEFAULT_FILTERS: UserQueryParams = {
   page: 1,
   limit: 10,
+  search: "",
 };
 
 export const useUsersStore = create<UsersState>((set) => ({
@@ -75,7 +76,12 @@ export const useUsersStore = create<UsersState>((set) => ({
 
   // Search
   searchQuery: "",
-  setSearchQuery: (query) => set({ searchQuery: query }),
+  setSearchQuery: (query) => {
+    set((state) => ({
+      filters: { ...state.filters, search: query, page: 1 }, // Reset to first page on search
+    }));
+    urlSync.pushToUrl({ search: query, page: 1 });
+  },
 
   // Actions
   addUser: () => {

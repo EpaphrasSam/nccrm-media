@@ -1,31 +1,29 @@
 import { create } from "zustand";
 import type {
-  Department,
+  DepartmentListItem,
+  DepartmentDetail,
   DepartmentCreateInput,
   DepartmentUpdateInput,
+  DepartmentQueryParams,
 } from "@/services/departments/types";
 import { departmentService } from "@/services/departments/api";
+import { urlSync } from "@/utils/url-sync";
 
 interface DepartmentsState {
   // Data
-  departments: Department[];
+  departments: DepartmentListItem[];
   totalDepartments: number;
-  filteredDepartments: Department[];
-  currentDepartment?: Department;
+  totalPages: number;
+  currentDepartment?: DepartmentDetail;
 
-  // Search
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-
-  // Pagination
-  currentPage: number;
-  pageSize: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
+  // Filters & Pagination
+  filters: DepartmentQueryParams;
+  setFilters: (filters: Partial<DepartmentQueryParams>) => void;
+  resetFilters: () => void;
 
   // Actions
   addDepartment: () => void;
-  editDepartment: (department: Department) => void;
+  editDepartment: (department: DepartmentListItem) => void;
   deleteDepartment: (departmentId: string) => Promise<void>;
   createDepartment: (department: DepartmentCreateInput) => Promise<void>;
   updateDepartment: (
@@ -34,46 +32,39 @@ interface DepartmentsState {
   ) => Promise<void>;
 
   // Loading States
-  isLoading: boolean;
-  setLoading: (loading: boolean) => void;
+  isTableLoading: boolean;
+  isFiltersLoading: boolean;
+  isFormLoading: boolean;
+  setTableLoading: (loading: boolean) => void;
+  setFiltersLoading: (loading: boolean) => void;
+  setFormLoading: (loading: boolean) => void;
 }
 
-const filterDepartments = (departments: Department[], searchQuery: string) => {
-  return departments.filter((department) => {
-    const matchesSearch = searchQuery
-      ? department.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        department.description.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-
-    return matchesSearch;
-  });
+const DEFAULT_FILTERS: DepartmentQueryParams = {
+  page: 1,
+  limit: 10,
+  search: "",
 };
 
-export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
+export const useDepartmentsStore = create<DepartmentsState>((set) => ({
   // Initial Data
   departments: [],
   totalDepartments: 0,
-  filteredDepartments: [],
+  totalPages: 0,
   currentDepartment: undefined,
 
-  // Search
-  searchQuery: "",
-  setSearchQuery: (query) => {
-    set({ searchQuery: query });
-    const state = get();
-    const filtered = filterDepartments(state.departments, query);
-    set({
-      filteredDepartments: filtered,
-      totalDepartments: filtered.length,
-      currentPage: 1,
-    });
+  // Filters & Pagination
+  filters: DEFAULT_FILTERS,
+  setFilters: (newFilters) => {
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    }));
+    urlSync.pushToUrl(newFilters);
   },
-
-  // Pagination
-  currentPage: 1,
-  pageSize: 10,
-  setCurrentPage: (page) => set({ currentPage: page }),
-  setPageSize: (size) => set({ pageSize: size }),
+  resetFilters: () => {
+    set({ filters: DEFAULT_FILTERS });
+    urlSync.pushToUrl({});
+  },
 
   // Actions
   addDepartment: () => {
@@ -83,59 +74,26 @@ export const useDepartmentsStore = create<DepartmentsState>((set, get) => ({
     window.location.href = `/admin/departments/${department.id}/edit`;
   },
   deleteDepartment: async (departmentId) => {
-    try {
-      set({ isLoading: true });
-      await departmentService.delete(departmentId);
-      set((state) => {
-        const newDepartments = state.departments.filter(
-          (d) => d.id !== departmentId
-        );
-        const filtered = filterDepartments(newDepartments, state.searchQuery);
-        return {
-          departments: newDepartments,
-          filteredDepartments: filtered,
-          totalDepartments: filtered.length,
-          isLoading: false,
-        };
-      });
-      // Navigate to departments list after deletion
-      window.location.href = "/admin/departments";
-    } catch (error) {
-      console.error("Failed to delete department:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await departmentService.delete(departmentId);
+    set((state) => ({
+      departments: state.departments.filter((d) => d.id !== departmentId),
+      totalDepartments: state.totalDepartments - 1,
+    }));
   },
-
-  createDepartment: async (department) => {
-    try {
-      set({ isLoading: true });
-      await departmentService.create(department);
-      set({ isLoading: false });
-      // Navigate to departments list after creation
-      window.location.href = "/admin/departments";
-    } catch (error) {
-      console.error("Failed to create department:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+  createDepartment: async (departmentData) => {
+    await departmentService.create(departmentData);
+    window.location.href = "/admin/departments";
   },
-
-  updateDepartment: async (id, department) => {
-    try {
-      set({ isLoading: true });
-      await departmentService.update(id, department);
-      set({ isLoading: false });
-      // Navigate to departments list after update
-      window.location.href = "/admin/departments";
-    } catch (error) {
-      console.error("Failed to update department:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+  updateDepartment: async (id, departmentData) => {
+    await departmentService.update(id, departmentData);
+    window.location.href = "/admin/departments";
   },
 
   // Loading States
-  isLoading: false,
-  setLoading: (loading) => set({ isLoading: loading }),
+  isTableLoading: false,
+  isFiltersLoading: false,
+  isFormLoading: false,
+  setTableLoading: (loading) => set({ isTableLoading: loading }),
+  setFiltersLoading: (loading) => set({ isFiltersLoading: loading }),
+  setFormLoading: (loading) => set({ isFormLoading: loading }),
 }));

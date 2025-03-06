@@ -1,15 +1,19 @@
 "use client";
 
-import { AdminToolbar } from "@/components/modules/admin/layout/AdminToolbar";
 import { useDepartmentsStore } from "@/store/departments";
+import { AdminToolbar } from "../layout/AdminToolbar";
 
 export function DepartmentsToolbar() {
-  const { setSearchQuery, addDepartment } = useDepartmentsStore();
+  const { setFilters, addDepartment } = useDepartmentsStore();
+
+  const handleSearch = (query: string) => {
+    setFilters({ search: query, page: 1 }); // Reset to first page on search
+  };
 
   return (
     <AdminToolbar
       searchPlaceholder="Search departments..."
-      onSearch={setSearchQuery}
+      onSearch={handleSearch}
       addButtonLabel="Add Department"
       onAdd={addDepartment}
     />

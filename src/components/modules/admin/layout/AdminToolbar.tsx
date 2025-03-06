@@ -4,7 +4,7 @@ import { FiPlus } from "react-icons/fi";
 import { SearchInput } from "@/components/common/inputs/SearchInput";
 import { buttonStyles } from "@/lib/styles";
 
-interface AdminToolbarProps {
+export interface AdminToolbarProps {
   searchPlaceholder: string;
   onSearch: (query: string) => void;
   addButtonLabel: string;

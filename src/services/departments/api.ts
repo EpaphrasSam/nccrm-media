@@ -16,13 +16,28 @@ export const departmentService = {
         params: {
           page: params.page || 1,
           limit: params.limit || 20,
+          ...(params.search && { search: params.search }),
         },
       })
       .then((res) => res.data);
 
     return isServer
-      ? serverApiCall(promise, { message: "", departments: [] })
-      : clientApiCall(promise, { message: "", departments: [] }, false);
+      ? serverApiCall(promise, {
+          message: "",
+          departments: [] as Department[],
+          totalDepartments: 0,
+          totalPages: 0,
+        })
+      : clientApiCall(
+          promise,
+          {
+            message: "",
+            departments: [] as Department[],
+            totalDepartments: 0,
+            totalPages: 0,
+          },
+          false
+        );
   },
 
   fetchById(id: string, isServer = false) {

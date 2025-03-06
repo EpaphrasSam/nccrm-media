@@ -1,30 +1,53 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useDepartmentsStore } from "@/store/departments";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchDepartmentById } from "@/services/departments/api";
+import { departmentService } from "@/services/departments/api";
 
-export function InitializeDepartment({ id }: { id: string }) {
-  const initializeDepartment = useCallback(async () => {
-    useDepartmentsStore.setState({ isLoading: true });
+interface InitializeDepartmentProps {
+  id: string;
+}
 
-    try {
-      const department = await fetchDepartmentById(id);
-      if (!department) throw new Error("Department not found");
+export function InitializeDepartment({ id }: InitializeDepartmentProps) {
+  const { setFormLoading } = useDepartmentsStore();
 
-      useDepartmentsStore.setState({
-        currentDepartment: department,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch department:", error);
-      useDepartmentsStore.setState({
-        currentDepartment: undefined,
-        isLoading: false,
-      });
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false,
+  };
+
+  // Fetch department data
+  const { isLoading: isDepartmentLoading } = useSWR(
+    `department/${id}`,
+    async () => {
+      try {
+        const response = await departmentService.fetchById(id);
+        const department =
+          response && "data" in response ? response.data : response;
+        useDepartmentsStore.setState({
+          currentDepartment: department?.department || undefined,
+        });
+        return department;
+      } finally {
+        if (isDepartmentLoading) {
+          setFormLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isDepartmentLoading) {
+      setFormLoading(true);
     }
-  }, [id]);
+  }, [isDepartmentLoading, setFormLoading]);
 
-  return <InitializeStore onInitialize={initializeDepartment} />;
+  return null;
 }

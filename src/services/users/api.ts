@@ -18,6 +18,7 @@ export function fetchUsers(params: UserQueryParams = {}, isServer = false) {
         limit: params.limit || 10,
         ...(params.department && { department: params.department }),
         ...(params.role && { role: params.role }),
+        ...(params.search && { search: params.search }),
       },
     })
     .then((res) => res.data);

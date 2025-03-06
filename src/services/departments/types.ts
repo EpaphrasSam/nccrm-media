@@ -11,7 +11,13 @@ export interface Department {
 export interface DepartmentListResponse {
   message: string;
   departments: Department[];
+  totalDepartments: number;
+  totalPages: number;
 }
+
+// We'll use Department type directly instead of creating empty interfaces
+export type DepartmentListItem = Department;
+export type DepartmentDetail = Department;
 
 export interface DepartmentDetailResponse {
   message: string;
@@ -35,4 +41,5 @@ export interface DepartmentUpdateInput {
 export interface DepartmentQueryParams {
   page?: number;
   limit?: number;
+  search?: string;
 }
