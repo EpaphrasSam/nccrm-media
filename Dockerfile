@@ -1,25 +1,48 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies)
+# Install dependencies with correct platform
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN apk add --no-cache python3 make g++ \
-    && npm install --ignore-platform \
-    && npm cache clean --force
+ENV npm_config_platform=linux
+ENV npm_config_arch=x64
+ENV npm_config_target_platform=linux
+ENV npm_config_target_arch=x64
+
+RUN npm install --omit=dev --force
 
 # Copy source code
 COPY . .
 
+# Build the application
+RUN npm run build
+
+# Production image
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Set to production environment
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy necessary files from builder
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+
+# Don't run as root
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
+    chown -R nextjs:nodejs /app
+USER nextjs
+
 # Expose port
 EXPOSE 3000
 
-# Start the development server
-ENV NODE_ENV=development
-ENV HOSTNAME=0.0.0.0
-ENV PORT=3000
-
-CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
+# Start the app
+CMD ["npm", "start"]
