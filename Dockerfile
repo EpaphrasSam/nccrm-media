@@ -5,8 +5,10 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Clean install dependencies for the target platform
+RUN npm cache clean --force && \
+    npm install --platform=linux --arch=x64 && \
+    npm rebuild
 
 # Copy source code
 COPY . .
@@ -29,9 +31,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 
 # Don't run as root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-RUN chown -R nextjs:nodejs /app
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
+    chown -R nextjs:nodejs /app
 USER nextjs
 
 # Expose port
