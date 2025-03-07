@@ -7,7 +7,9 @@ COPY package*.json ./
 
 # Install all dependencies (including dev dependencies)
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm install
+RUN apk add --no-cache python3 make g++ \
+    && npm install --ignore-platform \
+    && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -17,4 +19,7 @@ EXPOSE 3000
 
 # Start the development server
 ENV NODE_ENV=development
-CMD ["npm", "run", "dev"]
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
