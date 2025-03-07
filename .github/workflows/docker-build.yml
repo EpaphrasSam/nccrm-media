@@ -12,24 +12,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Enable BuildKit and Create Secret Files
-        run: |
-          export DOCKER_BUILDKIT=1
-          echo "${{ secrets.GIT_USERNAME }}" > git_username.txt
-          echo "${{ secrets.GIT_PASSWORD }}" > git_password.txt
-          ls -l  # Debugging: Check if the files exist
-
-      - name: Build Docker Image with Secure Secrets
-        run: |
-          docker build --secret id=git_username,src=git_username.txt \
-                       --secret id=git_password,src=git_password.txt \
-                       -t synxgh/nccrm:dev .
-
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push Docker Image
-        run: docker push synxgh/nccrm:dev
+      - name: Build and Push Docker Image
+        run: |
+          # Build with both latest and versioned tags
+          docker build -t synxgh/nccrm:latest -t synxgh/nccrm:dev-${GITHUB_SHA::7} .
+
+          # Push both tags
+          docker push synxgh/nccrm:latest
+          docker push synxgh/nccrm:dev-${GITHUB_SHA::7}
