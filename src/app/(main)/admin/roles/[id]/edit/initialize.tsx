@@ -1,34 +1,52 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useRolesStore } from "@/store/roles";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchRoleById } from "@/services/roles/api";
+import { roleService } from "@/services/roles/api";
 
-interface InitializeRoleEditProps {
-  roleId: string;
+interface InitializeRoleProps {
+  id: string;
 }
 
-export function InitializeRoleEdit({ roleId }: InitializeRoleEditProps) {
-  const initializeRole = useCallback(async () => {
-    useRolesStore.setState({ isLoading: true });
+export function InitializeRole({ id }: InitializeRoleProps) {
+  const { setFormLoading } = useRolesStore();
 
-    try {
-      const role = await fetchRoleById(roleId);
-      if (!role) throw new Error("Role not found");
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false,
+  };
 
-      useRolesStore.setState({
-        currentRole: role,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch role:", error);
-      useRolesStore.setState({
-        isLoading: false,
-        currentRole: undefined,
-      });
+  // Fetch role data
+  const { isLoading: isRoleLoading } = useSWR(
+    `role/${id}`,
+    async () => {
+      try {
+        const response = await roleService.fetchById(id);
+        const role = response && "data" in response ? response.data : response;
+        useRolesStore.setState({
+          currentRole: role?.role || undefined,
+        });
+        return role;
+      } finally {
+        if (isRoleLoading) {
+          setFormLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isRoleLoading) {
+      setFormLoading(true);
     }
-  }, [roleId]);
+  }, [isRoleLoading, setFormLoading]);
 
-  return <InitializeStore onInitialize={initializeRole} />;
+  return null;
 }

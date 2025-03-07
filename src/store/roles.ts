@@ -1,76 +1,67 @@
 import { create } from "zustand";
 import type {
-  Role,
+  RoleListItem,
+  RoleDetail,
   RoleCreateInput,
   RoleUpdateInput,
+  RoleQueryParams,
 } from "@/services/roles/types";
 import { roleService } from "@/services/roles/api";
+import { urlSync } from "@/utils/url-sync";
 
 interface RolesState {
   // Data
-  roles: Role[];
+  roles: RoleListItem[];
   totalRoles: number;
-  filteredRoles: Role[];
-  currentRole?: Role;
+  totalPages: number;
+  currentRole?: RoleDetail;
 
-  // Search
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-
-  // Pagination
-  currentPage: number;
-  pageSize: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
+  // Filters & Pagination
+  filters: RoleQueryParams;
+  setFilters: (filters: Partial<RoleQueryParams>) => void;
+  resetFilters: () => void;
 
   // Actions
   addRole: () => void;
-  editRole: (role: Role) => void;
+  editRole: (role: RoleListItem) => void;
   deleteRole: (roleId: string) => Promise<void>;
   createRole: (role: RoleCreateInput) => Promise<void>;
   updateRole: (id: string, role: RoleUpdateInput) => Promise<void>;
 
   // Loading States
-  isLoading: boolean;
-  setLoading: (loading: boolean) => void;
+  isTableLoading: boolean;
+  isFiltersLoading: boolean;
+  isFormLoading: boolean;
+  setTableLoading: (loading: boolean) => void;
+  setFiltersLoading: (loading: boolean) => void;
+  setFormLoading: (loading: boolean) => void;
 }
 
-const filterRoles = (roles: Role[], searchQuery: string) => {
-  return roles.filter((role) => {
-    const matchesSearch = searchQuery
-      ? role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-
-    return matchesSearch;
-  });
+const DEFAULT_FILTERS: RoleQueryParams = {
+  page: 1,
+  limit: 10,
+  search: "",
 };
 
-export const useRolesStore = create<RolesState>((set, get) => ({
+export const useRolesStore = create<RolesState>((set) => ({
   // Initial Data
   roles: [],
   totalRoles: 0,
-  filteredRoles: [],
+  totalPages: 0,
   currentRole: undefined,
 
-  // Search
-  searchQuery: "",
-  setSearchQuery: (query) => {
-    set({ searchQuery: query });
-    const state = get();
-    const filtered = filterRoles(state.roles, query);
-    set({
-      filteredRoles: filtered,
-      totalRoles: filtered.length,
-      currentPage: 1,
-    });
+  // Filters & Pagination
+  filters: DEFAULT_FILTERS,
+  setFilters: (newFilters) => {
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    }));
+    urlSync.pushToUrl(newFilters);
   },
-
-  // Pagination
-  currentPage: 1,
-  pageSize: 10,
-  setCurrentPage: (page) => set({ currentPage: page }),
-  setPageSize: (size) => set({ pageSize: size }),
+  resetFilters: () => {
+    set({ filters: DEFAULT_FILTERS });
+    urlSync.pushToUrl({});
+  },
 
   // Actions
   addRole: () => {
@@ -80,57 +71,26 @@ export const useRolesStore = create<RolesState>((set, get) => ({
     window.location.href = `/admin/roles/${role.id}/edit`;
   },
   deleteRole: async (roleId) => {
-    try {
-      set({ isLoading: true });
-      await roleService.delete(roleId);
-      set((state) => {
-        const newRoles = state.roles.filter((r) => r.id !== roleId);
-        const filtered = filterRoles(newRoles, state.searchQuery);
-        return {
-          roles: newRoles,
-          filteredRoles: filtered,
-          totalRoles: filtered.length,
-          isLoading: false,
-        };
-      });
-      // Navigate to roles list after deletion
-      window.location.href = "/admin/roles";
-    } catch (error) {
-      console.error("Failed to delete role:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+    await roleService.delete(roleId);
+    set((state) => ({
+      roles: state.roles.filter((r) => r.id !== roleId),
+      totalRoles: state.totalRoles - 1,
+    }));
   },
-
-  createRole: async (role) => {
-    try {
-      set({ isLoading: true });
-      await roleService.create(role);
-      set({ isLoading: false });
-      // Navigate to roles list after creation
-      window.location.href = "/admin/roles";
-    } catch (error) {
-      console.error("Failed to create role:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+  createRole: async (roleData) => {
+    await roleService.create(roleData);
+    window.location.href = "/admin/roles";
   },
-
-  updateRole: async (id, role) => {
-    try {
-      set({ isLoading: true });
-      await roleService.update(id, role);
-      set({ isLoading: false });
-      // Navigate to roles list after update
-      window.location.href = "/admin/roles";
-    } catch (error) {
-      console.error("Failed to update role:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+  updateRole: async (id, roleData) => {
+    await roleService.update(id, roleData);
+    window.location.href = "/admin/roles";
   },
 
   // Loading States
-  isLoading: false,
-  setLoading: (loading) => set({ isLoading: loading }),
+  isTableLoading: false,
+  isFiltersLoading: false,
+  isFormLoading: false,
+  setTableLoading: (loading) => set({ isTableLoading: loading }),
+  setFiltersLoading: (loading) => set({ isFiltersLoading: loading }),
+  setFormLoading: (loading) => set({ isFormLoading: loading }),
 }));

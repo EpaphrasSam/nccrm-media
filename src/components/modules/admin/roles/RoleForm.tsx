@@ -3,47 +3,93 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useEffect, useCallback, useState } from "react";
-import { Input, Textarea, Checkbox, Button, Skeleton } from "@heroui/react";
-import { MODULE_PERMISSIONS, ModulePermissions } from "@/services/roles/types";
-import { buttonStyles, checkboxStyles, inputStyles } from "@/lib/styles";
+import {
+  Input,
+  Button,
+  Skeleton,
+  Textarea,
+  Card,
+  CardHeader,
+  CardBody,
+  Checkbox,
+  Divider,
+} from "@heroui/react";
+import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useRolesStore } from "@/store/roles";
 import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import type { RoleFunctions, RolePermissions } from "@/services/roles/types";
 
-const roleFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  permissions: z.record(z.array(z.string())).default({}),
+const roleFunctionsSchema = z.object({
+  view: z.boolean(),
+  add: z.boolean(),
+  edit: z.boolean(),
+  delete: z.boolean(),
+  approve: z.boolean().optional(),
 });
 
-type RoleFormData = z.infer<typeof roleFormSchema>;
+const rolePermissionsSchema = z.object({
+  role: roleFunctionsSchema,
+  department: roleFunctionsSchema,
+  region: roleFunctionsSchema,
+  thematic_area: roleFunctionsSchema,
+  main_indicator: roleFunctionsSchema,
+  sub_indicator: roleFunctionsSchema,
+  event: roleFunctionsSchema.extend({ approve: z.boolean() }),
+  user: roleFunctionsSchema.extend({ approve: z.boolean() }),
+});
 
-const formatModuleName = (key: string): string => {
-  // First split by camelCase
-  const words = key.replace(/([A-Z])/g, " $1").trim();
-  // Then capitalize first letter of each word
-  return words
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-};
+const roleSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().min(1, "Description is required"),
+  functions: rolePermissionsSchema,
+});
+
+type RoleFormValues = z.infer<typeof roleSchema>;
 
 interface RoleFormProps {
   isNew?: boolean;
 }
 
+const PERMISSION_SECTIONS = [
+  { key: "role" as const, label: "Roles", hasApprove: false },
+  { key: "department" as const, label: "Departments", hasApprove: false },
+  { key: "region" as const, label: "Regions", hasApprove: false },
+  { key: "thematic_area" as const, label: "Thematic Areas", hasApprove: false },
+  {
+    key: "main_indicator" as const,
+    label: "Main Indicators",
+    hasApprove: false,
+  },
+  { key: "sub_indicator" as const, label: "Sub Indicators", hasApprove: false },
+  { key: "event" as const, label: "Events", hasApprove: true },
+  { key: "user" as const, label: "Users", hasApprove: true },
+] as const;
+
+const DEFAULT_FUNCTIONS: RoleFunctions = {
+  view: false,
+  add: false,
+  edit: false,
+  delete: false,
+};
+
+const DEFAULT_PERMISSIONS: RolePermissions = {
+  role: DEFAULT_FUNCTIONS,
+  department: DEFAULT_FUNCTIONS,
+  region: DEFAULT_FUNCTIONS,
+  thematic_area: DEFAULT_FUNCTIONS,
+  main_indicator: DEFAULT_FUNCTIONS,
+  sub_indicator: DEFAULT_FUNCTIONS,
+  event: { ...DEFAULT_FUNCTIONS, approve: false },
+  user: { ...DEFAULT_FUNCTIONS, approve: false },
+};
+
 export function RoleForm({ isNew = false }: RoleFormProps) {
   const router = useRouter();
-  const {
-    createRole,
-    updateRole,
-    deleteRole,
-    currentRole,
-    isLoading,
-    setLoading,
-  } = useRolesStore();
-  const [localLoading, setLocalLoading] = useState(true);
+  const { createRole, updateRole, deleteRole, currentRole, isFormLoading } =
+    useRolesStore();
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -51,12 +97,7 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     () => ({
       name: currentRole?.name || "",
       description: currentRole?.description || "",
-      permissions:
-        currentRole?.permissions ||
-        Object.keys(MODULE_PERMISSIONS).reduce((acc, module) => {
-          acc[module] = [];
-          return acc;
-        }, {} as Record<string, string[]>),
+      functions: currentRole?.functions || DEFAULT_PERMISSIONS,
     }),
     [currentRole]
   );
@@ -68,56 +109,27 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<RoleFormData>({
-    resolver: zodResolver(roleFormSchema),
+  } = useForm<RoleFormValues>({
+    resolver: zodResolver(roleSchema),
     defaultValues: getDefaultValues(),
   });
 
-  const watchPermissions = watch("permissions");
-
-  // Combined loading state and form reset handling
   useEffect(() => {
-    if (isNew) {
-      setLoading(false);
-      setLocalLoading(false);
-    } else if (!isLoading && currentRole) {
+    if (!isNew && currentRole) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
-  }, [isNew, currentRole, isLoading, reset, getDefaultValues, setLoading]);
+  }, [isNew, currentRole, reset, getDefaultValues]);
 
-  const handlePermissionChange = useCallback(
-    (
-      module: keyof typeof MODULE_PERMISSIONS,
-      permission: string,
-      checked: boolean
-    ) => {
-      const currentPermissions = watchPermissions[module] || [];
-      const newPermissions = checked
-        ? [...currentPermissions, permission]
-        : currentPermissions.filter((p) => p !== permission);
-
-      setValue(`permissions.${module}`, newPermissions);
-    },
-    [watchPermissions, setValue]
-  );
-
-  const onSubmit = async (data: RoleFormData) => {
+  const onSubmit = async (data: RoleFormValues) => {
     try {
-      const roleData = {
-        ...data,
-        permissions: data.permissions as Partial<ModulePermissions>,
-      };
-
-      if (currentRole) {
-        await updateRole(currentRole.id, roleData);
-      } else {
-        await createRole(roleData);
+      if (isNew) {
+        await createRole(data);
+      } else if (currentRole) {
+        await updateRole(currentRole.id, {
+          newName: data.name,
+          newDescription: data.description,
+          functions: data.functions,
+        });
       }
       router.push("/admin/roles");
     } catch (error) {
@@ -140,137 +152,173 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     }
   };
 
-  if (isLoading || localLoading) {
+  const handleSelectAll = (section: keyof RolePermissions) => {
+    const currentFunctions = watch(`functions.${section}`);
+    const allChecked = Object.values(currentFunctions).every((v) => v);
+    const newValue = !allChecked;
+
+    // Update all checkboxes in the section
+    setValue(`functions.${section}.view`, newValue);
+    setValue(`functions.${section}.add`, newValue);
+    setValue(`functions.${section}.edit`, newValue);
+    setValue(`functions.${section}.delete`, newValue);
+    if ("approve" in currentFunctions) {
+      setValue(`functions.${section}.approve`, newValue);
+    }
+  };
+
+  if (isFormLoading) {
     return (
-      <div className="space-y-12">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-32 w-full max-w-2xl" />
-          </div>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
-
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Object.keys(MODULE_PERMISSIONS).map((module) => (
-              <div key={module}>
-                <div className="flex items-start gap-4">
-                  <Skeleton className="h-4 w-[100px]" />
-                  <div className="flex flex-col gap-3 flex-1">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Skeleton className="h-5 w-5" />
-                        <Skeleton className="h-4 flex-1" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
-
-        <div className="flex justify-center">
-          <Skeleton className="h-10 w-[110px]" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-[400px] w-full rounded-lg" />
         </div>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
-      <div className="space-y-6">
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              classNames={inputStyles}
-              variant="bordered"
-              label="Role"
-              labelPlacement="outside"
-              placeholder="Enter the name of the role..."
-              className="max-w-2xl"
-              isInvalid={!!errors.name}
-              errorMessage={errors.name?.message}
-            />
-          )}
-        />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <Controller
+        name="name"
+        control={control}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label="Name"
+            labelPlacement="outside"
+            placeholder="Enter role name"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.name}
+            errorMessage={errors.name?.message}
+          />
+        )}
+      />
 
-        <Controller
-          name="description"
-          control={control}
-          render={({ field }) => (
-            <Textarea
-              {...field}
-              classNames={inputStyles}
-              variant="bordered"
-              label="Description"
-              labelPlacement="outside"
-              placeholder="Enter the description of the role..."
-              className="max-w-2xl"
-              isInvalid={!!errors.description}
-              errorMessage={errors.description?.message}
-            />
-          )}
-        />
-      </div>
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <Textarea
+            {...field}
+            label="Description"
+            labelPlacement="outside"
+            placeholder="Enter role description"
+            variant="bordered"
+            classNames={inputStyles}
+            isInvalid={!!errors.description}
+            errorMessage={errors.description?.message}
+          />
+        )}
+      />
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {Object.entries(MODULE_PERMISSIONS).map(([module, permissions]) => (
-            <div key={module}>
-              <div className="flex items-start gap-4">
-                <h3 className="text-sm font-medium min-w-[100px]">
-                  {formatModuleName(module)}
-                </h3>
-                <div className="flex flex-col gap-3">
-                  {permissions.map((permission) => (
-                    <div
-                      key={`${module}.${permission}`}
-                      className="flex items-center gap-2"
-                    >
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Permissions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {PERMISSION_SECTIONS.map(({ key, label, hasApprove }) => (
+            <Card key={key} className="p-0">
+              <CardHeader className="flex flex-row justify-between items-center">
+                <h4 className="text-base font-medium">{label}</h4>
+                <Button
+                  type="button"
+                  variant="light"
+                  size="sm"
+                  color="primary"
+                  onPress={() => handleSelectAll(key)}
+                >
+                  Toggle All
+                </Button>
+              </CardHeader>
+              <Divider />
+              <CardBody>
+                <div className="flex flex-col gap-2">
+                  <Controller
+                    name={`functions.${key}.view`}
+                    control={control}
+                    render={({ field }) => (
                       <Checkbox
-                        isSelected={watchPermissions[module]?.includes(
-                          permission
-                        )}
-                        onValueChange={(checked) =>
-                          handlePermissionChange(
-                            module as keyof typeof MODULE_PERMISSIONS,
-                            permission,
-                            checked
-                          )
-                        }
-                        radius="sm"
-                        className={checkboxStyles}
-                        color="danger"
-                      />
-                      <span className="text-sm">
-                        Can {permission}{" "}
-                        {formatModuleName(module).toLowerCase()}
-                      </span>
-                    </div>
-                  ))}
+                        isSelected={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        View
+                      </Checkbox>
+                    )}
+                  />
+                  <Controller
+                    name={`functions.${key}.add`}
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        isSelected={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        Add
+                      </Checkbox>
+                    )}
+                  />
+                  <Controller
+                    name={`functions.${key}.edit`}
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        isSelected={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        Edit
+                      </Checkbox>
+                    )}
+                  />
+                  <Controller
+                    name={`functions.${key}.delete`}
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        isSelected={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        Delete
+                      </Checkbox>
+                    )}
+                  />
+                  {hasApprove && (
+                    <Controller
+                      name={`functions.${key}.approve`}
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          isSelected={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          Approve
+                        </Checkbox>
+                      )}
+                    />
+                  )}
                 </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           ))}
         </div>
       </div>
 
-      <div className="flex gap-3 justify-center">
+      <div className="flex gap-3 justify-center pt-6">
         <Button
           type="submit"
           color="primary"
           isLoading={isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
-          {isNew ? "Save" : "Save Changes"}
+          {isNew ? "Create Role" : "Save Changes"}
         </Button>
         {!isNew && (
           <Button

@@ -5,10 +5,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Clean install dependencies for the target platform
-RUN npm cache clean --force && \
-    npm install --platform=linux --arch=x64 && \
-    npm rebuild
+# Install dependencies with correct platform
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV npm_config_platform=linux
+ENV npm_config_arch=x64
+ENV npm_config_target_platform=linux
+ENV npm_config_target_arch=x64
+
+RUN npm install --omit=dev --force
 
 # Copy source code
 COPY . .
@@ -23,6 +27,7 @@ WORKDIR /app
 
 # Set to production environment
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy necessary files from builder
 COPY --from=builder /app/package*.json ./

@@ -13,60 +13,68 @@ export type ModulePermissions = {
   [K in keyof typeof MODULE_PERMISSIONS]: ModulePermission[];
 };
 
-export interface Role {
-  id: string;
-  name: string;
-  description: string;
-  functions: RoleFunctions;
-  created_at: string;
-  updated_at: string;
-}
-
-// Permission types
-export interface Permission {
+export interface RoleFunctions {
   view: boolean;
   add: boolean;
   edit: boolean;
   delete: boolean;
+  approve?: boolean;
 }
 
-export interface UserPermission extends Permission {
-  approve: boolean;
+export interface RolePermissions {
+  role: RoleFunctions;
+  department: RoleFunctions;
+  region: RoleFunctions;
+  thematic_area: RoleFunctions;
+  main_indicator: RoleFunctions;
+  sub_indicator: RoleFunctions;
+  event: RoleFunctions & { approve: boolean };
+  user: RoleFunctions & { approve: boolean };
 }
 
-export interface RoleFunctions {
-  role: Permission;
-  user: UserPermission;
-  event: Permission;
-  region: Permission;
-  department: Permission;
-  sub_indicator: Permission;
-  thematic_area: Permission;
-  main_indicator: Permission;
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  functions: RolePermissions;
+  created_at: string;
+  updated_at: string;
+}
+
+// Use type aliases instead of interfaces
+export type RoleListItem = Role;
+export type RoleDetail = Role;
+
+// Type for creating a new role
+export interface RoleCreateInput {
+  name: string;
+  description: string;
+  functions: RolePermissions;
+}
+
+// Type for updating an existing role
+export interface RoleUpdateInput {
+  newName?: string;
+  newDescription?: string;
+  functions?: RolePermissions;
+}
+
+// Type for query parameters
+export interface RoleQueryParams {
+  page: number;
+  limit: number;
+  search?: string;
 }
 
 // API Response Types
 export interface RoleListResponse {
   message: string;
   roles: Role[];
+  totalRoles: number;
+  totalPages: number;
 }
 
 export interface RoleDetailResponse {
   message: string;
   role: Role;
-}
-
-// Request Types
-export interface RoleCreateInput {
-  name: string;
-  description: string;
-  functions: RoleFunctions;
-}
-
-export type RoleUpdateInput = Partial<RoleCreateInput>;
-
-// Query Parameters
-export interface RoleQueryParams {
-  page?: number;
-  limit?: number;
 }

@@ -1,15 +1,19 @@
 "use client";
 
-import { AdminToolbar } from "@/components/modules/admin/layout/AdminToolbar";
 import { useRolesStore } from "@/store/roles";
+import { AdminToolbar } from "../layout/AdminToolbar";
 
 export function RolesToolbar() {
-  const { setSearchQuery, addRole } = useRolesStore();
+  const { setFilters, addRole } = useRolesStore();
+
+  const handleSearch = (query: string) => {
+    setFilters({ search: query, page: 1 }); // Reset to first page on search
+  };
 
   return (
     <AdminToolbar
       searchPlaceholder="Search roles..."
-      onSearch={setSearchQuery}
+      onSearch={handleSearch}
       addButtonLabel="Add Role"
       onAdd={addRole}
     />

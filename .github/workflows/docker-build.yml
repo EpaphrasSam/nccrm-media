@@ -21,7 +21,9 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           # Build with both latest and versioned tags
-          docker build -t synxgh/nccrm:latest -t synxgh/nccrm:dev-${GITHUB_SHA::7} .
+          DOCKER_BUILDKIT=1 docker build \
+            -t synxgh/nccrm:latest \
+            -t synxgh/nccrm:dev-${GITHUB_SHA::7} .
 
           # Push both tags
           docker push synxgh/nccrm:latest

@@ -1,20 +1,49 @@
-"use client";
-
+import { Suspense } from "react";
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { RolesToolbar } from "@/components/modules/admin/roles/RolesToolbar";
 import { RolesTable } from "@/components/modules/admin/roles/RolesTable";
-import { InitializeRoles } from "@/app/(main)/admin/roles/initialize";
+import { InitializeRoles } from "./initialize";
 
-export default function RolesPage() {
+function getNumberParam(
+  param: string | string[] | undefined
+): number | undefined {
+  if (typeof param === "string") {
+    const num = parseInt(param, 10);
+    return isNaN(num) ? undefined : num;
+  }
+  return undefined;
+}
+
+function getStringParam(
+  param: string | string[] | undefined
+): string | undefined {
+  return typeof param === "string" ? param : undefined;
+}
+
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function RolesPage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+
+  const initialFilters = {
+    page: getNumberParam(resolvedParams.page),
+    limit: getNumberParam(resolvedParams.limit),
+    search: getStringParam(resolvedParams.search),
+  };
+
   return (
     <>
-      <InitializeRoles />
+      <Suspense fallback={null}>
+        <InitializeRoles initialFilters={initialFilters} />
+      </Suspense>
       <AdminPageLayout
         header={
           <AdminPageHeader
             title="Manage Roles"
-            description="Create, edit, and assign roles to define user permissions and access levels within the system."
+            description="Add, edit and manage roles"
           />
         }
         toolbar={<RolesToolbar />}
