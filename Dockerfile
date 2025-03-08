@@ -22,10 +22,6 @@ RUN npm install --force && \
 # Copy source code
 COPY . .
 
-# Mount env file during build
-RUN --mount=type=secret,id=env,target=/app/.env.production \
-    cp /app/.env.production /app/.env
-
 # Build the application
 ENV NODE_ENV=production
 RUN npm run build
@@ -45,7 +41,6 @@ COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.env .env
 
 # Don't run as root
 RUN addgroup --system --gid 1001 nodejs && \

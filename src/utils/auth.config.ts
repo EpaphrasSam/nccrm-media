@@ -145,7 +145,7 @@ export const authConfig = {
         } catch (error: any) {
           const statusCode = error.response?.status || 400;
           const ErrorClass =
-            AuthErrorClasses[statusCode] || AuthErrorClasses["400"];
+            AuthErrorClasses[statusCode] || AuthErrorClasses["500"];
           throw new ErrorClass();
         }
       },

@@ -22,6 +22,10 @@ export const AUTH_ERRORS = {
     code: "400",
     message: "Invalid credentials",
   },
+  INTERNAL_SERVER_ERROR: {
+    code: "500",
+    message: "Internal server error",
+  },
 } as const;
 
 // Create error classes dynamically
