@@ -51,5 +51,8 @@ USER nextjs
 # Expose port
 EXPOSE 3000
 
+# Install curl
+RUN apk add --no-cache curl
+
 # Start the app
 CMD ["npm", "start"]
