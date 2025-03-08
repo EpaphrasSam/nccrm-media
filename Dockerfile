@@ -2,7 +2,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy only necessary files for installation
+# Copy configuration files
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY next.config.ts ./
@@ -16,16 +16,15 @@ ENV npm_config_target_platform=linux
 ENV npm_config_target_arch=x64
 ENV npm_config_ignore_scripts=false
 
-# Install dependencies with only production packages and force platform
-RUN npm ci --only=production --target_platform=linux --target_arch=x64 --force && \
-    npm cache clean --force
+# Install dependencies
+RUN npm install --force && \
+    npm rebuild @next/swc-linux-x64-gnu
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN npm run build && \
-    rm -rf src .next/cache
+RUN npm run build
 
 # Production image
 FROM node:20-alpine AS runner
@@ -36,11 +35,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy only necessary files from builder
+# Copy necessary files from builder
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/node_modules ./node_modules
 
 # Don't run as root
 RUN addgroup --system --gid 1001 nodejs && \
@@ -52,4 +52,4 @@ USER nextjs
 EXPOSE 3000
 
 # Start the app
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
