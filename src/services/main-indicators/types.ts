@@ -30,6 +30,18 @@ export interface MainIndicatorDetail extends MainIndicator {
   };
 }
 
+export interface MainIndicatorListResponse {
+  message: string;
+  mainIndicators: MainIndicatorListItem[];
+  totalMainIndicators: number;
+  totalPages: number;
+}
+
+export interface MainIndicatorDetailResponse {
+  message: string;
+  mainIndicator: MainIndicatorDetail;
+}
+
 // Type for creating a new main indicator
 export interface MainIndicatorCreateInput {
   name: string;

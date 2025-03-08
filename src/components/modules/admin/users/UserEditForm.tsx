@@ -145,6 +145,7 @@ export function UserEditForm() {
     if (autoGenerateUsername && currentUser) {
       accountInfoForm.setValue("username", generateUsername(currentUser.name));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.name, autoGenerateUsername, accountInfoForm]);
 
   const handleGeneratePassword = () => {

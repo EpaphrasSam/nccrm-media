@@ -4,15 +4,15 @@ import { SubIndicatorForm } from "@/components/modules/admin/sub-indicators/SubI
 import { InitializeSubIndicator } from "./initialize";
 
 interface EditSubIndicatorPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditSubIndicatorPage({
   params,
 }: EditSubIndicatorPageProps) {
-  const { id } = params;
+  const { id } = await params;
 
   return (
     <>

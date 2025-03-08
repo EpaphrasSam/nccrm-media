@@ -1,24 +1,13 @@
 import axios from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
-  MainIndicatorListItem,
   MainIndicatorDetail,
   MainIndicatorCreateInput,
   MainIndicatorUpdateInput,
   MainIndicatorQueryParams,
+  MainIndicatorListResponse,
+  MainIndicatorDetailResponse,
 } from "./types";
-
-interface MainIndicatorListResponse {
-  message: string;
-  mainIndicators: MainIndicatorListItem[];
-  totalMainIndicators: number;
-  totalPages: number;
-}
-
-interface MainIndicatorDetailResponse {
-  message: string;
-  mainIndicator: MainIndicatorDetail;
-}
 
 export const mainIndicatorService = {
   fetchAll(params?: Partial<MainIndicatorQueryParams>, isServer = false) {

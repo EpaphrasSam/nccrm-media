@@ -19,7 +19,10 @@ import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import useSWR from "swr";
 import { mainIndicatorService } from "@/services/main-indicators/api";
-import type { MainIndicatorListItem } from "@/services/main-indicators/types";
+import type {
+  MainIndicatorListItem,
+  MainIndicatorListResponse,
+} from "@/services/main-indicators/types";
 
 const subIndicatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -48,17 +51,15 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch main indicators using SWR
-  const { data: mainIndicatorsResponse, error: mainIndicatorsError } = useSWR(
-    "mainIndicators",
-    async () => {
+  const { data: mainIndicatorsResponse, error: mainIndicatorsError } =
+    useSWR<MainIndicatorListResponse>("mainIndicators", async () => {
       const response = await mainIndicatorService.fetchAll();
-      return response;
-    }
-  );
+      return response as MainIndicatorListResponse;
+    });
 
-  // Extract main indicators from the wrapped response
+  // Extract main indicators from the response
   const mainIndicators = Array.isArray(mainIndicatorsResponse?.mainIndicators)
-    ? (mainIndicatorsResponse.mainIndicators as MainIndicatorListItem[])
+    ? mainIndicatorsResponse.mainIndicators
     : [];
 
   const getDefaultValues = useCallback(

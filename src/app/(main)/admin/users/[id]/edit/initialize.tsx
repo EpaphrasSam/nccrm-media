@@ -2,7 +2,7 @@
 
 import { useUsersStore } from "@/store/users";
 import useSWR from "swr";
-import { fetchUserById } from "@/services/users/api";
+import { userService } from "@/services/users/api";
 
 interface InitializeUserProps {
   id: string;
@@ -25,7 +25,7 @@ export function InitializeUser({ id }: InitializeUserProps) {
     `user/${id}`,
     async () => {
       try {
-        const response = await fetchUserById(id);
+        const response = await userService.fetchById(id);
         const user = response && "data" in response ? response.data : response;
         useUsersStore.setState({ currentUser: user || undefined });
         return user;
