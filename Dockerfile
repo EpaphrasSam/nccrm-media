@@ -2,8 +2,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy configuration files
 COPY package*.json ./
+COPY tsconfig.json ./
+COPY next.config.ts ./
 
 # Install dependencies with correct platform
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -18,6 +20,7 @@ RUN npm install --omit=dev --force
 COPY . .
 
 # Build the application
+ENV NODE_ENV=production
 RUN npm run build
 
 # Production image
@@ -31,6 +34,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy necessary files from builder
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
