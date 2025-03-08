@@ -24,6 +24,8 @@ export async function clientApiCall<T>(
   try {
     let result = await promise;
 
+    console.log(result);
+
     // Handle message and data stripping
     if (result && typeof result === "object") {
       const { message, ...rest } = result as any;

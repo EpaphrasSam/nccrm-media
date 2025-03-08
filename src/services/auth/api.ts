@@ -16,7 +16,8 @@ export const authService = {
   login(credentials: LoginCredentials) {
     const promise = signIn("credentials", {
       ...credentials,
-      redirect: false,
+      redirect: true,
+      callbackUrl: "/",
     }).then((result) => {
       if (result?.error) {
         const code = result.code as AuthErrorCode;
@@ -33,6 +34,7 @@ export const authService = {
   },
 
   signup(signupData: SignupData) {
+    console.log(signupData);
     const promise = axios
       .post<AuthResponse>("/auth/signup", signupData)
       .then((res) => res.data);

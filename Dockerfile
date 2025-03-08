@@ -7,14 +7,17 @@ COPY package*.json ./
 COPY tsconfig.json ./
 COPY next.config.ts ./
 
-# Install dependencies
+# Set npm configurations
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV npm_config_platform=linux
 ENV npm_config_arch=x64
 ENV npm_config_target_platform=linux
 ENV npm_config_target_arch=x64
+ENV npm_config_ignore_scripts=false
 
-RUN npm install
+# Clean install dependencies
+RUN npm ci --force && \
+    npm rebuild @next/swc-linux-x64-gnu
 
 # Copy source code
 COPY . .

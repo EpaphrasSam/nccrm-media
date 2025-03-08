@@ -60,7 +60,7 @@ export function SignupForm() {
     setIsLoading(true);
     const signupData: SignupData = {
       email: data.email,
-      fullName: data.fullName,
+      name: data.fullName,
       department: data.department,
       phoneNumber: data.phoneNumber,
       password: data.password,
