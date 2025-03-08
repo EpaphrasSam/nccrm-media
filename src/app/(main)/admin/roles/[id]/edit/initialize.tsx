@@ -28,9 +28,7 @@ export function InitializeRole({ id }: InitializeRoleProps) {
       try {
         const response = await roleService.fetchById(id);
         const role = response && "data" in response ? response.data : response;
-        useRolesStore.setState({
-          currentRole: role?.role || undefined,
-        });
+        useRolesStore.setState({ currentRole: role });
         return role;
       } finally {
         if (isRoleLoading) {

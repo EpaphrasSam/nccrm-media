@@ -1,22 +1,33 @@
 import axios from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
-  MainIndicatorWithThematicArea,
-  MainIndicatorListResponse,
-  MainIndicatorDetailResponse,
+  MainIndicatorListItem,
+  MainIndicatorDetail,
   MainIndicatorCreateInput,
   MainIndicatorUpdateInput,
   MainIndicatorQueryParams,
 } from "./types";
 
+interface MainIndicatorListResponse {
+  message: string;
+  mainIndicators: MainIndicatorListItem[];
+  totalMainIndicators: number;
+  totalPages: number;
+}
+
+interface MainIndicatorDetailResponse {
+  message: string;
+  mainIndicator: MainIndicatorDetail;
+}
+
 export const mainIndicatorService = {
-  fetchAll(params: MainIndicatorQueryParams = {}, isServer = false) {
+  fetchAll(params?: Partial<MainIndicatorQueryParams>, isServer = false) {
     const promise = axios
       .get<MainIndicatorListResponse>("/admin/all-main-indicators", {
         params: {
-          page: params.page || 1,
-          limit: params.limit || 20,
-          thematic_area_id: params.thematic_area_id,
+          page: params?.page || 1,
+          limit: params?.limit || 20,
+          thematic_area: params?.thematic_area,
         },
       })
       .then((res) => res.data);
@@ -43,18 +54,11 @@ export const mainIndicatorService = {
   fetchById(id: string, isServer = false) {
     const promise = axios
       .get<MainIndicatorDetailResponse>(`/admin/main-indicator/${id}`)
-      .then((res) => res.data);
+      .then((res) => res.data.mainIndicator);
 
     return isServer
-      ? serverApiCall(promise, {
-          message: "",
-          mainIndicator: {} as MainIndicatorWithThematicArea,
-        })
-      : clientApiCall(
-          promise,
-          { message: "", mainIndicator: {} as MainIndicatorWithThematicArea },
-          false
-        );
+      ? serverApiCall(promise, {} as MainIndicatorDetail)
+      : clientApiCall(promise, {} as MainIndicatorDetail, false);
   },
 
   create(mainIndicator: MainIndicatorCreateInput, isServer = false) {

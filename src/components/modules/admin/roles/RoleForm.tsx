@@ -3,17 +3,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Input,
-  Button,
-  Skeleton,
-  Textarea,
-  Card,
-  CardHeader,
-  CardBody,
-  Checkbox,
-  Divider,
-} from "@heroui/react";
+import { Input, Button, Skeleton, Textarea, Checkbox } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useRolesStore } from "@/store/roles";
 import { useRouter } from "next/navigation";
@@ -67,6 +57,8 @@ const PERMISSION_SECTIONS = [
   { key: "user" as const, label: "Users", hasApprove: true },
 ] as const;
 
+const PERMISSION_FUNCTIONS = ["view", "add", "edit", "delete"] as const;
+
 const DEFAULT_FUNCTIONS: RoleFunctions = {
   view: false,
   add: false,
@@ -106,8 +98,6 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     control,
     handleSubmit,
     reset,
-    watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RoleFormValues>({
     resolver: zodResolver(roleSchema),
@@ -152,21 +142,6 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     }
   };
 
-  const handleSelectAll = (section: keyof RolePermissions) => {
-    const currentFunctions = watch(`functions.${section}`);
-    const allChecked = Object.values(currentFunctions).every((v) => v);
-    const newValue = !allChecked;
-
-    // Update all checkboxes in the section
-    setValue(`functions.${section}.view`, newValue);
-    setValue(`functions.${section}.add`, newValue);
-    setValue(`functions.${section}.edit`, newValue);
-    setValue(`functions.${section}.delete`, newValue);
-    if ("approve" in currentFunctions) {
-      setValue(`functions.${section}.approve`, newValue);
-    }
-  };
-
   if (isFormLoading) {
     return (
       <div className="space-y-6">
@@ -187,126 +162,85 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-      <Controller
-        name="name"
-        control={control}
-        render={({ field }) => (
-          <Input
-            {...field}
-            label="Name"
-            labelPlacement="outside"
-            placeholder="Enter role name"
-            variant="bordered"
-            classNames={inputStyles}
-            isInvalid={!!errors.name}
-            errorMessage={errors.name?.message}
-          />
-        )}
-      />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 ">
+      <div className="max-w-2xl space-y-6">
+        <Controller
+          name="name"
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              label="Name"
+              labelPlacement="outside"
+              placeholder="Enter role name"
+              variant="bordered"
+              classNames={inputStyles}
+              isInvalid={!!errors.name}
+              errorMessage={errors.name?.message}
+            />
+          )}
+        />
 
-      <Controller
-        name="description"
-        control={control}
-        render={({ field }) => (
-          <Textarea
-            {...field}
-            label="Description"
-            labelPlacement="outside"
-            placeholder="Enter role description"
-            variant="bordered"
-            classNames={inputStyles}
-            isInvalid={!!errors.description}
-            errorMessage={errors.description?.message}
-          />
-        )}
-      />
+        <Controller
+          name="description"
+          control={control}
+          render={({ field }) => (
+            <Textarea
+              {...field}
+              label="Description"
+              labelPlacement="outside"
+              placeholder="Enter role description"
+              variant="bordered"
+              classNames={inputStyles}
+              isInvalid={!!errors.description}
+              errorMessage={errors.description?.message}
+            />
+          )}
+        />
+      </div>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Permissions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Permissions Section */}
+      <div className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PERMISSION_SECTIONS.map(({ key, label, hasApprove }) => (
-            <Card key={key} className="p-0">
-              <CardHeader className="flex flex-row justify-between items-center">
+            <div key={key} className="flex">
+              <div className="w-32 shrink-0">
                 <h4 className="text-base font-medium">{label}</h4>
-                <Button
-                  type="button"
-                  variant="light"
-                  size="sm"
-                  color="primary"
-                  onPress={() => handleSelectAll(key)}
-                >
-                  Toggle All
-                </Button>
-              </CardHeader>
-              <Divider />
-              <CardBody>
-                <div className="flex flex-col gap-2">
+              </div>
+              <div className="flex flex-col gap-2">
+                {PERMISSION_FUNCTIONS.map((func) => (
                   <Controller
-                    name={`functions.${key}.view`}
+                    key={func}
+                    name={`functions.${key}.${func}`}
                     control={control}
                     render={({ field }) => (
                       <Checkbox
                         isSelected={field.value}
                         onValueChange={field.onChange}
+                        color="danger"
                       >
-                        View
+                        Can {func} {label.toLowerCase().slice(0, -1)}
                       </Checkbox>
                     )}
                   />
+                ))}
+                {hasApprove && (
                   <Controller
-                    name={`functions.${key}.add`}
+                    name={`functions.${key}.approve`}
                     control={control}
                     render={({ field }) => (
                       <Checkbox
                         isSelected={field.value}
                         onValueChange={field.onChange}
+                        color="danger"
                       >
-                        Add
+                        Can approve {label.toLowerCase().slice(0, -1)}
                       </Checkbox>
                     )}
                   />
-                  <Controller
-                    name={`functions.${key}.edit`}
-                    control={control}
-                    render={({ field }) => (
-                      <Checkbox
-                        isSelected={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        Edit
-                      </Checkbox>
-                    )}
-                  />
-                  <Controller
-                    name={`functions.${key}.delete`}
-                    control={control}
-                    render={({ field }) => (
-                      <Checkbox
-                        isSelected={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        Delete
-                      </Checkbox>
-                    )}
-                  />
-                  {hasApprove && (
-                    <Controller
-                      name={`functions.${key}.approve`}
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          isSelected={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          Approve
-                        </Checkbox>
-                      )}
-                    />
-                  )}
-                </div>
-              </CardBody>
-            </Card>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       </div>

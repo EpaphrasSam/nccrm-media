@@ -1,44 +1,57 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchSubIndicatorById } from "@/services/sub-indicators/api";
-import { fetchMainIndicators } from "@/services/main-indicators/api";
+import { subIndicatorService } from "@/services/sub-indicators/api";
 
-export function InitializeSubIndicator({ id }: { id: string }) {
-  const initializeSubIndicator = useCallback(async () => {
-    useSubIndicatorsStore.setState({ isLoading: true });
+interface InitializeSubIndicatorProps {
+  id: string;
+}
 
-    try {
-      const [subIndicator, mainIndicators] = await Promise.all([
-        fetchSubIndicatorById(id),
-        fetchMainIndicators(),
-      ]);
+export function InitializeSubIndicator({ id }: InitializeSubIndicatorProps) {
+  const { setFormLoading } = useSubIndicatorsStore();
 
-      if (!subIndicator) throw new Error("Sub Indicator not found");
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false,
+  };
 
-      // Add main indicator name to sub indicator
-      const mainIndicator = mainIndicators.find(
-        (main) => main.id === subIndicator.mainIndicatorId
-      );
-      const subIndicatorWithMainIndicator = {
-        ...subIndicator,
-        mainIndicator: mainIndicator?.name || "Unknown",
-      };
+  // Fetch sub indicator data
+  const { isLoading: isSubIndicatorLoading } = useSWR(
+    `subIndicator/${id}`,
+    async () => {
+      try {
+        const response = await subIndicatorService.fetchById(id);
+        const subIndicator =
+          response && "data" in response ? response.data : response;
 
-      useSubIndicatorsStore.setState({
-        currentSubIndicator: subIndicatorWithMainIndicator,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch sub indicator:", error);
-      useSubIndicatorsStore.setState({
-        currentSubIndicator: undefined,
-        isLoading: false,
-      });
+        if (!subIndicator) throw new Error("Sub Indicator not found");
+
+        useSubIndicatorsStore.setState({
+          currentSubIndicator: subIndicator,
+        });
+
+        return subIndicator;
+      } finally {
+        if (isSubIndicatorLoading) {
+          setFormLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isSubIndicatorLoading) {
+      setFormLoading(true);
     }
-  }, [id]);
+  }, [isSubIndicatorLoading, setFormLoading]);
 
-  return <InitializeStore onInitialize={initializeSubIndicator} />;
+  return null;
 }

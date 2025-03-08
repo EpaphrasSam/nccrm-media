@@ -30,7 +30,7 @@ export function InitializeMainIndicator({ id }: InitializeMainIndicatorProps) {
         const mainIndicator =
           response && "data" in response ? response.data : response;
         useMainIndicatorsStore.setState({
-          currentMainIndicator: mainIndicator?.mainIndicator || undefined,
+          currentMainIndicator: mainIndicator || undefined,
         });
         return mainIndicator;
       } finally {

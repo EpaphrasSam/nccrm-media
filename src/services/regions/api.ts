@@ -21,18 +21,27 @@ export const regionService = {
       .then((res) => res.data);
 
     return isServer
-      ? serverApiCall(promise, { message: "", regions: [] })
-      : clientApiCall(promise, { message: "", regions: [] }, false);
+      ? serverApiCall(promise, {
+          message: "",
+          regions: [],
+          totalPages: 0,
+          totalRegions: 0,
+        })
+      : clientApiCall(
+          promise,
+          { message: "", regions: [], totalPages: 0, totalRegions: 0 },
+          false
+        );
   },
 
   fetchById(id: string, isServer = false) {
     const promise = axios
       .get<RegionDetailResponse>(`/admin/region/${id}`)
-      .then((res) => res.data);
+      .then((res) => res.data.region);
 
     return isServer
-      ? serverApiCall(promise, { message: "", region: {} as Region })
-      : clientApiCall(promise, { message: "", region: {} as Region }, false);
+      ? serverApiCall(promise, {} as Region)
+      : clientApiCall(promise, {} as Region, false);
   },
 
   create(region: RegionCreateInput, isServer = false) {

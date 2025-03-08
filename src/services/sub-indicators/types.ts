@@ -68,3 +68,15 @@ export interface SubIndicatorQueryParams {
   search?: string;
   main_indicator?: string;
 }
+
+export interface SubIndicatorListResponse {
+  message: string;
+  subIndicators: SubIndicatorListItem[];
+  totalSubIndicators: number;
+  totalPages: number;
+}
+
+export interface SubIndicatorDetailResponse {
+  message: string;
+  subIndicator: SubIndicatorDetail;
+}

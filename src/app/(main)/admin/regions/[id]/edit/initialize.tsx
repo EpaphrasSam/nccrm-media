@@ -30,7 +30,7 @@ export function InitializeRegion({ id }: InitializeRegionProps) {
         const region =
           response && "data" in response ? response.data : response;
         useRegionsStore.setState({
-          currentRegion: region?.region || undefined,
+          currentRegion: region || undefined,
         });
         return region;
       } finally {

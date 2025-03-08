@@ -12,10 +12,11 @@ import {
   Pagination,
   Skeleton,
 } from "@heroui/react";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiTrash2 } from "react-icons/fi";
 import { useDepartmentsStore } from "@/store/departments";
 import { buttonStyles, tableStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { FaRegEdit } from "react-icons/fa";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -128,14 +129,14 @@ export function DepartmentsTable() {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     <Button
                       isIconOnly
                       variant="light"
                       onPress={() => editDepartment(department)}
                       className={buttonStyles}
                     >
-                      <FiEdit2 className="h-4 w-4" />
+                      <FaRegEdit size={18} color="blue" />
                     </Button>
                     <Button
                       isIconOnly

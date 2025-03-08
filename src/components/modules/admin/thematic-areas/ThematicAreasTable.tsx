@@ -12,10 +12,11 @@ import {
   Pagination,
   Skeleton,
 } from "@heroui/react";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiTrash2 } from "react-icons/fi";
 import { useThematicAreasStore } from "@/store/thematic-areas";
 import { buttonStyles, tableStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { FaRegEdit } from "react-icons/fa";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -128,14 +129,14 @@ export function ThematicAreasTable() {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     <Button
                       isIconOnly
                       variant="light"
                       onPress={() => editThematicArea(thematicArea)}
                       className={buttonStyles}
                     >
-                      <FiEdit2 className="h-4 w-4" />
+                      <FaRegEdit size={18} color="blue" />
                     </Button>
                     <Button
                       isIconOnly
@@ -144,7 +145,7 @@ export function ThematicAreasTable() {
                       onPress={() => handleDeleteClick(thematicArea.id)}
                       className={buttonStyles}
                     >
-                      <FiTrash2 className="h-4 w-4" />
+                      <FiTrash2 size={18} />
                     </Button>
                   </div>
                 </TableCell>

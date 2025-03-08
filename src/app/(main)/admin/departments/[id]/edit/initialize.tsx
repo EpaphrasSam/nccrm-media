@@ -29,8 +29,9 @@ export function InitializeDepartment({ id }: InitializeDepartmentProps) {
         const response = await departmentService.fetchById(id);
         const department =
           response && "data" in response ? response.data : response;
+
         useDepartmentsStore.setState({
-          currentDepartment: department?.department || undefined,
+          currentDepartment: department || undefined,
         });
         return department;
       } finally {

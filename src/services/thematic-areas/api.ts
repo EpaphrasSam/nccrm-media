@@ -21,25 +21,32 @@ export const thematicAreaService = {
       .then((res) => res.data);
 
     return isServer
-      ? serverApiCall(promise, { message: "", thematicAreas: [] })
-      : clientApiCall(promise, { message: "", thematicAreas: [] }, false);
+      ? serverApiCall(promise, {
+          message: "",
+          thematicAreas: [],
+          totalPages: 0,
+          totalThematicAreas: 0,
+        })
+      : clientApiCall(
+          promise,
+          {
+            message: "",
+            thematicAreas: [],
+            totalPages: 0,
+            totalThematicAreas: 0,
+          },
+          false
+        );
   },
 
   fetchById(id: string, isServer = false) {
     const promise = axios
       .get<ThematicAreaDetailResponse>(`/admin/thematic-area/${id}`)
-      .then((res) => res.data);
+      .then((res) => res.data.thematicArea);
 
     return isServer
-      ? serverApiCall(promise, {
-          message: "",
-          thematicArea: {} as ThematicArea,
-        })
-      : clientApiCall(
-          promise,
-          { message: "", thematicArea: {} as ThematicArea },
-          false
-        );
+      ? serverApiCall(promise, {} as ThematicArea)
+      : clientApiCall(promise, {} as ThematicArea, false);
   },
 
   create(thematicArea: ThematicAreaCreateInput, isServer = false) {

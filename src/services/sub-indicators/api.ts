@@ -1,23 +1,22 @@
 import axios from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
-  SubIndicatorWithMainIndicator,
-  SubIndicatorListResponse,
-  SubIndicatorDetailResponse,
+  SubIndicatorDetail,
   SubIndicatorCreateInput,
   SubIndicatorUpdateInput,
   SubIndicatorQueryParams,
+  SubIndicatorListResponse,
+  SubIndicatorDetailResponse,
 } from "./types";
 
 export const subIndicatorService = {
-  fetchAll(params: SubIndicatorQueryParams = {}, isServer = false) {
+  fetchAll(params?: Partial<SubIndicatorQueryParams>, isServer = false) {
     const promise = axios
       .get<SubIndicatorListResponse>("/admin/all-sub-indicators", {
         params: {
-          page: params.page || 1,
-          limit: params.limit || 20,
-          main_indicator_id: params.main_indicator_id,
-          thematic_area_id: params.thematic_area_id,
+          page: params?.page || 1,
+          limit: params?.limit || 20,
+          main_indicator: params?.main_indicator,
         },
       })
       .then((res) => res.data);
@@ -44,18 +43,11 @@ export const subIndicatorService = {
   fetchById(id: string, isServer = false) {
     const promise = axios
       .get<SubIndicatorDetailResponse>(`/admin/sub-indicator/${id}`)
-      .then((res) => res.data);
+      .then((res) => res.data.subIndicator);
 
     return isServer
-      ? serverApiCall(promise, {
-          message: "",
-          subIndicator: {} as SubIndicatorWithMainIndicator,
-        })
-      : clientApiCall(
-          promise,
-          { message: "", subIndicator: {} as SubIndicatorWithMainIndicator },
-          false
-        );
+      ? serverApiCall(promise, {} as SubIndicatorDetail)
+      : clientApiCall(promise, {} as SubIndicatorDetail, false);
   },
 
   create(subIndicator: SubIndicatorCreateInput, isServer = false) {

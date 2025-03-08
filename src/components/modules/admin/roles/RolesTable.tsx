@@ -11,9 +11,12 @@ import {
   Skeleton,
 } from "@heroui/react";
 import { FaRegEdit } from "react-icons/fa";
+import { FiTrash2 } from "react-icons/fi";
 import { useRolesStore } from "@/store/roles";
 import { Pagination } from "@/components/common/navigation/Pagination";
-import { tableStyles } from "@/lib/styles";
+import { tableStyles, buttonStyles } from "@/lib/styles";
+import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { useState } from "react";
 import type { RoleListItem } from "@/services/roles/types";
 
 const LOADING_SKELETON_COUNT = 5;
@@ -26,11 +29,40 @@ const columns = [
 ] as const;
 
 export function RolesTable() {
-  const { roles, editRole, isTableLoading, filters, setFilters, totalPages } =
-    useRolesStore();
+  const {
+    roles,
+    editRole,
+    deleteRole,
+    isTableLoading,
+    filters,
+    setFilters,
+    totalPages,
+  } = useRolesStore();
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handlePageChange = (page: number) => {
     setFilters({ ...filters, page });
+  };
+
+  const handleDeleteClick = (roleId: string) => {
+    setSelectedRoleId(roleId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedRoleId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteRole(selectedRoleId);
+      setDeleteModalOpen(false);
+    } finally {
+      setIsDeleting(false);
+      setSelectedRoleId(null);
+    }
   };
 
   return (
@@ -81,14 +113,25 @@ export function RolesTable() {
                   })}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-start gap-1">
+                  <div className="flex items-center justify-start gap-2">
                     <Button
                       isIconOnly
                       variant="light"
                       size="sm"
                       onPress={() => editRole(role)}
+                      className={buttonStyles}
                     >
                       <FaRegEdit size={18} color="blue" />
+                    </Button>
+                    <Button
+                      isIconOnly
+                      variant="light"
+                      color="danger"
+                      size="sm"
+                      onPress={() => handleDeleteClick(role.id)}
+                      className={buttonStyles}
+                    >
+                      <FiTrash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -103,6 +146,15 @@ export function RolesTable() {
         pageSize={filters.limit}
         currentPage={filters.page}
         onPageChange={handlePageChange}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Role"
+        description="Are you sure you want to delete this role? This action cannot be undone."
+        isLoading={isDeleting}
       />
     </div>
   );

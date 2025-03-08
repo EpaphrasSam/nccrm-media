@@ -1,7 +1,7 @@
 import { AdminPageLayout } from "@/components/modules/admin/layout/AdminPageLayout";
 import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHeader";
 import { RoleForm } from "@/components/modules/admin/roles/RoleForm";
-import { InitializeRoleEdit } from "./initialize";
+import { InitializeRole } from "./initialize";
 
 interface EditRolePageProps {
   params: Promise<{
@@ -14,7 +14,7 @@ export default async function EditRolePage({ params }: EditRolePageProps) {
 
   return (
     <>
-      <InitializeRoleEdit roleId={id} />
+      <InitializeRole id={id} />
       <AdminPageLayout
         header={
           <AdminPageHeader

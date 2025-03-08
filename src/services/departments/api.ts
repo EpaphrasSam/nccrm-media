@@ -43,15 +43,11 @@ export const departmentService = {
   fetchById(id: string, isServer = false) {
     const promise = axios
       .get<DepartmentDetailResponse>(`/admin/department/${id}`)
-      .then((res) => res.data);
+      .then((res) => res.data.department);
 
     return isServer
-      ? serverApiCall(promise, { message: "", department: {} as Department })
-      : clientApiCall(
-          promise,
-          { message: "", department: {} as Department },
-          false
-        );
+      ? serverApiCall(promise, {} as Department)
+      : clientApiCall(promise, {} as Department, false);
   },
 
   create(department: DepartmentCreateInput, isServer = false) {

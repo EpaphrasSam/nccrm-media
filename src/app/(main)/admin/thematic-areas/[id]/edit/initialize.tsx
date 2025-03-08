@@ -30,7 +30,7 @@ export function InitializeThematicArea({ id }: InitializeThematicAreaProps) {
         const thematicArea =
           response && "data" in response ? response.data : response;
         useThematicAreasStore.setState({
-          currentThematicArea: thematicArea?.thematicArea || undefined,
+          currentThematicArea: thematicArea || undefined,
         });
         return thematicArea;
       } finally {
