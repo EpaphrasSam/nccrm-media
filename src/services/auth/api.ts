@@ -18,7 +18,6 @@ export const authService = {
       ...credentials,
       redirect: false,
     }).then((result) => {
-      console.log("Server result", result);
       if (result?.error) {
         const code = result.code as AuthErrorCode;
         throw new Error(AUTH_ERROR_MESSAGES[code] || "Authentication failed");

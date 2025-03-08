@@ -38,14 +38,14 @@ export interface AuthResponse {
     id: string;
     name: string;
     functions: RoleFunctions;
-  };
+  } | null;
   token: string;
   department: string | null;
   gender: string | null;
   image: string | null;
   phone_number: string | null;
   status: string;
-  username: string;
+  username: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import type { AuthResponse, LoginCredentials } from "@/services/auth/types";
+import type {
+  AuthResponse,
+  LoginCredentials,
+  RoleFunctions,
+} from "@/services/auth/types";
 import { AuthErrorClasses } from "@/services/auth/errors";
 import axios from "./axios";
 
@@ -12,8 +16,8 @@ interface LoginResponse {
     role: {
       id: string;
       name: string;
-      functions: AuthResponse["role"]["functions"];
-    };
+      functions: RoleFunctions;
+    } | null;
     department: string | null;
     gender: string | null;
     image: string | null;
@@ -38,15 +42,24 @@ async function loginWithCredentials(
     );
     const { user, token } = response.data;
 
+    // Role check - uncomment when ready to enforce role requirement
+    /* if (!user.role) {
+      const error: any = new Error("Account not verified");
+      error.response = { status: 403 }; // Will map to UNVERIFIED_ACCOUNT
+      throw error;
+    } */
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: {
-        id: user.role.id,
-        name: user.role.name,
-        functions: user.role.functions,
-      },
+      role: user.role
+        ? {
+            id: user.role.id,
+            name: user.role.name,
+            functions: user.role.functions,
+          }
+        : null,
       token,
       department: user.department,
       gender: user.gender,
@@ -67,11 +80,6 @@ export const authConfig = {
     signIn: "/login",
     signOut: "/login",
   },
-  events: {
-    signIn: async (message) => {
-      console.log("signIn", message);
-    },
-  },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
@@ -89,8 +97,9 @@ export const authConfig = {
       }
 
       if (isAdminRoute) {
-        if (!isLoggedIn) return false;
-        if (!isAdmin) return false;
+        if (!isLoggedIn || !isAdmin) {
+          return Response.redirect(new URL("/", nextUrl));
+        }
         return true;
       }
 

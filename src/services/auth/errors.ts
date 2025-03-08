@@ -12,7 +12,7 @@ export const AUTH_ERRORS = {
   },
   UNVERIFIED_ACCOUNT: {
     code: "403",
-    message: "Account not verified",
+    message: "Account not approved",
   },
   TOO_MANY_ATTEMPTS: {
     code: "429",
