@@ -10,10 +10,14 @@ COPY next.config.ts ./
 # Set environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV npm_config_platform=linux
+ENV npm_config_arch=x64
+ENV npm_config_target_platform=linux
+ENV npm_config_target_arch=x64
+ENV npm_config_ignore_scripts=false
 
-# Install dependencies with only production packages
-RUN npm ci --only=production && \
-    npm rebuild @next/swc-linux-x64-gnu && \
+# Install dependencies with only production packages and force platform
+RUN npm ci --only=production --target_platform=linux --target_arch=x64 --force && \
     npm cache clean --force
 
 # Copy source code
