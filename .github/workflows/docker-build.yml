@@ -20,11 +20,15 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          # Build with both latest and versioned tags
-          DOCKER_BUILDKIT=1 docker build \
-            -t synxgh/nccrm:latest \
-            -t synxgh/nccrm:dev-${GITHUB_SHA::7} .
-
-          # Push both tags
+          # Build and push only latest tag
+          DOCKER_BUILDKIT=1 docker build -t synxgh/nccrm:latest .
           docker push synxgh/nccrm:latest
-          docker push synxgh/nccrm:dev-${GITHUB_SHA::7}
+
+      - name: Cleanup old versions
+        run: |
+          # Keep only 5 most recent versions (adjust number as needed)
+          docker run --rm lumir/remove-old-tags \
+            -i synxgh/nccrm \
+            --user ${{ secrets.DOCKER_USERNAME }} \
+            --password ${{ secrets.DOCKER_PASSWORD }} \
+            --keep 5
