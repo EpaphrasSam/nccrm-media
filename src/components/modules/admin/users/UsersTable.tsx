@@ -100,6 +100,8 @@ export function UsersTable() {
     validateUser,
   } = useUsersStore();
 
+  console.log(users);
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);

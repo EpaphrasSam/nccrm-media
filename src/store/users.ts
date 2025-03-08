@@ -98,7 +98,7 @@ export const useUsersStore = create<UsersState>((set) => ({
   },
   updateUser: async (id, userData) => {
     await userService.update(id, userData);
-    window.location.href = "/admin/users";
+    // window.location.href = "/admin/users";
   },
   validateUser: async (userId, status) => {
     await userService.validate(userId, status);

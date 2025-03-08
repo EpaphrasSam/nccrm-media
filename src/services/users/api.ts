@@ -77,6 +77,7 @@ export const userService = {
           }
         }
       });
+      console.log("Users Data", userData);
       promise = axios
         .put<{ message: string }>(`/admin/edit-user/${id}`, formData, {
           headers: {

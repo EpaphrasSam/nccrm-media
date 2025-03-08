@@ -20,6 +20,6 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          # Build and push only latest tag
-          DOCKER_BUILDKIT=1 docker build -t synxgh/nccrm:latest .
-          docker push synxgh/nccrm:latest
+          # Build and push only dev tag
+          DOCKER_BUILDKIT=1 docker build -t synxgh/nccrm:dev .
+          docker push synxgh/nccrm:dev
