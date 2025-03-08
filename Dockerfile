@@ -42,6 +42,9 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 
+# Install curl
+RUN apk add --no-cache curl
+
 # Don't run as root
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
@@ -50,9 +53,6 @@ USER nextjs
 
 # Expose port
 EXPOSE 3000
-
-# Install curl
-RUN apk add --no-cache curl
 
 # Start the app
 CMD ["npm", "start"]
