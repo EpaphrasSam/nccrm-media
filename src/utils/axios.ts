@@ -1,6 +1,6 @@
 import axiosBase from "axios";
 
-export const BASE_URL = "http://localhost:3035";
+export const BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
 const authUrl = process.env.AUTH_URL || process.env.NEXT_PUBLIC_AUTH_URL;
 
