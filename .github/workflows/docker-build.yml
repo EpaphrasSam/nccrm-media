@@ -23,12 +23,3 @@ jobs:
           # Build and push only latest tag
           DOCKER_BUILDKIT=1 docker build -t synxgh/nccrm:latest .
           docker push synxgh/nccrm:latest
-
-      - name: Cleanup old versions
-        run: |
-          # Keep only 5 most recent versions (adjust number as needed)
-          docker run --rm lumir/remove-old-tags \
-            -i synxgh/nccrm \
-            --user ${{ secrets.DOCKER_USERNAME }} \
-            --password ${{ secrets.DOCKER_PASSWORD }} \
-            --keep 5

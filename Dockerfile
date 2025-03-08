@@ -9,7 +9,6 @@ COPY next.config.ts ./
 
 # Set environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
 ENV npm_config_platform=linux
 ENV npm_config_arch=x64
 ENV npm_config_target_platform=linux
@@ -24,6 +23,7 @@ RUN npm install --force && \
 COPY . .
 
 # Build the application
+ENV NODE_ENV=production
 RUN npm run build
 
 # Production image
