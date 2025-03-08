@@ -1,92 +1,123 @@
-// Basic event interface
+// Basic types
+export type EventStatus = "pending" | "approved";
+
 export interface Event {
   id: string;
-  reporterId: string;
-  subIndicatorId: string;
-  regionId: string;
-  thematicAreaId: string;
-  date: string;
-  createdAt: string;
-  // UI display properties
-  reporter?: string;
-  subIndicator?: string;
-  region?: string;
-  thematicArea?: string;
-}
-
-// Event form data interfaces
-export interface EventFormData {
-  reporterId: string;
-  date: string;
-  eventDetails: string;
-  when: string;
-  where: string;
-  locationDetails: string;
-  subIndicatorId: string;
-  thematicAreaId: string;
-}
-
-export interface PerpetratorFormData {
-  name: string;
-  age: string;
-  gender: string;
-  occupation: string;
-  organization: string;
-  note: string;
-}
-
-export interface VictimFormData {
-  name: string;
-  age: string;
-  gender: string;
-  occupation: string;
-  organization: string;
-  note: string;
-}
-
-export interface OutcomeFormData {
-  deathsMen: number;
-  deathsWomenChildren: number;
-  deathDetails: string;
-  injuriesMen: number;
-  injuriesWomenChildren: number;
-  injuriesDetails: string;
-  lossesProperty: number;
-  lossesDetails: string;
-}
-
-export interface ContextFormData {
-  informationCredibility: string;
-  informationSource: string;
-  geographicScope: string;
-  impact: string;
-  weaponsUse: string;
+  reporter_id: string;
+  report_date: string;
   details: string;
-  attachments?: File[];
+  status: EventStatus;
+  event_date: string;
+  region_id: string;
+  location_details: string;
+  sub_indicator_id: string;
+  thematic_area_id: string;
+  perpetrator: string;
+  pep_gender: string;
+  pep_age: number;
+  pep_occupation: string;
+  pep_organization: string;
+  pep_note: string;
+  victim: string;
+  victim_age: number;
+  victim_gender: string;
+  victim_occupation: string;
+  victim_organization: string;
+  victim_note: string;
+  death_count_men: number;
+  death_count_women_chldren: number;
+  death_details: string;
+  injury_count_men: number;
+  injury_count_women_chldren: number;
+  injury_details: string;
+  losses_count: number;
+  losses_details: string;
+  info_credibility: string;
+  info_source: string;
+  geo_scope: string;
+  impact: string;
+  weapons_use: string;
+  context_details: string;
+  files: string[];
+  created_at: string;
+  updated_at: string;
+  // Nested objects from API
+  reporter: {
+    id: string;
+    name: string;
+  };
+  thematic_area: {
+    id: string;
+    name: string;
+  };
+  region: {
+    id: string;
+    name: string;
+  };
+  sub_indicator: {
+    id: string;
+    name: string;
+  };
 }
 
-// Event with all form data and UI display properties
-export interface EventWithDetails extends Event {
-  // Event details
-  eventDetails: string;
-  when: string;
-  where: string;
-  locationDetails: string;
-  what: string;
-  thematicArea: string;
+// API Response Types
+export interface EventListResponse {
+  message: string;
+  events: Event[];
+  totalEvents: number;
+  totalPages: number;
+}
 
-  // Perpetrator details
-  perpetrator: PerpetratorFormData;
+export interface EventDetailResponse {
+  message: string;
+  event: Event;
+}
 
-  // Victim details
-  victim: VictimFormData;
+// Request Types
+export interface EventCreateInput {
+  reporter_id: string;
+  report_date: string;
+  details?: string;
+  event_date?: string;
+  region_id: string;
+  location_details?: string;
+  sub_indicator_id: string;
+  thematic_area_id: string;
+  perpetrator?: string;
+  pep_gender?: string;
+  pep_age?: number;
+  pep_occupation?: string;
+  pep_organization?: string;
+  pep_note?: string;
+  victim?: string;
+  victim_age?: number;
+  victim_gender?: string;
+  victim_occupation?: string;
+  victim_organization?: string;
+  victim_note?: string;
+  death_count_men?: number;
+  death_count_women_chldren?: number;
+  death_details?: string;
+  injury_count_men?: number;
+  injury_count_women_chldren?: number;
+  injury_details?: string;
+  losses_count?: number;
+  losses_details?: string;
+  info_credibility?: string;
+  info_source?: string;
+  geo_scope?: string;
+  impact?: string;
+  weapons_use?: string;
+  context_details?: string;
+  docs?: File[];
+}
 
-  // Outcome details
-  outcome: OutcomeFormData;
-
-  // Context details
-  context: ContextFormData;
-
-  // UI display properties
-  reporter?: string;
+// Query Parameters
+export interface EventQueryParams {
+  page: number;
+  limit: number;
+  region?: string;
+  status?: EventStatus;
+  thematic_area?: string;
+  search?: string;
 }

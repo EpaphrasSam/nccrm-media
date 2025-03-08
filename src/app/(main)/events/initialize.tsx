@@ -1,111 +1,118 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import { useEventsStore } from "@/store/events";
-import { InitializeStore } from "@/components/common/misc/InitializeStore";
-import { fetchEvents } from "@/services/events/api";
-import { fetchSubIndicators } from "@/services/sub-indicators/api";
-import { fetchRegions } from "@/services/regions/api";
-import { fetchUsers } from "@/services/users/api";
-import { fetchThematicAreas } from "@/services/thematic-areas/api";
-import { EventWithDetails } from "@/services/events/types";
+import { eventService } from "@/services/events/api";
+import { subIndicatorService } from "@/services/sub-indicators/api";
+import { regionService } from "@/services/regions/api";
+import type { EventQueryParams } from "@/services/events/types";
+import { urlSync } from "@/utils/url-sync";
 
-export function InitializeEvents() {
-  const initializeEvents = useCallback(async () => {
-    useEventsStore.setState({ isLoading: true });
+interface InitializeEventsProps {
+  initialFilters: Partial<EventQueryParams>;
+}
 
-    try {
-      const [events, subIndicators, regions, users, thematicAreas] =
-        await Promise.all([
-          fetchEvents(),
-          fetchSubIndicators(),
-          fetchRegions(),
-          fetchUsers(),
-          fetchThematicAreas(),
+const DEFAULT_FILTERS: EventQueryParams = {
+  page: 1,
+  limit: 10,
+};
+
+export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
+  const { filters, setFilters, setTableLoading, setFiltersLoading } =
+    useEventsStore();
+
+  // Set initial filters from URL or defaults
+  useEffect(() => {
+    const hasInitialFilters = Object.keys(initialFilters).length > 0;
+    if (hasInitialFilters) {
+      setFilters(initialFilters);
+    } else {
+      // If no URL params exist, set defaults and push to URL
+      setFilters(DEFAULT_FILTERS);
+      urlSync.pushToUrl(DEFAULT_FILTERS);
+    }
+  }, [initialFilters, setFilters]);
+
+  // Common SWR config to handle errors
+  const swrConfig = {
+    onError: (error: Error) => {
+      // Error is already handled by clientApiCall
+      console.error("SWR Error:", error);
+    },
+    shouldRetryOnError: false, // Disable automatic retries
+  };
+
+  // Fetch filter options (sub indicators and regions)
+  const { isLoading: isFilterOptionsLoading } = useSWR(
+    "filterOptions",
+    async () => {
+      try {
+        const [subIndicatorsResponse, regionsResponse] = await Promise.all([
+          subIndicatorService.fetchAll(undefined),
+          regionService.fetchAll(undefined),
         ]);
 
-      // Add reporter names, sub indicator names, and region names to events
-      const eventsWithDetails: EventWithDetails[] = events.map((event) => {
-        const reporter = users.find((user) => user.id === event.reporterId);
-        const subIndicator = subIndicators.find(
-          (indicator) => indicator.id === event.subIndicatorId
-        );
-        const region = regions.find((r) => r.id === event.regionId);
-        const thematicArea = thematicAreas.find(
-          (area) => area.id === event.thematicAreaId
-        );
-
         return {
-          ...event,
-          // Keep IDs for form data
-          reporterId: event.reporterId,
-          subIndicatorId: event.subIndicatorId,
-          regionId: event.regionId,
-          thematicAreaId: event.thematicAreaId || "",
-          // Display names for UI
-          reporter: reporter?.name || "Unknown",
-          subIndicator: subIndicator?.name || "Unknown",
-          region: region?.name || "Unknown",
-          thematicArea: thematicArea?.name || "Unknown",
-          // Initialize other required fields with defaults
-          eventDetails: "",
-          when: event.date || "",
-          where: region?.name || "",
-          locationDetails: "",
-          what: event.subIndicatorId || "",
-          perpetrator: {
-            name: "",
-            age: "",
-            gender: "",
-            occupation: "",
-            organization: "",
-            note: "",
-          },
-          victim: {
-            name: "",
-            age: "",
-            gender: "",
-            occupation: "",
-            organization: "",
-            note: "",
-          },
-          outcome: {
-            deathsMen: 0,
-            deathsWomenChildren: 0,
-            deathDetails: "",
-            injuriesMen: 0,
-            injuriesWomenChildren: 0,
-            injuriesDetails: "",
-            lossesProperty: 0,
-            lossesDetails: "",
-          },
-          context: {
-            informationCredibility: "",
-            informationSource: "",
-            geographicScope: "",
-            impact: "",
-            weaponsUse: "",
-            details: "",
-          },
+          subIndicators:
+            "data" in subIndicatorsResponse
+              ? subIndicatorsResponse.data.subIndicators
+              : subIndicatorsResponse.subIndicators,
+          regions:
+            "data" in regionsResponse
+              ? regionsResponse.data.regions
+              : regionsResponse.regions,
         };
-      });
+      } finally {
+        // Only update loading state after initial load
+        if (isFilterOptionsLoading) {
+          setFiltersLoading(false);
+        }
+      }
+    },
+    swrConfig
+  );
 
-      useEventsStore.setState({
-        events: eventsWithDetails,
-        filteredEvents: eventsWithDetails,
-        totalEvents: eventsWithDetails.length,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
-      useEventsStore.setState({
-        isLoading: false,
-        events: [],
-        filteredEvents: [],
-        totalEvents: 0,
-      });
+  // Fetch events data - will refetch when filters change
+  const { isLoading: isEventsLoading } = useSWR(
+    ["events", filters],
+    async () => {
+      try {
+        const response = await eventService.fetchAll(filters);
+        const data = "data" in response ? response.data : response;
+
+        useEventsStore.setState({
+          events: data.events,
+          totalEvents: data.totalEvents,
+          totalPages: data.totalPages,
+        });
+
+        return data;
+      } finally {
+        // Only update loading state after initial load
+        if (isEventsLoading) {
+          setTableLoading(false);
+        }
+      }
+    },
+    {
+      ...swrConfig,
+      keepPreviousData: true,
     }
-  }, []);
+  );
 
-  return <InitializeStore onInitialize={initializeEvents} />;
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isFilterOptionsLoading) {
+      setFiltersLoading(true);
+    }
+  }, [isFilterOptionsLoading, setFiltersLoading]);
+
+  useEffect(() => {
+    if (isEventsLoading) {
+      setTableLoading(true);
+    }
+  }, [isEventsLoading, setTableLoading]);
+
+  return null;
 }

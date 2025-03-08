@@ -8,37 +8,68 @@ import {
   PopoverTrigger,
   PopoverContent,
   Button,
+  Skeleton,
 } from "@heroui/react";
 import { FiFilter } from "react-icons/fi";
 import { useEventsStore } from "@/store/events";
 import { buttonStyles } from "@/lib/styles";
 import { AdminToolbar } from "../../admin/layout/AdminToolbar";
-import useSWR from "swr";
-import { fetchSubIndicators } from "@/services/sub-indicators/api";
-import { fetchRegions } from "@/services/regions/api";
 import { PiMicrosoftExcelLogoThin } from "react-icons/pi";
+import useSWR from "swr";
+import type { SubIndicator } from "@/services/sub-indicators/types";
+import type { Region } from "@/services/regions/types";
+
+interface FilterState {
+  thematic_area: string;
+  region: string;
+}
 
 export function EventsToolbar() {
   const {
-    setSearchQuery,
+    filters,
     setFilters,
-    clearFilters,
+    resetFilters,
     addEvent,
     exportToExcel,
     isExporting,
+    isFiltersLoading,
   } = useEventsStore();
 
-  const [tempFilters, setTempFilters] = useState({
-    subIndicator: "all",
-    region: "all",
+  const [tempFilters, setTempFilters] = useState<FilterState>({
+    thematic_area: filters.thematic_area || "all",
+    region: filters.region || "all",
   });
 
-  // Fetch sub indicators and regions using SWR
-  const { data: subIndicators } = useSWR("subIndicators", fetchSubIndicators);
-  const { data: regions } = useSWR("regions", fetchRegions);
+  // Get filter options from SWR cache
+  const { data: filterOptions } = useSWR<{
+    subIndicators: SubIndicator[];
+    regions: Region[];
+  }>("filterOptions");
+  const subIndicators = filterOptions?.subIndicators || [];
+  const regions = filterOptions?.regions || [];
+
+  const handleSearch = (query: string) => {
+    setFilters({ ...filters, search: query, page: 1 });
+  };
 
   const handleApplyFilters = () => {
-    setFilters(tempFilters.subIndicator, tempFilters.region);
+    setFilters({
+      ...filters,
+      thematic_area:
+        tempFilters.thematic_area === "all"
+          ? undefined
+          : tempFilters.thematic_area,
+      region: tempFilters.region === "all" ? undefined : tempFilters.region,
+      page: 1,
+    });
+  };
+
+  const handleClearFilters = () => {
+    resetFilters();
+    setTempFilters({
+      thematic_area: "all",
+      region: "all",
+    });
   };
 
   const FilterComponent = (
@@ -50,6 +81,7 @@ export function EventsToolbar() {
             startContent={<FiFilter className="h-4 w-4" />}
             size="md"
             className={`${buttonStyles} bg-brand-red-dark text-white min-w-[48px]`}
+            isLoading={isFiltersLoading}
           >
             <span className="sm:inline hidden">Filter</span>
           </Button>
@@ -58,58 +90,63 @@ export function EventsToolbar() {
           <p className="self-start text-sm-plus text-brand-black font-extrabold">
             Filters
           </p>
-          <Select
-            label="Incident Type"
-            placeholder="Select incident type"
-            variant="bordered"
-            defaultSelectedKeys={["all"]}
-            selectedKeys={[tempFilters.subIndicator]}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0]?.toString() || "all";
-              setTempFilters({ ...tempFilters, subIndicator: value });
-            }}
-          >
-            {[
-              { key: "all", label: "All Incident Types" },
-              ...(subIndicators || []).map((indicator) => ({
-                key: indicator.id,
-                label: indicator.name,
-              })),
-            ].map(({ key, label }) => (
-              <SelectItem key={key}>{label}</SelectItem>
-            ))}
-          </Select>
 
-          <Select
-            label="Region"
-            placeholder="Select region"
-            variant="bordered"
-            defaultSelectedKeys={["all"]}
-            selectedKeys={[tempFilters.region]}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0]?.toString() || "all";
-              setTempFilters({ ...tempFilters, region: value });
-            }}
-          >
-            {[
-              { key: "all", label: "All Regions" },
-              ...(regions || []).map((region) => ({
-                key: region.id,
-                label: region.name,
-              })),
-            ].map(({ key, label }) => (
-              <SelectItem key={key}>{label}</SelectItem>
-            ))}
-          </Select>
+          {isFiltersLoading ? (
+            <>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+              </div>
+            </>
+          ) : (
+            <>
+              <Select
+                label="Thematic Area"
+                placeholder="Select thematic area"
+                variant="bordered"
+                selectedKeys={[tempFilters.thematic_area]}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0]?.toString() || "all";
+                  setTempFilters({ ...tempFilters, thematic_area: value });
+                }}
+              >
+                <>
+                  <SelectItem key="all">All Thematic Areas</SelectItem>
+                  {subIndicators.map((indicator) => (
+                    <SelectItem key={indicator.id}>{indicator.name}</SelectItem>
+                  ))}
+                </>
+              </Select>
+
+              <Select
+                label="Region"
+                placeholder="Select region"
+                variant="bordered"
+                selectedKeys={[tempFilters.region]}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0]?.toString() || "all";
+                  setTempFilters({ ...tempFilters, region: value });
+                }}
+              >
+                <>
+                  <SelectItem key="all">All Regions</SelectItem>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id}>{region.name}</SelectItem>
+                  ))}
+                </>
+              </Select>
+            </>
+          )}
 
           <div className="flex justify-end gap-2 mt-4 w-full">
             <Button
               variant="light"
               color="danger"
-              onPress={() => {
-                clearFilters();
-                setTempFilters({ subIndicator: "all", region: "all" });
-              }}
+              onPress={handleClearFilters}
               className={`text-brand-red-dark w-1/2 ${buttonStyles}`}
             >
               Clear
@@ -144,7 +181,7 @@ export function EventsToolbar() {
   return (
     <AdminToolbar
       searchPlaceholder="Search events..."
-      onSearch={setSearchQuery}
+      onSearch={handleSearch}
       addButtonLabel="Add Event"
       onAdd={addEvent}
       filterComponent={FilterComponent}
