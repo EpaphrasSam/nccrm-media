@@ -7,14 +7,14 @@ COPY package*.json ./
 COPY tsconfig.json ./
 COPY next.config.ts ./
 
-# Install dependencies with correct platform
+# Install dependencies
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV npm_config_platform=linux
 ENV npm_config_arch=x64
 ENV npm_config_target_platform=linux
 ENV npm_config_target_arch=x64
 
-RUN npm install --omit=dev --force
+RUN npm install
 
 # Copy source code
 COPY . .
