@@ -23,18 +23,18 @@ axios.interceptors.request.use(async (config) => {
   return config;
 });
 
-axios.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // Use absolute URL for signout
-      await fetch(`${process.env.AUTH_URL}/api/auth/signout`, {
-        method: "POST",
-      });
-      return Response.redirect("/login");
-    }
-    return Promise.reject(error);
-  }
-);
+// axios.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     if (error.response?.status === 401) {
+//       // Use absolute URL for signout
+//       await fetch(`${process.env.AUTH_URL}/api/auth/signout`, {
+//         method: "POST",
+//       });
+//       return Response.redirect("/login");
+//     }
+//     return Promise.reject(error);
+//   }
+// );
 
 export default axios;
