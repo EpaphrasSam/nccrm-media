@@ -48,16 +48,14 @@ export interface SubIndicatorDetail extends SubIndicator {
 // Type for creating a new sub indicator
 export interface SubIndicatorCreateInput {
   name: string;
-  description: string;
-  main_indicator_id: string;
+  mainIndicator: string;
   status: SubIndicatorStatus;
 }
 
 // Type for updating an existing sub indicator
 export interface SubIndicatorUpdateInput {
   newName?: string;
-  newDescription?: string;
-  main_indicator_id?: string;
+  mainIndicator?: string;
   status?: SubIndicatorStatus;
 }
 

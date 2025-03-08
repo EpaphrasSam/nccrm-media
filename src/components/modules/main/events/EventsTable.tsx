@@ -10,13 +10,9 @@ import {
   User as HeroUser,
   Button,
   Skeleton,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
 } from "@heroui/react";
 import { FaRegEdit } from "react-icons/fa";
-import { FiMoreVertical, FiTrash2 } from "react-icons/fi";
+import { FiTrash2 } from "react-icons/fi";
 import { useEventsStore } from "@/store/events";
 import { Pagination } from "@/components/common/navigation/Pagination";
 import { tableStyles } from "@/lib/styles";
@@ -70,6 +66,8 @@ export function EventsTable() {
     }
   };
 
+  console.log(events);
+
   return (
     <div className="space-y-4">
       <Table aria-label="Events table" classNames={tableStyles}>
@@ -121,7 +119,13 @@ export function EventsTable() {
                   <div className="flex items-center gap-3">
                     <HeroUser
                       name={event.reporter?.name || "Unknown"}
-                      description={event.report_date}
+                      description={new Date(
+                        event.report_date
+                      ).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
                     />
                   </div>
                 </TableCell>
@@ -136,7 +140,13 @@ export function EventsTable() {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm">{event.report_date}</span>
+                  <span className="text-sm">
+                    {new Date(event.report_date).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -158,23 +168,6 @@ export function EventsTable() {
                     >
                       <FiTrash2 className="w-4 h-4" />
                     </Button>
-                    <Dropdown>
-                      <DropdownTrigger>
-                        <Button isIconOnly variant="light">
-                          <FiMoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownMenu aria-label="Event actions">
-                        <DropdownItem
-                          key="view"
-                          onPress={() =>
-                            (window.location.href = `/events/${event.id}`)
-                          }
-                        >
-                          View Details
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
                   </div>
                 </TableCell>
               </TableRow>

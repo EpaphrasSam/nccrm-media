@@ -93,18 +93,18 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
         await createMainIndicator({
           name: data.name,
           description: data.description,
-          thematic_area_id: data.thematic_area_id,
+          thematicArea: data.thematic_area_id,
           status: data.status ? "active" : "inactive",
         });
       } else if (currentMainIndicator) {
         await updateMainIndicator(currentMainIndicator.id, {
           newName: data.name,
           newDescription: data.description,
-          thematic_area_id: data.thematic_area_id,
+          thematicArea: data.thematic_area_id,
           status: data.status ? "active" : "inactive",
         });
       }
-      router.push("/admin/main-indicators");
+      // router.push("/admin/main-indicators");
     } catch (error) {
       console.error("Failed to save main indicator:", error);
     }

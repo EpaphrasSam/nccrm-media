@@ -46,7 +46,7 @@ export interface MainIndicatorDetailResponse {
 export interface MainIndicatorCreateInput {
   name: string;
   description: string;
-  thematic_area_id: string;
+  thematicArea: string;
   status: MainIndicatorStatus;
 }
 
@@ -54,7 +54,7 @@ export interface MainIndicatorCreateInput {
 export interface MainIndicatorUpdateInput {
   newName?: string;
   newDescription?: string;
-  thematic_area_id?: string;
+  thematicArea?: string;
   status?: MainIndicatorStatus;
 }
 

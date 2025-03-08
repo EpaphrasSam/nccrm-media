@@ -233,7 +233,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       set({ isFormLoading: true });
       await eventService.create(data);
       get().resetForm();
-      window.location.href = "/events";
+      // window.location.href = "/events";
     } catch (error) {
       console.error("Failed to create event:", error);
       throw error;
@@ -245,7 +245,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     try {
       set({ isFormLoading: true });
       await eventService.update(id, data);
-      window.location.href = "/events";
+      // window.location.href = "/events";
     } catch (error) {
       console.error("Failed to update event:", error);
       throw error;

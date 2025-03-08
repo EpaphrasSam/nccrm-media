@@ -10,7 +10,6 @@ import {
   Select,
   SelectItem,
   Skeleton,
-  Textarea,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
@@ -26,7 +25,7 @@ import type {
 
 const subIndicatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
+  // description: z.string().min(1, "Description is required"),
   main_indicator_id: z.string().min(1, "Main Indicator is required"),
   status: z.boolean().default(true),
 });
@@ -95,15 +94,15 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
       if (isNew) {
         await createSubIndicator({
           name: data.name,
-          description: data.description,
-          main_indicator_id: data.main_indicator_id,
+          // description: data.description,
+          mainIndicator: data.main_indicator_id,
           status: data.status ? "active" : "inactive",
         });
       } else if (currentSubIndicator) {
         await updateSubIndicator(currentSubIndicator.id, {
           newName: data.name,
-          newDescription: data.description,
-          main_indicator_id: data.main_indicator_id,
+          // newDescription: data.description,
+          mainIndicator: data.main_indicator_id,
           status: data.status ? "active" : "inactive",
         });
       }
@@ -174,7 +173,7 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
         )}
       />
 
-      <Controller
+      {/* <Controller
         name="description"
         control={control}
         render={({ field }) => (
@@ -189,7 +188,7 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
             errorMessage={errors.description?.message}
           />
         )}
-      />
+      /> */}
 
       <Controller
         name="main_indicator_id"

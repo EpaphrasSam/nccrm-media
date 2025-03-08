@@ -85,6 +85,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
     }));
   },
   createMainIndicator: async (mainIndicatorData) => {
+    console.log("mainIndicatorData", mainIndicatorData);
     await mainIndicatorService.create(mainIndicatorData);
     window.location.href = "/admin/main-indicators";
   },

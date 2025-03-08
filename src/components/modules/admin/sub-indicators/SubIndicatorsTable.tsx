@@ -26,7 +26,7 @@ const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
   { key: "name", label: "Sub Indicator" },
-  { key: "description", label: "Description" },
+  // { key: "description", label: "Description" },
   { key: "main_indicator", label: "Main Indicator" },
   { key: "thematic_area", label: "Thematic Area" },
   { key: "created_at", label: "Date Created" },
@@ -100,9 +100,9 @@ export function SubIndicatorsTable() {
                     <TableCell>
                       <Skeleton className="h-5 w-32" />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-96" />
-                    </TableCell>
+                    {/* <TableCell>
+                        <Skeleton className="h-5 w-96" />
+                      </TableCell> */}
                     <TableCell>
                       <Skeleton className="h-5 w-28" />
                     </TableCell>
@@ -130,9 +130,9 @@ export function SubIndicatorsTable() {
                 <TableCell className="font-medium">
                   {subIndicator.name}
                 </TableCell>
-                <TableCell className="min-w-[300px] max-w-[400px] whitespace-normal">
-                  {subIndicator.description}
-                </TableCell>
+                {/* <TableCell className="min-w-[300px] max-w-[400px] whitespace-normal">
+                    {subIndicator.description}
+                  </TableCell> */}
                 <TableCell>{subIndicator.main_indicator.name}</TableCell>
                 <TableCell>
                   {subIndicator.main_indicator.thematic_area.name}
