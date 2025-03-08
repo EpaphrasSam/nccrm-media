@@ -7,20 +7,21 @@ COPY package*.json ./
 COPY tsconfig.json ./
 COPY next.config.ts ./
 
-# Set npm configurations
+# Install dependencies
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV npm_config_platform=linux
 ENV npm_config_arch=x64
 ENV npm_config_target_platform=linux
 ENV npm_config_target_arch=x64
-ENV npm_config_ignore_scripts=false
 
-# Clean install dependencies
-RUN npm ci --force && \
-    npm rebuild @next/swc-linux-x64-gnu
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Mount env file during build
+RUN --mount=type=secret,id=env,target=/app/.env.production \
+    cp /app/.env.production /app/.env
 
 # Build the application
 ENV NODE_ENV=production
@@ -31,7 +32,7 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Set to production environment
+# Set production environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -41,6 +42,7 @@ COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.env .env
 
 # Don't run as root
 RUN addgroup --system --gid 1001 nodejs && \

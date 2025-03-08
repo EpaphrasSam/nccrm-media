@@ -18,10 +18,22 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Create env file
+        run: |
+          # Create .env.production from GitHub secrets
+          for secret in $(echo "$SECRETS_CONTEXT" | jq -r 'keys[]'); do
+            if [[ $secret != DOCKER_* ]]; then  # Skip Docker-related secrets
+              echo "$secret=${!secret}" >> .env.production
+            fi
+          done
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+
       - name: Build and Push Docker Image
         run: |
           # Build with both latest and versioned tags
           DOCKER_BUILDKIT=1 docker build \
+            --secret id=env,src=.env.production \
             -t synxgh/nccrm:latest \
             -t synxgh/nccrm:dev-${GITHUB_SHA::7} .
 

@@ -10,6 +10,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Logo } from "@/components/common/misc/Logo";
 import { inputStyles } from "@/lib/styles";
 import { authService } from "@/services/auth/api";
+import { useRouter } from "next/navigation";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -28,24 +29,20 @@ export function LoginForm() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+  const router = useRouter();
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true);
-      await authService.login(data);
-      // The login service would handle redirect
-      // Could still keep toast here if you want UI feedback
-      addToast({
-        title: "Login successful",
-        variant: "solid",
-        color: "success",
-      });
-    } catch {
-      addToast({
-        title: "Login failed",
-        variant: "solid",
-        color: "danger",
-      });
+      const result = await authService.login(data);
+
+      if (result) {
+        addToast({
+          title: "Login Successful",
+          color: "success",
+        });
+        router.push("/");
+      }
     } finally {
       setIsLoading(false);
     }
