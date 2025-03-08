@@ -209,7 +209,7 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
             errorMessage={errors.main_indicator_id?.message}
           >
             {mainIndicators.map((indicator: MainIndicatorListItem) => (
-              <SelectItem key={indicator.id} textValue={indicator.id}>
+              <SelectItem key={indicator.id} textValue={indicator.name}>
                 <div className="flex flex-col">
                   <span>{indicator.name}</span>
                   <span className="text-tiny text-default-500">

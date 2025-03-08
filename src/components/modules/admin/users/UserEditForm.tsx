@@ -343,7 +343,7 @@ export function UserEditForm() {
                       }
                     >
                       {roles.map((role: { id: string; name: string }) => (
-                        <SelectItem key={role.id} textValue={role.id}>
+                        <SelectItem key={role.id} textValue={role.name}>
                           {role.name}
                         </SelectItem>
                       ))}
@@ -539,7 +539,7 @@ export function UserEditForm() {
                   }
                 >
                   {departments.map((dept: { id: string; name: string }) => (
-                    <SelectItem key={dept.id} textValue={dept.id}>
+                    <SelectItem key={dept.id} textValue={dept.name}>
                       {dept.name}
                     </SelectItem>
                   ))}

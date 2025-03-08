@@ -17,6 +17,17 @@ import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { FaChevronRight } from "react-icons/fa";
 
+// Helper functions for date formatting
+const formatDateForInput = (dateString: string | null | undefined) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toISOString().split("T")[0];
+};
+
+const formatDateForSubmit = (dateString: string) => {
+  return new Date(dateString).toISOString();
+};
+
 const eventSchema = z.object({
   reporter_id: z.string().min(1, "Reporter is required"),
   report_date: z.string().min(1, "Report date is required"),
@@ -53,9 +64,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
   const getDefaultValues = useCallback(
     () => ({
       reporter_id: formData.event?.reporter_id || "",
-      report_date: formData.event?.report_date || "",
+      report_date: formatDateForInput(formData.event?.report_date) || "",
       details: formData.event?.details || "",
-      event_date: formData.event?.event_date || "",
+      event_date: formatDateForInput(formData.event?.event_date) || "",
       region_id: formData.event?.region_id || "",
       location_details: formData.event?.location_details || "",
       sub_indicator_id: formData.event?.sub_indicator_id || "",
@@ -98,7 +109,13 @@ export function EventForm({ isNew = false }: EventFormProps) {
   ]);
 
   const onSubmit = async (data: EventFormValues) => {
-    setEventForm(data);
+    // Format dates before submitting
+    const formattedData = {
+      ...data,
+      report_date: formatDateForSubmit(data.report_date),
+      event_date: formatDateForSubmit(data.event_date),
+    };
+    setEventForm(formattedData);
     setCurrentStep("perpetrator");
   };
 

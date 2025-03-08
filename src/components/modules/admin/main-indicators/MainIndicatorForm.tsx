@@ -207,7 +207,7 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
             errorMessage={errors.thematic_area_id?.message}
           >
             {thematicAreas.map((area) => (
-              <SelectItem key={area.id} textValue={area.id}>
+              <SelectItem key={area.id} textValue={area.name}>
                 {area.name}
               </SelectItem>
             ))}
