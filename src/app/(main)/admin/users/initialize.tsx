@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import useSWR from "swr";
 import { useUsersStore } from "@/store/users";
-import { fetchUsers } from "@/services/users/api";
+import { userService } from "@/services/users/api";
 import { departmentService } from "@/services/departments/api";
 import { roleService } from "@/services/roles/api";
 import type { UserQueryParams } from "@/services/users/types";
@@ -48,16 +48,16 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
     "filterOptions",
     async () => {
       try {
-        const [deptResponse, rolesResponse] = await Promise.all([
+        const [departmentsResponse, rolesResponse] = await Promise.all([
           departmentService.fetchAll(undefined),
           roleService.fetchAll(undefined),
         ]);
 
         return {
           departments:
-            "data" in deptResponse
-              ? deptResponse.data.departments
-              : deptResponse.departments,
+            "data" in departmentsResponse
+              ? departmentsResponse.data.departments
+              : departmentsResponse.departments,
           roles:
             "data" in rolesResponse
               ? rolesResponse.data.roles
@@ -78,7 +78,7 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
     ["users", filters],
     async () => {
       try {
-        const response = await fetchUsers(filters);
+        const response = await userService.fetchAll(filters);
         const data = "data" in response ? response.data : response;
 
         useUsersStore.setState({

@@ -7,12 +7,7 @@ import type {
   UserValidateInput,
   UserQueryParams,
 } from "@/services/users/types";
-import {
-  createUser as createUserApi,
-  updateUser as updateUserApi,
-  deleteUser as deleteUserApi,
-  validateUser as validateUserApi,
-} from "@/services/users/api";
+import { userService } from "@/services/users/api";
 import { urlSync } from "@/utils/url-sync";
 
 interface UsersState {
@@ -91,22 +86,22 @@ export const useUsersStore = create<UsersState>((set) => ({
     window.location.href = `/admin/users/${user.id}/edit`;
   },
   deleteUser: async (userId) => {
-    await deleteUserApi(userId);
+    await userService.delete(userId);
     set((state) => ({
       users: state.users.filter((u) => u.id !== userId),
       totalUsers: state.totalUsers - 1,
     }));
   },
   createUser: async (userData) => {
-    await createUserApi(userData);
+    await userService.create(userData);
     window.location.href = "/admin/users";
   },
   updateUser: async (id, userData) => {
-    await updateUserApi(id, userData);
+    await userService.update(id, userData);
     window.location.href = "/admin/users";
   },
   validateUser: async (userId, status) => {
-    await validateUserApi(userId, status);
+    await userService.validate(userId, status);
     window.location.href = "/admin/users";
   },
 

@@ -18,12 +18,12 @@ import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const victimSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  age: z.string().min(1, "Age is required"),
-  gender: z.string().min(1, "Gender is required"),
-  occupation: z.string().min(1, "Occupation is required"),
-  organization: z.string().min(1, "Organization is required"),
-  note: z.string().min(1, "Note is required"),
+  victim: z.string().min(1, "Name is required"),
+  victim_age: z.coerce.number().min(1, "Age is required"),
+  victim_gender: z.string().min(1, "Gender is required"),
+  victim_occupation: z.string().min(1, "Occupation is required"),
+  victim_organization: z.string().min(1, "Organization is required"),
+  victim_note: z.string().min(1, "Note is required"),
 });
 
 type VictimFormValues = z.infer<typeof victimSchema>;
@@ -33,21 +33,27 @@ interface VictimFormProps {
 }
 
 export function VictimForm({ isNew = false }: VictimFormProps) {
-  const { setVictimForm, currentEvent, isLoading, setLoading, setCurrentStep } =
-    useEventsStore();
+  const {
+    setVictimForm,
+    currentEvent,
+    isFormLoading,
+    setFormLoading,
+    formData,
+    setCurrentStep,
+  } = useEventsStore();
 
   const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
-      name: currentEvent?.victim?.name || "",
-      age: currentEvent?.victim?.age || "",
-      gender: currentEvent?.victim?.gender || "",
-      occupation: currentEvent?.victim?.occupation || "",
-      organization: currentEvent?.victim?.organization || "",
-      note: currentEvent?.victim?.note || "",
+      victim: formData.victim?.victim || "",
+      victim_age: formData.victim?.victim_age || 0,
+      victim_gender: formData.victim?.victim_gender || "",
+      victim_occupation: formData.victim?.victim_occupation || "",
+      victim_organization: formData.victim?.victim_organization || "",
+      victim_note: formData.victim?.victim_note || "",
     }),
-    [currentEvent]
+    [formData.victim]
   );
 
   const {
@@ -63,9 +69,9 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
   // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
-      setLoading(false);
+      setFormLoading(false);
       setLocalLoading(false);
-    } else if (!isLoading && currentEvent) {
+    } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
       const timer = setTimeout(() => {
         setLocalLoading(false);
@@ -74,14 +80,21 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
     } else {
       setLocalLoading(true);
     }
-  }, [isNew, currentEvent, isLoading, reset, getDefaultValues, setLoading]);
+  }, [
+    isNew,
+    currentEvent,
+    isFormLoading,
+    reset,
+    getDefaultValues,
+    setFormLoading,
+  ]);
 
   const onSubmit = async (data: VictimFormValues) => {
     setVictimForm(data);
     setCurrentStep("outcome");
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -113,7 +126,7 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
     >
       <div className="flex flex-col gap-6">
         <Controller
-          name="name"
+          name="victim"
           control={control}
           render={({ field }) => (
             <Input
@@ -123,31 +136,34 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
               placeholder="Enter the name"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name?.message}
+              isInvalid={!!errors.victim}
+              errorMessage={errors.victim?.message}
             />
           )}
         />
 
         <Controller
-          name="age"
+          name="victim_age"
           control={control}
-          render={({ field }) => (
+          render={({ field: { value, onChange, ...field } }) => (
             <Input
               {...field}
+              type="number"
+              value={value.toString()}
+              onChange={(e) => onChange(Number(e.target.value))}
               label="Age"
               labelPlacement="outside"
               placeholder="Enter the age"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.age}
-              errorMessage={errors.age?.message}
+              isInvalid={!!errors.victim_age}
+              errorMessage={errors.victim_age?.message}
             />
           )}
         />
 
         <Controller
-          name="gender"
+          name="victim_gender"
           control={control}
           render={({ field }) => (
             <Select
@@ -161,13 +177,13 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
               placeholder="Select gender"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.gender}
-              errorMessage={errors.gender?.message}
+              isInvalid={!!errors.victim_gender}
+              errorMessage={errors.victim_gender?.message}
             >
-              <SelectItem key="male" value="male">
+              <SelectItem key="male" textValue="Male">
                 Male
               </SelectItem>
-              <SelectItem key="female" value="female">
+              <SelectItem key="female" textValue="Female">
                 Female
               </SelectItem>
             </Select>
@@ -175,7 +191,7 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
         />
 
         <Controller
-          name="occupation"
+          name="victim_occupation"
           control={control}
           render={({ field }) => (
             <Input
@@ -185,14 +201,14 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
               placeholder="Enter the occupation/identity"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.occupation}
-              errorMessage={errors.occupation?.message}
+              isInvalid={!!errors.victim_occupation}
+              errorMessage={errors.victim_occupation?.message}
             />
           )}
         />
 
         <Controller
-          name="organization"
+          name="victim_organization"
           control={control}
           render={({ field }) => (
             <Input
@@ -202,14 +218,14 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
               placeholder="Enter the organization"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.organization}
-              errorMessage={errors.organization?.message}
+              isInvalid={!!errors.victim_organization}
+              errorMessage={errors.victim_organization?.message}
             />
           )}
         />
 
         <Controller
-          name="note"
+          name="victim_note"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -219,8 +235,8 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
               placeholder="Enter any additional note"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.note}
-              errorMessage={errors.note?.message}
+              isInvalid={!!errors.victim_note}
+              errorMessage={errors.victim_note?.message}
             />
           )}
         />

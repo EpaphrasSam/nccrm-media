@@ -11,20 +11,24 @@ import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const outcomeSchema = z.object({
-  deathsMen: z.coerce.number().min(0, "Deaths (Men) must be 0 or greater"),
-  deathsWomenChildren: z.coerce
+  death_count_men: z.coerce
+    .number()
+    .min(0, "Deaths (Men) must be 0 or greater"),
+  death_count_women_chldren: z.coerce
     .number()
     .min(0, "Deaths (Women and Children) must be 0 or greater"),
-  deathDetails: z.string().min(1, "Death details are required"),
-  injuriesMen: z.coerce.number().min(0, "Injuries (Men) must be 0 or greater"),
-  injuriesWomenChildren: z.coerce
+  death_details: z.string().min(1, "Death details are required"),
+  injury_count_men: z.coerce
+    .number()
+    .min(0, "Injuries (Men) must be 0 or greater"),
+  injury_count_women_chldren: z.coerce
     .number()
     .min(0, "Injuries (Women and Children) must be 0 or greater"),
-  injuriesDetails: z.string().min(1, "Injuries details are required"),
-  lossesProperty: z.coerce
+  injury_details: z.string().min(1, "Injuries details are required"),
+  losses_count: z.coerce
     .number()
     .min(0, "Property losses must be 0 or greater"),
-  lossesDetails: z.string().min(1, "Losses details are required"),
+  losses_details: z.string().min(1, "Losses details are required"),
 });
 
 type OutcomeFormValues = z.infer<typeof outcomeSchema>;
@@ -34,22 +38,31 @@ interface OutcomeFormProps {
 }
 
 export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
-  const { setOutcomeForm, currentEvent, isLoading, setCurrentStep } =
-    useEventsStore();
+  const {
+    setOutcomeForm,
+    currentEvent,
+    isFormLoading,
+    setFormLoading,
+    formData,
+    setCurrentStep,
+  } = useEventsStore();
+
   const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
-      deathsMen: currentEvent?.outcome?.deathsMen || 0,
-      deathsWomenChildren: currentEvent?.outcome?.deathsWomenChildren || 0,
-      deathDetails: currentEvent?.outcome?.deathDetails || "",
-      injuriesMen: currentEvent?.outcome?.injuriesMen || 0,
-      injuriesWomenChildren: currentEvent?.outcome?.injuriesWomenChildren || 0,
-      injuriesDetails: currentEvent?.outcome?.injuriesDetails || "",
-      lossesProperty: currentEvent?.outcome?.lossesProperty || 0,
-      lossesDetails: currentEvent?.outcome?.lossesDetails || "",
+      death_count_men: formData.outcome?.death_count_men || 0,
+      death_count_women_chldren:
+        formData.outcome?.death_count_women_chldren || 0,
+      death_details: formData.outcome?.death_details || "",
+      injury_count_men: formData.outcome?.injury_count_men || 0,
+      injury_count_women_chldren:
+        formData.outcome?.injury_count_women_chldren || 0,
+      injury_details: formData.outcome?.injury_details || "",
+      losses_count: formData.outcome?.losses_count || 0,
+      losses_details: formData.outcome?.losses_details || "",
     }),
-    [currentEvent]
+    [formData.outcome]
   );
 
   const {
@@ -65,8 +78,9 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
   // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
+      setFormLoading(false);
       setLocalLoading(false);
-    } else if (!isLoading && currentEvent) {
+    } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
       const timer = setTimeout(() => {
         setLocalLoading(false);
@@ -75,14 +89,21 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
     } else {
       setLocalLoading(true);
     }
-  }, [isNew, currentEvent, isLoading, reset, getDefaultValues]);
+  }, [
+    isNew,
+    currentEvent,
+    isFormLoading,
+    reset,
+    getDefaultValues,
+    setFormLoading,
+  ]);
 
   const onSubmit = async (data: OutcomeFormValues) => {
     setOutcomeForm(data);
     setCurrentStep("context");
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -114,7 +135,7 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
     >
       <div className="flex flex-col gap-6">
         <Controller
-          name="deathsMen"
+          name="death_count_men"
           control={control}
           render={({ field: { value, onChange, ...field } }) => (
             <Input
@@ -127,14 +148,14 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter the count of dead men"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.deathsMen}
-              errorMessage={errors.deathsMen?.message}
+              isInvalid={!!errors.death_count_men}
+              errorMessage={errors.death_count_men?.message}
             />
           )}
         />
 
         <Controller
-          name="deathsWomenChildren"
+          name="death_count_women_chldren"
           control={control}
           render={({ field: { value, onChange, ...field } }) => (
             <Input
@@ -147,14 +168,14 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter the count of dead women and children"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.deathsWomenChildren}
-              errorMessage={errors.deathsWomenChildren?.message}
+              isInvalid={!!errors.death_count_women_chldren}
+              errorMessage={errors.death_count_women_chldren?.message}
             />
           )}
         />
 
         <Controller
-          name="deathDetails"
+          name="death_details"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -164,14 +185,14 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter details about the deaths"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.deathDetails}
-              errorMessage={errors.deathDetails?.message}
+              isInvalid={!!errors.death_details}
+              errorMessage={errors.death_details?.message}
             />
           )}
         />
 
         <Controller
-          name="injuriesMen"
+          name="injury_count_men"
           control={control}
           render={({ field: { value, onChange, ...field } }) => (
             <Input
@@ -184,14 +205,14 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter the count of injured men"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.injuriesMen}
-              errorMessage={errors.injuriesMen?.message}
+              isInvalid={!!errors.injury_count_men}
+              errorMessage={errors.injury_count_men?.message}
             />
           )}
         />
 
         <Controller
-          name="injuriesWomenChildren"
+          name="injury_count_women_chldren"
           control={control}
           render={({ field: { value, onChange, ...field } }) => (
             <Input
@@ -204,14 +225,14 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter the count of injured women and children"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.injuriesWomenChildren}
-              errorMessage={errors.injuriesWomenChildren?.message}
+              isInvalid={!!errors.injury_count_women_chldren}
+              errorMessage={errors.injury_count_women_chldren?.message}
             />
           )}
         />
 
         <Controller
-          name="injuriesDetails"
+          name="injury_details"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -221,14 +242,14 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter details about the injuries"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.injuriesDetails}
-              errorMessage={errors.injuriesDetails?.message}
+              isInvalid={!!errors.injury_details}
+              errorMessage={errors.injury_details?.message}
             />
           )}
         />
 
         <Controller
-          name="lossesProperty"
+          name="losses_count"
           control={control}
           render={({ field: { value, onChange, ...field } }) => (
             <Input
@@ -241,14 +262,14 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter the estimated property losses"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.lossesProperty}
-              errorMessage={errors.lossesProperty?.message}
+              isInvalid={!!errors.losses_count}
+              errorMessage={errors.losses_count?.message}
             />
           )}
         />
 
         <Controller
-          name="lossesDetails"
+          name="losses_details"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -258,8 +279,8 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
               placeholder="Enter details about the property losses"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.lossesDetails}
-              errorMessage={errors.lossesDetails?.message}
+              isInvalid={!!errors.losses_details}
+              errorMessage={errors.losses_details?.message}
             />
           )}
         />

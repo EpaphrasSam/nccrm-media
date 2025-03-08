@@ -14,19 +14,17 @@ import {
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { FaChevronLeft } from "react-icons/fa";
 
 const contextSchema = z.object({
-  informationCredibility: z
-    .string()
-    .min(1, "Information credibility is required"),
-  informationSource: z.string().min(1, "Information source is required"),
-  geographicScope: z.string().min(1, "Geographic scope is required"),
+  info_credibility: z.string().min(1, "Information credibility is required"),
+  info_source: z.string().min(1, "Information source is required"),
+  geo_scope: z.string().min(1, "Geographic scope is required"),
   impact: z.string().min(1, "Impact is required"),
-  weaponsUse: z.string().min(1, "Weapons use is required"),
-  details: z.string().min(1, "Details are required"),
+  weapons_use: z.string().min(1, "Weapons use is required"),
+  context_details: z.string().min(1, "Details are required"),
+  docs: z.array(z.instanceof(File)).optional(),
 });
 
 type ContextFormValues = z.infer<typeof contextSchema>;
@@ -36,31 +34,30 @@ interface ContextFormProps {
 }
 
 export function ContextForm({ isNew = false }: ContextFormProps) {
-  const router = useRouter();
   const {
-    updateEvent,
-    createEvent,
-    currentEvent,
-    isLoading,
-    setLoading,
     setContextForm,
+    currentEvent,
+    isFormLoading,
+    setFormLoading,
     formData,
-    setCurrentStep
+    setCurrentStep,
+    createEvent,
+    updateEvent,
   } = useEventsStore();
 
   const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
-      informationCredibility:
-        currentEvent?.context?.informationCredibility || "",
-      informationSource: currentEvent?.context?.informationSource || "",
-      geographicScope: currentEvent?.context?.geographicScope || "",
-      impact: currentEvent?.context?.impact || "",
-      weaponsUse: currentEvent?.context?.weaponsUse || "",
-      details: currentEvent?.context?.details || "",
+      info_credibility: formData.context?.info_credibility || "",
+      info_source: formData.context?.info_source || "",
+      geo_scope: formData.context?.geo_scope || "",
+      impact: formData.context?.impact || "",
+      weapons_use: formData.context?.weapons_use || "",
+      context_details: formData.context?.context_details || "",
+      docs: formData.context?.docs || [],
     }),
-    [currentEvent]
+    [formData.context]
   );
 
   const {
@@ -76,9 +73,9 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
   // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
-      setLoading(false);
+      setFormLoading(false);
       setLocalLoading(false);
-    } else if (!isLoading && currentEvent) {
+    } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
       const timer = setTimeout(() => {
         setLocalLoading(false);
@@ -87,65 +84,69 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     } else {
       setLocalLoading(true);
     }
-  }, [isNew, currentEvent, isLoading, reset, getDefaultValues, setLoading]);
+  }, [
+    isNew,
+    currentEvent,
+    isFormLoading,
+    reset,
+    getDefaultValues,
+    setFormLoading,
+  ]);
 
   const onSubmit = async (data: ContextFormValues) => {
     try {
       // Save context form data to store
       setContextForm(data);
 
-      // Now submit the complete form data
+      // Get the complete form data with required fields
       const completeFormData = {
-        ...formData.event,
-        perpetrator: formData.perpetrator || {
-          name: "",
-          age: "",
-          gender: "",
-          occupation: "",
-          organization: "",
-          note: "",
-        },
-        victim: formData.victim || {
-          name: "",
-          age: "",
-          gender: "",
-          occupation: "",
-          organization: "",
-          note: "",
-        },
-        outcome: formData.outcome || {
-          deathsMen: 0,
-          deathsWomenChildren: 0,
-          deathDetails: "",
-          injuriesMen: 0,
-          injuriesWomenChildren: 0,
-          injuriesDetails: "",
-          lossesProperty: 0,
-          lossesDetails: "",
-        },
-        context: data,
-      };
+        reporter_id: formData.event?.reporter_id || "",
+        report_date: formData.event?.report_date || "",
+        details: formData.event?.details || "",
+        event_date: formData.event?.event_date || "",
+        region_id: formData.event?.region_id || "",
+        location_details: formData.event?.location_details || "",
+        sub_indicator_id: formData.event?.sub_indicator_id || "",
+        thematic_area_id: formData.event?.thematic_area_id || "",
+        perpetrator: formData.perpetrator?.perpetrator || "",
+        pep_age: formData.perpetrator?.pep_age || 0,
+        pep_gender: formData.perpetrator?.pep_gender || "",
+        pep_occupation: formData.perpetrator?.pep_occupation || "",
+        pep_organization: formData.perpetrator?.pep_organization || "",
+        pep_note: formData.perpetrator?.pep_note || "",
+        victim: formData.victim?.victim || "",
+        victim_age: formData.victim?.victim_age || 0,
+        victim_gender: formData.victim?.victim_gender || "",
+        victim_occupation: formData.victim?.victim_occupation || "",
+        victim_organization: formData.victim?.victim_organization || "",
+        victim_note: formData.victim?.victim_note || "",
+        death_count_men: formData.outcome?.death_count_men || 0,
+        death_count_women_chldren:
+          formData.outcome?.death_count_women_chldren || 0,
+        death_details: formData.outcome?.death_details || "",
+        injury_count_men: formData.outcome?.injury_count_men || 0,
+        injury_count_women_chldren:
+          formData.outcome?.injury_count_women_chldren || 0,
+        injury_details: formData.outcome?.injury_details || "",
+        losses_count: formData.outcome?.losses_count || 0,
+        losses_details: formData.outcome?.losses_details || "",
+        ...data,
+      } as const;
 
       if (currentEvent) {
         await updateEvent(currentEvent.id, completeFormData);
       } else {
         await createEvent(completeFormData);
       }
-
-      router.push("/events");
     } catch (error) {
       console.error("Failed to save event:", error);
     }
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-10 w-full max-w-2xl" />
-          </div>
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-10 w-full max-w-2xl" />
@@ -185,21 +186,25 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     >
       <div className="flex flex-col gap-6">
         <Controller
-          name="informationCredibility"
+          name="info_credibility"
           control={control}
           render={({ field }) => (
             <Select
-              {...field}
+              selectedKeys={field.value ? [field.value] : []}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0]?.toString();
+                if (value) field.onChange(value);
+              }}
               label="Information Credibility"
               labelPlacement="outside"
               placeholder="Select the level of information credibility"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.informationCredibility}
-              errorMessage={errors.informationCredibility?.message}
+              isInvalid={!!errors.info_credibility}
+              errorMessage={errors.info_credibility?.message}
             >
               {credibilityOptions.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
+                <SelectItem key={option.id} textValue={option.name}>
                   {option.name}
                 </SelectItem>
               ))}
@@ -208,7 +213,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
         />
 
         <Controller
-          name="informationSource"
+          name="info_source"
           control={control}
           render={({ field }) => (
             <Input
@@ -218,14 +223,14 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter the type of information source"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.informationSource}
-              errorMessage={errors.informationSource?.message}
+              isInvalid={!!errors.info_source}
+              errorMessage={errors.info_source?.message}
             />
           )}
         />
 
         <Controller
-          name="geographicScope"
+          name="geo_scope"
           control={control}
           render={({ field }) => (
             <Input
@@ -235,8 +240,8 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter the geographic scope definition"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.geographicScope}
-              errorMessage={errors.geographicScope?.message}
+              isInvalid={!!errors.geo_scope}
+              errorMessage={errors.geo_scope?.message}
             />
           )}
         />
@@ -246,7 +251,11 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
           control={control}
           render={({ field }) => (
             <Select
-              {...field}
+              selectedKeys={field.value ? [field.value] : []}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0]?.toString();
+                if (value) field.onChange(value);
+              }}
               label="Impact"
               labelPlacement="outside"
               placeholder="Select the level of impact"
@@ -256,7 +265,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               errorMessage={errors.impact?.message}
             >
               {impactOptions.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
+                <SelectItem key={option.id} textValue={option.name}>
                   {option.name}
                 </SelectItem>
               ))}
@@ -265,7 +274,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
         />
 
         <Controller
-          name="weaponsUse"
+          name="weapons_use"
           control={control}
           render={({ field }) => (
             <Input
@@ -275,14 +284,14 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter the weapon use description"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.weaponsUse}
-              errorMessage={errors.weaponsUse?.message}
+              isInvalid={!!errors.weapons_use}
+              errorMessage={errors.weapons_use?.message}
             />
           )}
         />
 
         <Controller
-          name="details"
+          name="context_details"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -292,8 +301,30 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter any additional details"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.details}
-              errorMessage={errors.details?.message}
+              isInvalid={!!errors.context_details}
+              errorMessage={errors.context_details?.message}
+            />
+          )}
+        />
+
+        <Controller
+          name="docs"
+          control={control}
+          render={({ field }) => (
+            <Input
+              type="file"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                field.onChange(files);
+              }}
+              label="Documents"
+              labelPlacement="outside"
+              placeholder="Upload supporting documents"
+              variant="bordered"
+              classNames={inputStyles}
+              isInvalid={!!errors.docs}
+              errorMessage={errors.docs?.message}
             />
           )}
         />

@@ -4,6 +4,10 @@ import type {
   EventCreateInput,
   EventQueryParams,
 } from "@/services/events/types";
+import type { UserListItem } from "@/services/users/types";
+import type { Region } from "@/services/regions/types";
+import type { SubIndicator } from "@/services/sub-indicators/types";
+import type { ThematicArea } from "@/services/thematic-areas/types";
 import { eventService } from "@/services/events/api";
 import { urlSync } from "@/utils/url-sync";
 
@@ -80,6 +84,16 @@ interface EventsState {
   currentEvent: Event | null;
   formData: FormDataState;
 
+  // Reference Data
+  reporters: UserListItem[];
+  regions: Region[];
+  subIndicators: SubIndicator[];
+  thematicAreas: ThematicArea[];
+  setReporters: (reporters: UserListItem[]) => void;
+  setRegions: (regions: Region[]) => void;
+  setSubIndicators: (indicators: SubIndicator[]) => void;
+  setThematicAreas: (areas: ThematicArea[]) => void;
+
   // Data
   events: Event[];
   totalEvents: number;
@@ -122,17 +136,29 @@ const DEFAULT_FILTERS: EventQueryParams = {
   limit: 10,
 };
 
+const DEFAULT_FORM_STATE: FormDataState = {
+  event: null,
+  perpetrator: null,
+  victim: null,
+  outcome: null,
+  context: null,
+};
+
 export const useEventsStore = create<EventsState>((set, get) => ({
   // Initial Form State
   currentStep: "event",
   currentEvent: null,
-  formData: {
-    event: null,
-    perpetrator: null,
-    victim: null,
-    outcome: null,
-    context: null,
-  },
+  formData: DEFAULT_FORM_STATE,
+
+  // Initial Reference Data
+  reporters: [],
+  regions: [],
+  subIndicators: [],
+  thematicAreas: [],
+  setReporters: (reporters) => set({ reporters }),
+  setRegions: (regions) => set({ regions }),
+  setSubIndicators: (indicators) => set({ subIndicators: indicators }),
+  setThematicAreas: (areas) => set({ thematicAreas: areas }),
 
   // Initial Data
   events: [],
@@ -175,13 +201,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     set((state) => ({ formData: { ...state.formData, context: data } })),
   resetForm: () =>
     set({
-      formData: {
-        event: null,
-        perpetrator: null,
-        victim: null,
-        outcome: null,
-        context: null,
-      },
+      formData: DEFAULT_FORM_STATE,
       currentStep: "event",
       currentEvent: null,
     }),
@@ -196,7 +216,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   deleteEvent: async (eventId) => {
     try {
       set({ isTableLoading: true });
-      // TODO: Add API call to delete event
+      await eventService.delete(eventId);
       set((state) => ({
         events: state.events.filter((e) => e.id !== eventId),
         totalEvents: state.totalEvents - 1,
@@ -224,10 +244,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   updateEvent: async (id, data) => {
     try {
       set({ isFormLoading: true });
-      // TODO: Add API call to update event
-      set((state) => ({
-        events: state.events.map((e) => (e.id === id ? { ...e, ...data } : e)),
-      }));
+      await eventService.update(id, data);
       window.location.href = "/events";
     } catch (error) {
       console.error("Failed to update event:", error);

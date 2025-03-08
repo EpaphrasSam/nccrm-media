@@ -14,22 +14,18 @@ import {
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useState, useEffect, useCallback } from "react";
-import useSWR from "swr";
-import { fetchReporters } from "@/services/reporters/api";
-import { fetchSubIndicators } from "@/services/sub-indicators/api";
-import { fetchThematicAreas } from "@/services/thematic-areas/api";
 import { cn } from "@/lib/utils";
 import { FaChevronRight } from "react-icons/fa";
 
 const eventSchema = z.object({
-  reporterId: z.string().min(1, "Reporter is required"),
-  date: z.string().min(1, "Report date is required"),
-  eventDetails: z.string().min(1, "Event details are required"),
-  when: z.string().min(1, "When is required"),
-  where: z.string().min(1, "Where is required"),
-  locationDetails: z.string().min(1, "Location details are required"),
-  subIndicatorId: z.string().min(1, "What is required"),
-  thematicAreaId: z.string().min(1, "Thematic area is required"),
+  reporter_id: z.string().min(1, "Reporter is required"),
+  report_date: z.string().min(1, "Report date is required"),
+  details: z.string().min(1, "Event details are required"),
+  event_date: z.string().min(1, "Event date is required"),
+  region_id: z.string().min(1, "Region is required"),
+  location_details: z.string().min(1, "Location details are required"),
+  sub_indicator_id: z.string().min(1, "Sub indicator is required"),
+  thematic_area_id: z.string().min(1, "Thematic area is required"),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -39,26 +35,33 @@ interface EventFormProps {
 }
 
 export function EventForm({ isNew = false }: EventFormProps) {
-  const { setEventForm, currentEvent, isLoading, setLoading, setCurrentStep } =
-    useEventsStore();
+  const {
+    setEventForm,
+    currentEvent,
+    isFormLoading,
+    setFormLoading,
+    formData,
+    setCurrentStep,
+    reporters,
+    regions,
+    subIndicators,
+    thematicAreas,
+  } = useEventsStore();
 
-  const { data: reporters } = useSWR("reporters", fetchReporters);
-  const { data: subIndicators } = useSWR("subIndicators", fetchSubIndicators);
-  const { data: thematicAreas } = useSWR("thematicAreas", fetchThematicAreas);
   const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
-      reporterId: currentEvent?.reporterId || "",
-      date: currentEvent?.date || "",
-      eventDetails: currentEvent?.eventDetails || "",
-      when: currentEvent?.when || "",
-      where: currentEvent?.where || "",
-      locationDetails: currentEvent?.locationDetails || "",
-      subIndicatorId: currentEvent?.subIndicatorId || "",
-      thematicAreaId: currentEvent?.thematicAreaId || "",
+      reporter_id: formData.event?.reporter_id || "",
+      report_date: formData.event?.report_date || "",
+      details: formData.event?.details || "",
+      event_date: formData.event?.event_date || "",
+      region_id: formData.event?.region_id || "",
+      location_details: formData.event?.location_details || "",
+      sub_indicator_id: formData.event?.sub_indicator_id || "",
+      thematic_area_id: formData.event?.thematic_area_id || "",
     }),
-    [currentEvent]
+    [formData.event]
   );
 
   const {
@@ -74,9 +77,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
   // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
-      setLoading(false);
+      setFormLoading(false);
       setLocalLoading(false);
-    } else if (!isLoading && currentEvent) {
+    } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
       const timer = setTimeout(() => {
         setLocalLoading(false);
@@ -85,24 +88,21 @@ export function EventForm({ isNew = false }: EventFormProps) {
     } else {
       setLocalLoading(true);
     }
-  }, [isNew, currentEvent, isLoading, reset, getDefaultValues, setLoading]);
+  }, [
+    isNew,
+    currentEvent,
+    isFormLoading,
+    reset,
+    getDefaultValues,
+    setFormLoading,
+  ]);
 
   const onSubmit = async (data: EventFormValues) => {
-    const formData = {
-      reporterId: data.reporterId,
-      date: data.date,
-      eventDetails: data.eventDetails,
-      when: data.when,
-      where: data.where,
-      locationDetails: data.locationDetails,
-      subIndicatorId: data.subIndicatorId,
-      thematicAreaId: data.thematicAreaId,
-    };
-    setEventForm(formData);
+    setEventForm(data);
     setCurrentStep("perpetrator");
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -133,7 +133,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
     >
       <div className="flex flex-col gap-6">
         <Controller
-          name="reporterId"
+          name="reporter_id"
           control={control}
           render={({ field }) => (
             <Select
@@ -147,20 +147,20 @@ export function EventForm({ isNew = false }: EventFormProps) {
               placeholder="Select the reporter"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.reporterId}
-              errorMessage={errors.reporterId?.message}
+              isInvalid={!!errors.reporter_id}
+              errorMessage={errors.reporter_id?.message}
             >
               {reporters?.map((reporter) => (
-                <SelectItem key={reporter.id} value={reporter.id}>
+                <SelectItem key={reporter.id} textValue={reporter.name}>
                   {reporter.name}
                 </SelectItem>
-              )) || []}
+              ))}
             </Select>
           )}
         />
 
         <Controller
-          name="date"
+          name="report_date"
           control={control}
           render={({ field }) => (
             <Input
@@ -171,14 +171,14 @@ export function EventForm({ isNew = false }: EventFormProps) {
               placeholder="Select the report date"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.date}
-              errorMessage={errors.date?.message}
+              isInvalid={!!errors.report_date}
+              errorMessage={errors.report_date?.message}
             />
           )}
         />
 
         <Controller
-          name="eventDetails"
+          name="details"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -188,49 +188,59 @@ export function EventForm({ isNew = false }: EventFormProps) {
               placeholder="Enter the event details"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.eventDetails}
-              errorMessage={errors.eventDetails?.message}
+              isInvalid={!!errors.details}
+              errorMessage={errors.details?.message}
             />
           )}
         />
 
         <Controller
-          name="when"
+          name="event_date"
           control={control}
           render={({ field }) => (
             <Input
               {...field}
               type="date"
-              label="When"
+              label="Event Date"
               labelPlacement="outside"
-              placeholder="Select the date"
+              placeholder="Select the event date"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.when}
-              errorMessage={errors.when?.message}
+              isInvalid={!!errors.event_date}
+              errorMessage={errors.event_date?.message}
             />
           )}
         />
 
         <Controller
-          name="where"
+          name="region_id"
           control={control}
           render={({ field }) => (
-            <Input
-              {...field}
-              label="Where"
+            <Select
+              selectedKeys={field.value ? [field.value] : []}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0]?.toString();
+                if (value) field.onChange(value);
+              }}
+              label="Region"
               labelPlacement="outside"
               placeholder="Select the region"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.where}
-              errorMessage={errors.where?.message}
-            />
+              isInvalid={!!errors.region_id}
+              errorMessage={errors.region_id?.message}
+            >
+              {regions?.map((region) => (
+                <SelectItem key={region.id} textValue={region.name}>
+                  {region.name}
+                </SelectItem>
+              ))}
+            </Select>
           )}
         />
 
         <Controller
-          name="locationDetails"
+          name="location_details"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -240,14 +250,14 @@ export function EventForm({ isNew = false }: EventFormProps) {
               placeholder="Enter the location details"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.locationDetails}
-              errorMessage={errors.locationDetails?.message}
+              isInvalid={!!errors.location_details}
+              errorMessage={errors.location_details?.message}
             />
           )}
         />
 
         <Controller
-          name="subIndicatorId"
+          name="sub_indicator_id"
           control={control}
           render={({ field }) => (
             <Select
@@ -256,25 +266,25 @@ export function EventForm({ isNew = false }: EventFormProps) {
                 const value = Array.from(keys)[0]?.toString();
                 if (value) field.onChange(value);
               }}
-              label="What"
+              label="Sub Indicator"
               labelPlacement="outside"
               placeholder="Select the sub indicator"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.subIndicatorId}
-              errorMessage={errors.subIndicatorId?.message}
+              isInvalid={!!errors.sub_indicator_id}
+              errorMessage={errors.sub_indicator_id?.message}
             >
-              {subIndicators?.map((subIndicator) => (
-                <SelectItem key={subIndicator.id} value={subIndicator.id}>
-                  {subIndicator.name}
+              {subIndicators?.map((indicator) => (
+                <SelectItem key={indicator.id} textValue={indicator.name}>
+                  {indicator.name}
                 </SelectItem>
-              )) || []}
+              ))}
             </Select>
           )}
         />
 
         <Controller
-          name="thematicAreaId"
+          name="thematic_area_id"
           control={control}
           render={({ field }) => (
             <Select
@@ -283,19 +293,19 @@ export function EventForm({ isNew = false }: EventFormProps) {
                 const value = Array.from(keys)[0]?.toString();
                 if (value) field.onChange(value);
               }}
-              label="Thematic area"
+              label="Thematic Area"
               labelPlacement="outside"
               placeholder="Select the thematic area"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.thematicAreaId}
-              errorMessage={errors.thematicAreaId?.message}
+              isInvalid={!!errors.thematic_area_id}
+              errorMessage={errors.thematic_area_id?.message}
             >
-              {thematicAreas?.map((thematicArea) => (
-                <SelectItem key={thematicArea.id} value={thematicArea.id}>
-                  {thematicArea.name}
+              {thematicAreas?.map((area) => (
+                <SelectItem key={area.id} textValue={area.name}>
+                  {area.name}
                 </SelectItem>
-              )) || []}
+              ))}
             </Select>
           )}
         />

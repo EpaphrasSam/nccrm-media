@@ -21,7 +21,7 @@ import { FaCamera } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { generateUsername, generatePassword } from "@/helpers/userHelpers";
 import { useSession } from "next-auth/react";
-import { updateUser } from "@/services/users/api";
+import { userService } from "@/services/users/api";
 
 // Section schemas
 const profileSchema = z.object({
@@ -140,7 +140,7 @@ export default function SettingsPage() {
         Object.assign(updateData, { image: file });
       }
 
-      await updateUser(session.user.id, updateData);
+      await userService.update(session.user.id, updateData);
       addToast({
         title: "Success",
         description: "Profile updated successfully",
@@ -160,7 +160,7 @@ export default function SettingsPage() {
     if (!session?.user?.id) return;
 
     try {
-      await updateUser(session.user.id, data);
+      await userService.update(session.user.id, data);
       addToast({
         title: "Success",
         description: "Personal information updated successfully",
@@ -180,7 +180,7 @@ export default function SettingsPage() {
     if (!session?.user?.id) return;
 
     try {
-      await updateUser(session.user.id, data);
+      await userService.update(session.user.id, data);
       addToast({
         title: "Success",
         description: "Account information updated successfully",

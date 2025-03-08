@@ -18,12 +18,12 @@ import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const perpetratorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  age: z.string().min(1, "Age is required"),
-  gender: z.string().min(1, "Gender is required"),
-  occupation: z.string().min(1, "Occupation is required"),
-  organization: z.string().min(1, "Organization is required"),
-  note: z.string().min(1, "Note is required"),
+  perpetrator: z.string().min(1, "Name is required"),
+  pep_age: z.coerce.number().min(1, "Age is required"),
+  pep_gender: z.string().min(1, "Gender is required"),
+  pep_occupation: z.string().min(1, "Occupation is required"),
+  pep_organization: z.string().min(1, "Organization is required"),
+  pep_note: z.string().min(1, "Note is required"),
 });
 
 type PerpetratorFormValues = z.infer<typeof perpetratorSchema>;
@@ -36,8 +36,9 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
   const {
     setPerpetratorForm,
     currentEvent,
-    isLoading,
-    setLoading,
+    isFormLoading,
+    setFormLoading,
+    formData,
     setCurrentStep,
   } = useEventsStore();
 
@@ -45,14 +46,14 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
 
   const getDefaultValues = useCallback(
     () => ({
-      name: currentEvent?.perpetrator?.name || "",
-      age: currentEvent?.perpetrator?.age || "",
-      gender: currentEvent?.perpetrator?.gender || "",
-      occupation: currentEvent?.perpetrator?.occupation || "",
-      organization: currentEvent?.perpetrator?.organization || "",
-      note: currentEvent?.perpetrator?.note || "",
+      perpetrator: formData.perpetrator?.perpetrator || "",
+      pep_age: formData.perpetrator?.pep_age || 0,
+      pep_gender: formData.perpetrator?.pep_gender || "",
+      pep_occupation: formData.perpetrator?.pep_occupation || "",
+      pep_organization: formData.perpetrator?.pep_organization || "",
+      pep_note: formData.perpetrator?.pep_note || "",
     }),
-    [currentEvent]
+    [formData.perpetrator]
   );
 
   const {
@@ -68,9 +69,9 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
   // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
-      setLoading(false);
+      setFormLoading(false);
       setLocalLoading(false);
-    } else if (!isLoading && currentEvent) {
+    } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
       const timer = setTimeout(() => {
         setLocalLoading(false);
@@ -79,14 +80,21 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
     } else {
       setLocalLoading(true);
     }
-  }, [isNew, currentEvent, isLoading, reset, getDefaultValues, setLoading]);
+  }, [
+    isNew,
+    currentEvent,
+    isFormLoading,
+    reset,
+    getDefaultValues,
+    setFormLoading,
+  ]);
 
   const onSubmit = async (data: PerpetratorFormValues) => {
     setPerpetratorForm(data);
     setCurrentStep("victim");
   };
 
-  if (isLoading || localLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -118,7 +126,7 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
     >
       <div className="flex flex-col gap-6">
         <Controller
-          name="name"
+          name="perpetrator"
           control={control}
           render={({ field }) => (
             <Input
@@ -128,31 +136,34 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
               placeholder="Enter the name"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name?.message}
+              isInvalid={!!errors.perpetrator}
+              errorMessage={errors.perpetrator?.message}
             />
           )}
         />
 
         <Controller
-          name="age"
+          name="pep_age"
           control={control}
-          render={({ field }) => (
+          render={({ field: { value, onChange, ...field } }) => (
             <Input
               {...field}
+              type="number"
+              value={value.toString()}
+              onChange={(e) => onChange(Number(e.target.value))}
               label="Age"
               labelPlacement="outside"
               placeholder="Enter the age"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.age}
-              errorMessage={errors.age?.message}
+              isInvalid={!!errors.pep_age}
+              errorMessage={errors.pep_age?.message}
             />
           )}
         />
 
         <Controller
-          name="gender"
+          name="pep_gender"
           control={control}
           render={({ field }) => (
             <Select
@@ -166,13 +177,13 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
               placeholder="Select gender"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.gender}
-              errorMessage={errors.gender?.message}
+              isInvalid={!!errors.pep_gender}
+              errorMessage={errors.pep_gender?.message}
             >
-              <SelectItem key="male" value="male">
+              <SelectItem key="male" textValue="Male">
                 Male
               </SelectItem>
-              <SelectItem key="female" value="female">
+              <SelectItem key="female" textValue="Female">
                 Female
               </SelectItem>
             </Select>
@@ -180,7 +191,7 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
         />
 
         <Controller
-          name="occupation"
+          name="pep_occupation"
           control={control}
           render={({ field }) => (
             <Input
@@ -190,14 +201,14 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
               placeholder="Enter the occupation/identity"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.occupation}
-              errorMessage={errors.occupation?.message}
+              isInvalid={!!errors.pep_occupation}
+              errorMessage={errors.pep_occupation?.message}
             />
           )}
         />
 
         <Controller
-          name="organization"
+          name="pep_organization"
           control={control}
           render={({ field }) => (
             <Input
@@ -207,14 +218,14 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
               placeholder="Enter the organization"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.organization}
-              errorMessage={errors.organization?.message}
+              isInvalid={!!errors.pep_organization}
+              errorMessage={errors.pep_organization?.message}
             />
           )}
         />
 
         <Controller
-          name="note"
+          name="pep_note"
           control={control}
           render={({ field }) => (
             <Textarea
@@ -224,8 +235,8 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
               placeholder="Enter any additional note"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.note}
-              errorMessage={errors.note?.message}
+              isInvalid={!!errors.pep_note}
+              errorMessage={errors.pep_note?.message}
             />
           )}
         />
