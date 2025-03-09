@@ -25,6 +25,12 @@ axios.interceptors.request.use(async (config) => {
     if (session?.user) {
       config.headers.Authorization = `${session.user.token}`;
     }
+
+    // Remove leading slash from url to ensure baseURL is used
+    if (config.url?.startsWith("/")) {
+      config.url = config.url.slice(1);
+    }
+
     return config;
   } catch (error) {
     console.error("Error fetching session:", error);
