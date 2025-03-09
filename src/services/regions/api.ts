@@ -1,4 +1,4 @@
-import axios from "@/utils/axios";
+import { fetchClient } from "@/utils/fetch-client";
 import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
@@ -12,7 +12,7 @@ import type {
 
 export const regionService = {
   fetchAll(params?: Partial<RegionQueryParams>, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<RegionListResponse>(`${BASE_URL}/admin/all-regions`, {
         params: {
           page: params?.page || 1,
@@ -42,7 +42,7 @@ export const regionService = {
   },
 
   fetchById(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<RegionDetailResponse>(`${BASE_URL}/admin/region/${id}`)
       .then((res) => res.data.region);
 
@@ -51,9 +51,9 @@ export const regionService = {
       : clientApiCall(promise, {} as Region, false);
   },
 
-  create(region: RegionCreateInput, isServer = false) {
-    const promise = axios
-      .post<{ message: string }>(`${BASE_URL}/admin/add-region`, region)
+  create(data: RegionCreateInput, isServer = false) {
+    const promise = fetchClient
+      .post<{ message: string }>(`${BASE_URL}/admin/add-region`, data)
       .then((res) => res.data);
 
     return isServer
@@ -61,9 +61,9 @@ export const regionService = {
       : clientApiCall(promise, { message: "" });
   },
 
-  update(id: string, region: RegionUpdateInput, isServer = false) {
-    const promise = axios
-      .put<{ message: string }>(`${BASE_URL}/admin/edit-region/${id}`, region)
+  update(id: string, data: RegionUpdateInput, isServer = false) {
+    const promise = fetchClient
+      .put<{ message: string }>(`${BASE_URL}/admin/edit-region/${id}`, data)
       .then((res) => res.data);
 
     return isServer
@@ -72,7 +72,7 @@ export const regionService = {
   },
 
   delete(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .delete<{ message: string }>(`${BASE_URL}/admin/delete-region/${id}`)
       .then((res) => res.data);
 

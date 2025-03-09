@@ -1,4 +1,4 @@
-import axios from "@/utils/axios";
+import { fetchClient } from "@/utils/fetch-client";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   Event,
@@ -11,7 +11,7 @@ import { BASE_URL } from "@/utils/axios";
 
 export const eventService = {
   fetchAll(params: Partial<EventQueryParams> = {}, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<EventListResponse>(`${BASE_URL}/events`, {
         params: {
           page: params.page || 1,
@@ -39,7 +39,7 @@ export const eventService = {
   },
 
   fetchById(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<EventDetailResponse>(`${BASE_URL}/events/${id}`)
       .then((res) => res.data.event);
 
@@ -63,7 +63,7 @@ export const eventService = {
       }
     });
 
-    const promise = axios
+    const promise = fetchClient
       .post<{ message: string }>(`${BASE_URL}/events`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -91,7 +91,7 @@ export const eventService = {
       }
     });
 
-    const promise = axios
+    const promise = fetchClient
       .put<{ message: string }>(`${BASE_URL}/events/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -105,7 +105,7 @@ export const eventService = {
   },
 
   delete(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .delete<{ message: string }>(`${BASE_URL}/events/${id}`)
       .then((res) => res.data);
 

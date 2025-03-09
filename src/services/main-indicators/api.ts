@@ -1,4 +1,4 @@
-import axios from "@/utils/axios";
+import { fetchClient } from "@/utils/fetch-client";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import { BASE_URL } from "@/utils/axios";
 import type {
@@ -12,7 +12,7 @@ import type {
 
 export const mainIndicatorService = {
   fetchAll(params?: Partial<MainIndicatorQueryParams>, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<MainIndicatorListResponse>(`${BASE_URL}/admin/all-main-indicators`, {
         params: {
           page: params?.page || 1,
@@ -42,7 +42,7 @@ export const mainIndicatorService = {
   },
 
   fetchById(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<MainIndicatorDetailResponse>(
         `${BASE_URL}/admin/main-indicator/${id}`
       )
@@ -53,12 +53,9 @@ export const mainIndicatorService = {
       : clientApiCall(promise, {} as MainIndicatorDetail, false);
   },
 
-  create(mainIndicator: MainIndicatorCreateInput, isServer = false) {
-    const promise = axios
-      .post<{ message: string }>(
-        `${BASE_URL}/admin/add-main-indicator`,
-        mainIndicator
-      )
+  create(data: MainIndicatorCreateInput, isServer = false) {
+    const promise = fetchClient
+      .post<{ message: string }>(`${BASE_URL}/admin/add-main-indicator`, data)
       .then((res) => res.data);
 
     return isServer
@@ -66,15 +63,11 @@ export const mainIndicatorService = {
       : clientApiCall(promise, { message: "" });
   },
 
-  update(
-    id: string,
-    mainIndicator: MainIndicatorUpdateInput,
-    isServer = false
-  ) {
-    const promise = axios
+  update(id: string, data: MainIndicatorUpdateInput, isServer = false) {
+    const promise = fetchClient
       .put<{ message: string }>(
         `${BASE_URL}/admin/edit-main-indicator/${id}`,
-        mainIndicator
+        data
       )
       .then((res) => res.data);
 
@@ -84,7 +77,7 @@ export const mainIndicatorService = {
   },
 
   delete(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .delete<{ message: string }>(
         `${BASE_URL}/admin/delete-main-indicator/${id}`
       )

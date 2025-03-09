@@ -1,3 +1,4 @@
+import { fetchClient } from "@/utils/fetch-client";
 import { clientApiCall } from "@/utils/api-wrapper";
 import { signIn, signOut } from "next-auth/react";
 import type {
@@ -9,8 +10,6 @@ import type {
   ChangePasswordData,
 } from "./types";
 import { Department } from "../departments/types";
-import axios from "@/utils/axios";
-import { BASE_URL } from "@/utils/axios";
 import { AUTH_ERROR_MESSAGES, type AuthErrorCode } from "./errors";
 
 export const authService = {
@@ -35,36 +34,36 @@ export const authService = {
 
   signup(signupData: SignupData) {
     console.log(signupData);
-    const promise = axios
-      .post<AuthResponse>(`${BASE_URL}/auth/signup`, signupData)
+    const promise = fetchClient
+      .post<AuthResponse>("/auth/signup", signupData)
       .then((res) => res.data);
     return clientApiCall(promise, {} as AuthResponse);
   },
 
   forgotPassword(data: ForgotPasswordData) {
-    const promise = axios
-      .post(`${BASE_URL}/auth/forgot-password`, data)
+    const promise = fetchClient
+      .post("/auth/forgot-password", data)
       .then((res) => res.data);
     return clientApiCall(promise, {});
   },
 
   resetPassword(data: ResetPasswordData) {
-    const promise = axios
-      .post(`${BASE_URL}/auth/reset-password`, data)
+    const promise = fetchClient
+      .post("/auth/reset-password", data)
       .then((res) => res.data);
     return clientApiCall(promise, {});
   },
 
   changePassword(data: ChangePasswordData) {
-    const promise = axios
-      .post(`${BASE_URL}/auth/change-password`, data)
+    const promise = fetchClient
+      .post("/auth/change-password", data)
       .then((res) => res.data);
     return clientApiCall(promise, {});
   },
 
   getDepartment() {
-    const promise = axios
-      .get<Department[]>(`${BASE_URL}/get-departments`)
+    const promise = fetchClient
+      .get<Department[]>("/get-departments")
       .then((res) => res.data);
     return clientApiCall(promise, [], false);
   },

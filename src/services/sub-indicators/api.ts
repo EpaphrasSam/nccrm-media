@@ -1,4 +1,4 @@
-import axios from "@/utils/axios";
+import { fetchClient } from "@/utils/fetch-client";
 import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
@@ -12,7 +12,7 @@ import type {
 
 export const subIndicatorService = {
   fetchAll(params?: Partial<SubIndicatorQueryParams>, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<SubIndicatorListResponse>(`${BASE_URL}/admin/all-sub-indicators`, {
         params: {
           page: params?.page || 1,
@@ -42,7 +42,7 @@ export const subIndicatorService = {
   },
 
   fetchById(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .get<SubIndicatorDetailResponse>(`${BASE_URL}/admin/sub-indicator/${id}`)
       .then((res) => res.data.subIndicator);
 
@@ -51,12 +51,9 @@ export const subIndicatorService = {
       : clientApiCall(promise, {} as SubIndicatorDetail, false);
   },
 
-  create(subIndicator: SubIndicatorCreateInput, isServer = false) {
-    const promise = axios
-      .post<{ message: string }>(
-        `${BASE_URL}/admin/add-sub-indicator`,
-        subIndicator
-      )
+  create(data: SubIndicatorCreateInput, isServer = false) {
+    const promise = fetchClient
+      .post<{ message: string }>(`${BASE_URL}/admin/add-sub-indicator`, data)
       .then((res) => res.data);
 
     return isServer
@@ -64,11 +61,11 @@ export const subIndicatorService = {
       : clientApiCall(promise, { message: "" });
   },
 
-  update(id: string, subIndicator: SubIndicatorUpdateInput, isServer = false) {
-    const promise = axios
+  update(id: string, data: SubIndicatorUpdateInput, isServer = false) {
+    const promise = fetchClient
       .put<{ message: string }>(
         `${BASE_URL}/admin/edit-sub-indicator/${id}`,
-        subIndicator
+        data
       )
       .then((res) => res.data);
 
@@ -78,7 +75,7 @@ export const subIndicatorService = {
   },
 
   delete(id: string, isServer = false) {
-    const promise = axios
+    const promise = fetchClient
       .delete<{ message: string }>(
         `${BASE_URL}/admin/delete-sub-indicator/${id}`
       )

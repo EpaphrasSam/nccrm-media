@@ -11,6 +11,7 @@ const authUrl =
 
 // Create main instance with auth interceptors
 const axios = axiosBase.create({
+  baseURL: BASE_URL,
   withCredentials: false,
 });
 

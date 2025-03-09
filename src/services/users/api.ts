@@ -12,6 +12,7 @@ import type {
 
 export const userService = {
   fetchAll(params: UserQueryParams = {}, isServer = false) {
+    console.log("BASE_URL", BASE_URL);
     const promise = axios
       .get<UserListResponse>(`${BASE_URL}/admin/all-users`, {
         params: {
