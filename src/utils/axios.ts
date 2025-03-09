@@ -2,7 +2,11 @@ import axiosBase from "axios";
 
 export const BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
-const authUrl = process.env.AUTH_URL || process.env.NEXT_PUBLIC_AUTH_URL;
+// Ensure we have the full URL for auth
+const authUrl =
+  process.env.AUTH_URL ||
+  process.env.NEXT_PUBLIC_AUTH_URL ||
+  "http://localhost:3000";
 
 // Create main instance with auth interceptors
 const axios = axiosBase.create({
@@ -12,15 +16,19 @@ const axios = axiosBase.create({
 
 // Use dynamic imports to break circular dependency
 axios.interceptors.request.use(async (config) => {
-  // Use absolute URL for session fetch
-  const session = await fetch(`${authUrl}/api/auth/session`).then((res) =>
-    res.json()
-  );
+  try {
+    // Ensure we use an absolute URL for session fetch
+    const sessionUrl = new URL("/api/auth/session", authUrl).toString();
+    const session = await fetch(sessionUrl).then((res) => res.json());
 
-  if (session?.user) {
-    config.headers.Authorization = `${session.user.token}`;
+    if (session?.user) {
+      config.headers.Authorization = `${session.user.token}`;
+    }
+    return config;
+  } catch (error) {
+    console.error("Error fetching session:", error);
+    return config;
   }
-  return config;
 });
 
 // axios.interceptors.response.use(
