@@ -1,4 +1,5 @@
 import axios from "@/utils/axios";
+import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   SubIndicatorDetail,
@@ -12,7 +13,7 @@ import type {
 export const subIndicatorService = {
   fetchAll(params?: Partial<SubIndicatorQueryParams>, isServer = false) {
     const promise = axios
-      .get<SubIndicatorListResponse>("/admin/all-sub-indicators", {
+      .get<SubIndicatorListResponse>(`${BASE_URL}/admin/all-sub-indicators`, {
         params: {
           page: params?.page || 1,
           limit: params?.limit || 20,
@@ -42,7 +43,7 @@ export const subIndicatorService = {
 
   fetchById(id: string, isServer = false) {
     const promise = axios
-      .get<SubIndicatorDetailResponse>(`/admin/sub-indicator/${id}`)
+      .get<SubIndicatorDetailResponse>(`${BASE_URL}/admin/sub-indicator/${id}`)
       .then((res) => res.data.subIndicator);
 
     return isServer
@@ -52,7 +53,10 @@ export const subIndicatorService = {
 
   create(subIndicator: SubIndicatorCreateInput, isServer = false) {
     const promise = axios
-      .post<{ message: string }>("/admin/add-sub-indicator", subIndicator)
+      .post<{ message: string }>(
+        `${BASE_URL}/admin/add-sub-indicator`,
+        subIndicator
+      )
       .then((res) => res.data);
 
     return isServer
@@ -62,7 +66,10 @@ export const subIndicatorService = {
 
   update(id: string, subIndicator: SubIndicatorUpdateInput, isServer = false) {
     const promise = axios
-      .put<{ message: string }>(`/admin/edit-sub-indicator/${id}`, subIndicator)
+      .put<{ message: string }>(
+        `${BASE_URL}/admin/edit-sub-indicator/${id}`,
+        subIndicator
+      )
       .then((res) => res.data);
 
     return isServer
@@ -72,7 +79,9 @@ export const subIndicatorService = {
 
   delete(id: string, isServer = false) {
     const promise = axios
-      .delete<{ message: string }>(`/admin/delete-sub-indicator/${id}`)
+      .delete<{ message: string }>(
+        `${BASE_URL}/admin/delete-sub-indicator/${id}`
+      )
       .then((res) => res.data);
 
     return isServer

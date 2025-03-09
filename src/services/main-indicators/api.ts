@@ -1,5 +1,6 @@
 import axios from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
+import { BASE_URL } from "@/utils/axios";
 import type {
   MainIndicatorDetail,
   MainIndicatorCreateInput,
@@ -12,7 +13,7 @@ import type {
 export const mainIndicatorService = {
   fetchAll(params?: Partial<MainIndicatorQueryParams>, isServer = false) {
     const promise = axios
-      .get<MainIndicatorListResponse>("/admin/all-main-indicators", {
+      .get<MainIndicatorListResponse>(`${BASE_URL}/admin/all-main-indicators`, {
         params: {
           page: params?.page || 1,
           limit: params?.limit || 20,
@@ -42,7 +43,9 @@ export const mainIndicatorService = {
 
   fetchById(id: string, isServer = false) {
     const promise = axios
-      .get<MainIndicatorDetailResponse>(`/admin/main-indicator/${id}`)
+      .get<MainIndicatorDetailResponse>(
+        `${BASE_URL}/admin/main-indicator/${id}`
+      )
       .then((res) => res.data.mainIndicator);
 
     return isServer
@@ -52,7 +55,10 @@ export const mainIndicatorService = {
 
   create(mainIndicator: MainIndicatorCreateInput, isServer = false) {
     const promise = axios
-      .post<{ message: string }>("/admin/add-main-indicator", mainIndicator)
+      .post<{ message: string }>(
+        `${BASE_URL}/admin/add-main-indicator`,
+        mainIndicator
+      )
       .then((res) => res.data);
 
     return isServer
@@ -67,7 +73,7 @@ export const mainIndicatorService = {
   ) {
     const promise = axios
       .put<{ message: string }>(
-        `/admin/edit-main-indicator/${id}`,
+        `${BASE_URL}/admin/edit-main-indicator/${id}`,
         mainIndicator
       )
       .then((res) => res.data);
@@ -79,7 +85,9 @@ export const mainIndicatorService = {
 
   delete(id: string, isServer = false) {
     const promise = axios
-      .delete<{ message: string }>(`/admin/delete-main-indicator/${id}`)
+      .delete<{ message: string }>(
+        `${BASE_URL}/admin/delete-main-indicator/${id}`
+      )
       .then((res) => res.data);
 
     return isServer

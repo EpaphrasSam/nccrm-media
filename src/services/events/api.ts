@@ -7,11 +7,12 @@ import type {
   EventCreateInput,
   EventQueryParams,
 } from "./types";
+import { BASE_URL } from "@/utils/axios";
 
 export const eventService = {
   fetchAll(params: Partial<EventQueryParams> = {}, isServer = false) {
     const promise = axios
-      .get<EventListResponse>("/get-events", {
+      .get<EventListResponse>(`${BASE_URL}/events`, {
         params: {
           page: params.page || 1,
           limit: params.limit || 10,
@@ -39,7 +40,7 @@ export const eventService = {
 
   fetchById(id: string, isServer = false) {
     const promise = axios
-      .get<EventDetailResponse>(`/get-event/${id}`)
+      .get<EventDetailResponse>(`${BASE_URL}/events/${id}`)
       .then((res) => res.data.event);
 
     return isServer
@@ -63,7 +64,7 @@ export const eventService = {
     });
 
     const promise = axios
-      .post<{ message: string }>("/add-event", formData, {
+      .post<{ message: string }>(`${BASE_URL}/events`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -91,7 +92,7 @@ export const eventService = {
     });
 
     const promise = axios
-      .put<{ message: string }>(`/update-event/${id}`, formData, {
+      .put<{ message: string }>(`${BASE_URL}/events/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -105,7 +106,7 @@ export const eventService = {
 
   delete(id: string, isServer = false) {
     const promise = axios
-      .delete<{ message: string }>(`/delete-event/${id}`)
+      .delete<{ message: string }>(`${BASE_URL}/events/${id}`)
       .then((res) => res.data);
 
     return isServer

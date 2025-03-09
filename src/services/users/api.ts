@@ -1,4 +1,5 @@
 import axios from "@/utils/axios";
+import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   UserListResponse,
@@ -12,7 +13,7 @@ import type {
 export const userService = {
   fetchAll(params: UserQueryParams = {}, isServer = false) {
     const promise = axios
-      .get<UserListResponse>("/admin/all-users", {
+      .get<UserListResponse>(`${BASE_URL}/admin/all-users`, {
         params: {
           page: params.page || 1,
           limit: params.limit || 10,
@@ -44,7 +45,7 @@ export const userService = {
 
   fetchById(id: string, isServer = false) {
     const promise = axios
-      .get<UserDetailResponse>(`/admin/user/${id}`)
+      .get<UserDetailResponse>(`${BASE_URL}/admin/user/${id}`)
       .then((res) => res.data.user);
 
     return isServer
@@ -54,7 +55,7 @@ export const userService = {
 
   create(userData: UserCreateInput, isServer = false) {
     const promise = axios
-      .post<{ message: string }>("/admin/add-user", userData)
+      .post<{ message: string }>(`${BASE_URL}/admin/add-user`, userData)
       .then((res) => res.data);
 
     return isServer
@@ -79,16 +80,20 @@ export const userService = {
       });
       console.log("Users Data", userData);
       promise = axios
-        .put<{ message: string }>(`/admin/edit-user/${id}`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
+        .put<{ message: string }>(
+          `${BASE_URL}/admin/edit-user/${id}`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        )
         .then((res) => res.data);
     } else {
       // If no image, send JSON
       promise = axios
-        .put<{ message: string }>(`/admin/edit-user/${id}`, userData)
+        .put<{ message: string }>(`${BASE_URL}/admin/edit-user/${id}`, userData)
         .then((res) => res.data);
     }
 
@@ -99,7 +104,7 @@ export const userService = {
 
   delete(id: string, isServer = false) {
     const promise = axios
-      .delete<{ message: string }>(`/admin/delete-user/${id}`)
+      .delete<{ message: string }>(`${BASE_URL}/admin/delete-user/${id}`)
       .then((res) => res.data);
 
     return isServer
@@ -109,7 +114,7 @@ export const userService = {
 
   validate(id: string, status: UserValidateInput, isServer = false) {
     const promise = axios
-      .put<{ message: string }>(`/admin/validate-user/${id}`, status)
+      .put<{ message: string }>(`${BASE_URL}/admin/validate-user/${id}`, status)
       .then((res) => res.data);
 
     return isServer

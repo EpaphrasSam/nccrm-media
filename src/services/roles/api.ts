@@ -1,4 +1,5 @@
 import axios from "@/utils/axios";
+import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   Role,
@@ -12,7 +13,7 @@ import type {
 export const roleService = {
   fetchAll: async (params?: Partial<RoleQueryParams>, isServer = false) => {
     const promise = axios
-      .get<RoleListResponse>("/admin/all-roles", {
+      .get<RoleListResponse>(`${BASE_URL}/admin/all-roles`, {
         params: {
           page: params?.page || 1,
           limit: params?.limit || 10,
@@ -42,7 +43,7 @@ export const roleService = {
 
   fetchById: async (id: string, isServer = false) => {
     const promise = axios
-      .get<RoleDetailResponse>(`/admin/role/${id}`)
+      .get<RoleDetailResponse>(`${BASE_URL}/admin/role/${id}`)
       .then((res) => res.data.role);
 
     return isServer
@@ -52,7 +53,7 @@ export const roleService = {
 
   create: async (data: RoleCreateInput, isServer = false) => {
     const promise = axios
-      .post<{ message: string; role: Role }>("/admin/add-role", data)
+      .post<{ message: string; role: Role }>(`${BASE_URL}/admin/add-role`, data)
       .then((res) => res.data);
 
     return isServer
@@ -62,7 +63,10 @@ export const roleService = {
 
   update: async (id: string, data: RoleUpdateInput, isServer = false) => {
     const promise = axios
-      .put<{ message: string; role: Role }>(`/admin/edit-role/${id}`, data)
+      .put<{ message: string; role: Role }>(
+        `${BASE_URL}/admin/edit-role/${id}`,
+        data
+      )
       .then((res) => res.data);
 
     return isServer
@@ -72,7 +76,7 @@ export const roleService = {
 
   delete: async (id: string, isServer = false) => {
     const promise = axios
-      .delete<{ message: string }>(`/admin/delete-role/${id}`)
+      .delete<{ message: string }>(`${BASE_URL}/admin/delete-role/${id}`)
       .then((res) => res.data);
 
     return isServer

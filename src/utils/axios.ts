@@ -11,7 +11,6 @@ const authUrl =
 
 // Create main instance with auth interceptors
 const axios = axiosBase.create({
-  baseURL: BASE_URL,
   withCredentials: false,
 });
 
@@ -24,11 +23,6 @@ axios.interceptors.request.use(async (config) => {
 
     if (session?.user) {
       config.headers.Authorization = `${session.user.token}`;
-    }
-
-    // Force absolute URLs like fetch
-    if (!config.url?.startsWith("http")) {
-      config.url = `${BASE_URL}${config.url}`; // Force absolute URL
     }
 
     return config;

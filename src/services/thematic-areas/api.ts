@@ -1,4 +1,5 @@
 import axios from "@/utils/axios";
+import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   ThematicArea,
@@ -10,12 +11,13 @@ import type {
 } from "./types";
 
 export const thematicAreaService = {
-  fetchAll(params: ThematicAreaQueryParams = {}, isServer = false) {
+  fetchAll(params?: Partial<ThematicAreaQueryParams>, isServer = false) {
     const promise = axios
-      .get<ThematicAreaListResponse>("/admin/all-thematic-areas", {
+      .get<ThematicAreaListResponse>(`${BASE_URL}/admin/all-thematic-areas`, {
         params: {
-          page: params.page || 1,
-          limit: params.limit || 20,
+          page: params?.page || 1,
+          limit: params?.limit || 20,
+          ...(params?.search && { search: params.search }),
         },
       })
       .then((res) => res.data);
@@ -24,16 +26,16 @@ export const thematicAreaService = {
       ? serverApiCall(promise, {
           message: "",
           thematicAreas: [],
-          totalPages: 0,
           totalThematicAreas: 0,
+          totalPages: 0,
         })
       : clientApiCall(
           promise,
           {
             message: "",
             thematicAreas: [],
-            totalPages: 0,
             totalThematicAreas: 0,
+            totalPages: 0,
           },
           false
         );
@@ -41,7 +43,7 @@ export const thematicAreaService = {
 
   fetchById(id: string, isServer = false) {
     const promise = axios
-      .get<ThematicAreaDetailResponse>(`/admin/thematic-area/${id}`)
+      .get<ThematicAreaDetailResponse>(`${BASE_URL}/admin/thematic-area/${id}`)
       .then((res) => res.data.thematicArea);
 
     return isServer
@@ -51,7 +53,10 @@ export const thematicAreaService = {
 
   create(thematicArea: ThematicAreaCreateInput, isServer = false) {
     const promise = axios
-      .post<{ message: string }>("/admin/add-thematic-area", thematicArea)
+      .post<{ message: string }>(
+        `${BASE_URL}/admin/add-thematic-area`,
+        thematicArea
+      )
       .then((res) => res.data);
 
     return isServer
@@ -61,7 +66,10 @@ export const thematicAreaService = {
 
   update(id: string, thematicArea: ThematicAreaUpdateInput, isServer = false) {
     const promise = axios
-      .put<{ message: string }>(`/admin/edit-thematic-area/${id}`, thematicArea)
+      .put<{ message: string }>(
+        `${BASE_URL}/admin/edit-thematic-area/${id}`,
+        thematicArea
+      )
       .then((res) => res.data);
 
     return isServer
@@ -71,7 +79,9 @@ export const thematicAreaService = {
 
   delete(id: string, isServer = false) {
     const promise = axios
-      .delete<{ message: string }>(`/admin/delete-thematic-area/${id}`)
+      .delete<{ message: string }>(
+        `${BASE_URL}/admin/delete-thematic-area/${id}`
+      )
       .then((res) => res.data);
 
     return isServer

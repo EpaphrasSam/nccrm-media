@@ -10,6 +10,7 @@ import type {
 } from "./types";
 import { Department } from "../departments/types";
 import axios from "@/utils/axios";
+import { BASE_URL } from "@/utils/axios";
 import { AUTH_ERROR_MESSAGES, type AuthErrorCode } from "./errors";
 
 export const authService = {
@@ -35,35 +36,35 @@ export const authService = {
   signup(signupData: SignupData) {
     console.log(signupData);
     const promise = axios
-      .post<AuthResponse>("/auth/signup", signupData)
+      .post<AuthResponse>(`${BASE_URL}/auth/signup`, signupData)
       .then((res) => res.data);
     return clientApiCall(promise, {} as AuthResponse);
   },
 
   forgotPassword(data: ForgotPasswordData) {
     const promise = axios
-      .post("/auth/forgot-password", data)
+      .post(`${BASE_URL}/auth/forgot-password`, data)
       .then((res) => res.data);
     return clientApiCall(promise, {});
   },
 
   resetPassword(data: ResetPasswordData) {
     const promise = axios
-      .post("/auth/reset-password", data)
+      .post(`${BASE_URL}/auth/reset-password`, data)
       .then((res) => res.data);
     return clientApiCall(promise, {});
   },
 
   changePassword(data: ChangePasswordData) {
     const promise = axios
-      .post("/auth/change-password", data)
+      .post(`${BASE_URL}/auth/change-password`, data)
       .then((res) => res.data);
     return clientApiCall(promise, {});
   },
 
   getDepartment() {
     const promise = axios
-      .get<Department[]>("/get-departments")
+      .get<Department[]>(`${BASE_URL}/get-departments`)
       .then((res) => res.data);
     return clientApiCall(promise, [], false);
   },
