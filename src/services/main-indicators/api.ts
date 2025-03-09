@@ -1,6 +1,5 @@
 import { fetchClient } from "@/utils/fetch-client";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
-import { BASE_URL } from "@/utils/axios";
 import type {
   MainIndicatorDetail,
   MainIndicatorCreateInput,
@@ -13,7 +12,7 @@ import type {
 export const mainIndicatorService = {
   fetchAll(params?: Partial<MainIndicatorQueryParams>, isServer = false) {
     const promise = fetchClient
-      .get<MainIndicatorListResponse>(`${BASE_URL}/admin/all-main-indicators`, {
+      .get<MainIndicatorListResponse>("/admin/all-main-indicators", {
         params: {
           page: params?.page || 1,
           limit: params?.limit || 20,
@@ -43,9 +42,7 @@ export const mainIndicatorService = {
 
   fetchById(id: string, isServer = false) {
     const promise = fetchClient
-      .get<MainIndicatorDetailResponse>(
-        `${BASE_URL}/admin/main-indicator/${id}`
-      )
+      .get<MainIndicatorDetailResponse>(`/admin/main-indicator/${id}`)
       .then((res) => res.data.mainIndicator);
 
     return isServer
@@ -55,7 +52,7 @@ export const mainIndicatorService = {
 
   create(data: MainIndicatorCreateInput, isServer = false) {
     const promise = fetchClient
-      .post<{ message: string }>(`${BASE_URL}/admin/add-main-indicator`, data)
+      .post<{ message: string }>("/admin/add-main-indicator", data)
       .then((res) => res.data);
 
     return isServer
@@ -65,10 +62,7 @@ export const mainIndicatorService = {
 
   update(id: string, data: MainIndicatorUpdateInput, isServer = false) {
     const promise = fetchClient
-      .put<{ message: string }>(
-        `${BASE_URL}/admin/edit-main-indicator/${id}`,
-        data
-      )
+      .put<{ message: string }>(`/admin/edit-main-indicator/${id}`, data)
       .then((res) => res.data);
 
     return isServer
@@ -78,9 +72,7 @@ export const mainIndicatorService = {
 
   delete(id: string, isServer = false) {
     const promise = fetchClient
-      .delete<{ message: string }>(
-        `${BASE_URL}/admin/delete-main-indicator/${id}`
-      )
+      .delete<{ message: string }>(`/admin/delete-main-indicator/${id}`)
       .then((res) => res.data);
 
     return isServer

@@ -1,5 +1,4 @@
 import { fetchClient } from "@/utils/fetch-client";
-import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   SubIndicatorDetail,
@@ -13,7 +12,7 @@ import type {
 export const subIndicatorService = {
   fetchAll(params?: Partial<SubIndicatorQueryParams>, isServer = false) {
     const promise = fetchClient
-      .get<SubIndicatorListResponse>(`${BASE_URL}/admin/all-sub-indicators`, {
+      .get<SubIndicatorListResponse>("/admin/all-sub-indicators", {
         params: {
           page: params?.page || 1,
           limit: params?.limit || 20,
@@ -43,7 +42,7 @@ export const subIndicatorService = {
 
   fetchById(id: string, isServer = false) {
     const promise = fetchClient
-      .get<SubIndicatorDetailResponse>(`${BASE_URL}/admin/sub-indicator/${id}`)
+      .get<SubIndicatorDetailResponse>(`/admin/sub-indicator/${id}`)
       .then((res) => res.data.subIndicator);
 
     return isServer
@@ -53,7 +52,7 @@ export const subIndicatorService = {
 
   create(data: SubIndicatorCreateInput, isServer = false) {
     const promise = fetchClient
-      .post<{ message: string }>(`${BASE_URL}/admin/add-sub-indicator`, data)
+      .post<{ message: string }>("/admin/add-sub-indicator", data)
       .then((res) => res.data);
 
     return isServer
@@ -63,10 +62,7 @@ export const subIndicatorService = {
 
   update(id: string, data: SubIndicatorUpdateInput, isServer = false) {
     const promise = fetchClient
-      .put<{ message: string }>(
-        `${BASE_URL}/admin/edit-sub-indicator/${id}`,
-        data
-      )
+      .put<{ message: string }>(`/admin/edit-sub-indicator/${id}`, data)
       .then((res) => res.data);
 
     return isServer
@@ -76,9 +72,7 @@ export const subIndicatorService = {
 
   delete(id: string, isServer = false) {
     const promise = fetchClient
-      .delete<{ message: string }>(
-        `${BASE_URL}/admin/delete-sub-indicator/${id}`
-      )
+      .delete<{ message: string }>(`/admin/delete-sub-indicator/${id}`)
       .then((res) => res.data);
 
     return isServer

@@ -1,5 +1,4 @@
 import { fetchClient } from "@/utils/fetch-client";
-import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   Region,
@@ -13,7 +12,7 @@ import type {
 export const regionService = {
   fetchAll(params?: Partial<RegionQueryParams>, isServer = false) {
     const promise = fetchClient
-      .get<RegionListResponse>(`${BASE_URL}/admin/all-regions`, {
+      .get<RegionListResponse>("/admin/all-regions", {
         params: {
           page: params?.page || 1,
           limit: params?.limit || 20,
@@ -43,7 +42,7 @@ export const regionService = {
 
   fetchById(id: string, isServer = false) {
     const promise = fetchClient
-      .get<RegionDetailResponse>(`${BASE_URL}/admin/region/${id}`)
+      .get<RegionDetailResponse>(`/admin/region/${id}`)
       .then((res) => res.data.region);
 
     return isServer
@@ -53,7 +52,7 @@ export const regionService = {
 
   create(data: RegionCreateInput, isServer = false) {
     const promise = fetchClient
-      .post<{ message: string }>(`${BASE_URL}/admin/add-region`, data)
+      .post<{ message: string }>("/admin/add-region", data)
       .then((res) => res.data);
 
     return isServer
@@ -63,7 +62,7 @@ export const regionService = {
 
   update(id: string, data: RegionUpdateInput, isServer = false) {
     const promise = fetchClient
-      .put<{ message: string }>(`${BASE_URL}/admin/edit-region/${id}`, data)
+      .put<{ message: string }>(`/admin/edit-region/${id}`, data)
       .then((res) => res.data);
 
     return isServer
@@ -73,7 +72,7 @@ export const regionService = {
 
   delete(id: string, isServer = false) {
     const promise = fetchClient
-      .delete<{ message: string }>(`${BASE_URL}/admin/delete-region/${id}`)
+      .delete<{ message: string }>(`/admin/delete-region/${id}`)
       .then((res) => res.data);
 
     return isServer

@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
+export const BASE_URL =
+  process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://api:3035";
 const authUrl =
-  process.env.NEXT_PUBLIC_AUTH_URL ||
   process.env.AUTH_URL ||
+  process.env.NEXT_PUBLIC_AUTH_URL ||
   "http://localhost:3000";
+
+console.log("BASE_URL", BASE_URL);
+console.log("authUrl", authUrl);
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;

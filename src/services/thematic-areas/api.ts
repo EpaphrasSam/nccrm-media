@@ -1,5 +1,4 @@
 import { fetchClient } from "@/utils/fetch-client";
-import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   ThematicArea,
@@ -13,7 +12,7 @@ import type {
 export const thematicAreaService = {
   fetchAll(params?: Partial<ThematicAreaQueryParams>, isServer = false) {
     const promise = fetchClient
-      .get<ThematicAreaListResponse>(`${BASE_URL}/admin/all-thematic-areas`, {
+      .get<ThematicAreaListResponse>("/admin/all-thematic-areas", {
         params: {
           page: params?.page || 1,
           limit: params?.limit || 20,
@@ -43,7 +42,7 @@ export const thematicAreaService = {
 
   fetchById(id: string, isServer = false) {
     const promise = fetchClient
-      .get<ThematicAreaDetailResponse>(`${BASE_URL}/admin/thematic-area/${id}`)
+      .get<ThematicAreaDetailResponse>(`/admin/thematic-area/${id}`)
       .then((res) => res.data.thematicArea);
 
     return isServer
@@ -53,7 +52,7 @@ export const thematicAreaService = {
 
   create(data: ThematicAreaCreateInput, isServer = false) {
     const promise = fetchClient
-      .post<{ message: string }>(`${BASE_URL}/admin/add-thematic-area`, data)
+      .post<{ message: string }>("/admin/add-thematic-area", data)
       .then((res) => res.data);
 
     return isServer
@@ -63,10 +62,7 @@ export const thematicAreaService = {
 
   update(id: string, data: ThematicAreaUpdateInput, isServer = false) {
     const promise = fetchClient
-      .put<{ message: string }>(
-        `${BASE_URL}/admin/edit-thematic-area/${id}`,
-        data
-      )
+      .put<{ message: string }>(`/admin/edit-thematic-area/${id}`, data)
       .then((res) => res.data);
 
     return isServer
@@ -76,9 +72,7 @@ export const thematicAreaService = {
 
   delete(id: string, isServer = false) {
     const promise = fetchClient
-      .delete<{ message: string }>(
-        `${BASE_URL}/admin/delete-thematic-area/${id}`
-      )
+      .delete<{ message: string }>(`/admin/delete-thematic-area/${id}`)
       .then((res) => res.data);
 
     return isServer

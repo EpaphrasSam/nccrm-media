@@ -1,5 +1,4 @@
 import { fetchClient } from "@/utils/fetch-client";
-import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   Department,
@@ -13,7 +12,7 @@ import type {
 export const departmentService = {
   fetchAll(params: DepartmentQueryParams = {}, isServer = false) {
     const promise = fetchClient
-      .get<DepartmentListResponse>(`${BASE_URL}/admin/all-departments`, {
+      .get<DepartmentListResponse>("/admin/all-departments", {
         params: {
           page: params.page || 1,
           limit: params.limit || 20,
@@ -43,7 +42,7 @@ export const departmentService = {
 
   fetchById(id: string, isServer = false) {
     const promise = fetchClient
-      .get<DepartmentDetailResponse>(`${BASE_URL}/admin/department/${id}`)
+      .get<DepartmentDetailResponse>(`/admin/department/${id}`)
       .then((res) => res.data.department);
 
     return isServer
@@ -53,7 +52,7 @@ export const departmentService = {
 
   create(data: DepartmentCreateInput, isServer = false) {
     const promise = fetchClient
-      .post<{ message: string }>(`${BASE_URL}/admin/add-department`, data)
+      .post<{ message: string }>("/admin/add-department", data)
       .then((res) => res.data);
 
     return isServer
@@ -63,7 +62,7 @@ export const departmentService = {
 
   update(id: string, data: DepartmentUpdateInput, isServer = false) {
     const promise = fetchClient
-      .put<{ message: string }>(`${BASE_URL}/admin/edit-department/${id}`, data)
+      .put<{ message: string }>(`/admin/edit-department/${id}`, data)
       .then((res) => res.data);
 
     return isServer
@@ -73,7 +72,7 @@ export const departmentService = {
 
   delete(id: string, isServer = false) {
     const promise = fetchClient
-      .delete<{ message: string }>(`${BASE_URL}/admin/delete-department/${id}`)
+      .delete<{ message: string }>(`/admin/delete-department/${id}`)
       .then((res) => res.data);
 
     return isServer

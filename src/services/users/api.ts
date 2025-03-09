@@ -1,5 +1,3 @@
-import axios from "@/utils/axios";
-import { BASE_URL } from "@/utils/axios";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   UserListResponse,
@@ -9,12 +7,12 @@ import type {
   UserValidateInput,
   UserQueryParams,
 } from "./types";
+import { fetchClient } from "@/utils/fetch-client";
 
 export const userService = {
   fetchAll(params: UserQueryParams = {}, isServer = false) {
-    console.log("BASE_URL", BASE_URL);
-    const promise = axios
-      .get<UserListResponse>(`${BASE_URL}/admin/all-users`, {
+    const promise = fetchClient
+      .get<UserListResponse>(`/admin/all-users`, {
         params: {
           page: params.page || 1,
           limit: params.limit || 10,
@@ -45,8 +43,8 @@ export const userService = {
   },
 
   fetchById(id: string, isServer = false) {
-    const promise = axios
-      .get<UserDetailResponse>(`${BASE_URL}/admin/user/${id}`)
+    const promise = fetchClient
+      .get<UserDetailResponse>(`/admin/user/${id}`)
       .then((res) => res.data.user);
 
     return isServer
@@ -55,8 +53,8 @@ export const userService = {
   },
 
   create(userData: UserCreateInput, isServer = false) {
-    const promise = axios
-      .post<{ message: string }>(`${BASE_URL}/admin/add-user`, userData)
+    const promise = fetchClient
+      .post<{ message: string }>(`/admin/add-user`, userData)
       .then((res) => res.data);
 
     return isServer
@@ -80,21 +78,17 @@ export const userService = {
         }
       });
       console.log("Users Data", userData);
-      promise = axios
-        .put<{ message: string }>(
-          `${BASE_URL}/admin/edit-user/${id}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        )
+      promise = fetchClient
+        .put<{ message: string }>(`/admin/edit-user/${id}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
         .then((res) => res.data);
     } else {
       // If no image, send JSON
-      promise = axios
-        .put<{ message: string }>(`${BASE_URL}/admin/edit-user/${id}`, userData)
+      promise = fetchClient
+        .put<{ message: string }>(`/admin/edit-user/${id}`, userData)
         .then((res) => res.data);
     }
 
@@ -104,8 +98,8 @@ export const userService = {
   },
 
   delete(id: string, isServer = false) {
-    const promise = axios
-      .delete<{ message: string }>(`${BASE_URL}/admin/delete-user/${id}`)
+    const promise = fetchClient
+      .delete<{ message: string }>(`/admin/delete-user/${id}`)
       .then((res) => res.data);
 
     return isServer
@@ -114,8 +108,8 @@ export const userService = {
   },
 
   validate(id: string, status: UserValidateInput, isServer = false) {
-    const promise = axios
-      .put<{ message: string }>(`${BASE_URL}/admin/validate-user/${id}`, status)
+    const promise = fetchClient
+      .put<{ message: string }>(`/admin/validate-user/${id}`, status)
       .then((res) => res.data);
 
     return isServer
