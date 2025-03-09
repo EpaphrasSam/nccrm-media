@@ -26,9 +26,9 @@ axios.interceptors.request.use(async (config) => {
       config.headers.Authorization = `${session.user.token}`;
     }
 
-    // Remove leading slash from url to ensure baseURL is used
-    if (config.url?.startsWith("/")) {
-      config.url = config.url.slice(1);
+    // Force absolute URLs like fetch
+    if (!config.url?.startsWith("http")) {
+      config.url = `${BASE_URL}${config.url}`; // Force absolute URL
     }
 
     return config;
