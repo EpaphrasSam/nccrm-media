@@ -6,6 +6,7 @@ import type {
   RoleFunctions,
 } from "@/services/auth/types";
 import { AuthErrorClasses } from "@/services/auth/errors";
+import { fetchClient } from "@/utils/fetch-client";
 
 interface LoginResponse {
   user: {
@@ -29,35 +30,17 @@ interface LoginResponse {
   token: string;
 }
 
-interface LoginError extends Error {
-  response?: { status: number };
-}
-
 const authRoutes = ["/login", "/signup", "/forgot-password"];
-
-const BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
-
-console.log("AUTH BASE_URL", BASE_URL);
 
 async function loginWithCredentials(
   credentials: LoginCredentials
 ): Promise<AuthResponse> {
   try {
-    const response = await fetch(`${BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(credentials),
-    });
-
-    if (!response.ok) {
-      const error: LoginError = new Error("Login failed");
-      error.response = { status: response.status };
-      throw error;
-    }
-
-    const { user, token } = (await response.json()) as LoginResponse;
+    const response = await fetchClient.post<LoginResponse>(
+      "/auth/login",
+      credentials
+    );
+    const { user, token } = response.data;
 
     // Role check - uncomment when ready to enforce role requirement
     /* if (!user.role) {
