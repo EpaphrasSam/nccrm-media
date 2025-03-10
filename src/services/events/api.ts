@@ -11,7 +11,7 @@ import type {
 export const eventService = {
   fetchAll(params: Partial<EventQueryParams> = {}, isServer = false) {
     const promise = fetchClient
-      .get<EventListResponse>(`/events`, {
+      .get<EventListResponse>("/get-events", {
         params: {
           page: params.page || 1,
           limit: params.limit || 10,
@@ -39,7 +39,7 @@ export const eventService = {
 
   fetchById(id: string, isServer = false) {
     const promise = fetchClient
-      .get<EventDetailResponse>(`/events/${id}`)
+      .get<EventDetailResponse>(`/get-event/${id}`)
       .then((res) => res.data.event);
 
     return isServer
@@ -50,6 +50,7 @@ export const eventService = {
   create(eventData: EventCreateInput, isServer = false) {
     // Create FormData for file upload
     const formData = new FormData();
+
     Object.entries(eventData).forEach(([key, value]) => {
       if (value !== undefined) {
         if (key === "docs" && Array.isArray(value)) {
@@ -63,11 +64,7 @@ export const eventService = {
     });
 
     const promise = fetchClient
-      .post<{ message: string }>(`/events`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
+      .post<{ message: string }>("/add-event", formData)
       .then((res) => res.data);
 
     return isServer
@@ -91,11 +88,7 @@ export const eventService = {
     });
 
     const promise = fetchClient
-      .put<{ message: string }>(`/events/${id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
+      .put<{ message: string }>(`/edit-event/${id}`, formData)
       .then((res) => res.data);
 
     return isServer
@@ -105,7 +98,7 @@ export const eventService = {
 
   delete(id: string, isServer = false) {
     const promise = fetchClient
-      .delete<{ message: string }>(`/events/${id}`)
+      .delete<{ message: string }>(`/delete-event/${id}`)
       .then((res) => res.data);
 
     return isServer

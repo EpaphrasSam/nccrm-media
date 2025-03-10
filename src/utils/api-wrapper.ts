@@ -24,8 +24,6 @@ export async function clientApiCall<T>(
   try {
     let result = await promise;
 
-    console.log(result);
-
     // Handle message and data stripping
     if (result && typeof result === "object") {
       const { message, ...rest } = result as any;
@@ -44,6 +42,7 @@ export async function clientApiCall<T>(
 
     return result;
   } catch (error: any) {
+    console.log("ERROR", error.response.data);
     const message =
       error.response?.data?.error?.message ||
       error.message ||
