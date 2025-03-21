@@ -9,7 +9,6 @@ import {
   TableRow,
   TableCell,
   Button,
-  Pagination,
   Skeleton,
 } from "@heroui/react";
 import { FiTrash2 } from "react-icons/fi";
@@ -17,6 +16,7 @@ import { useDepartmentsStore } from "@/store/departments";
 import { buttonStyles, tableStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import { FaRegEdit } from "react-icons/fa";
+import { Pagination } from "@/components/common/navigation/Pagination";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -155,15 +155,12 @@ export function DepartmentsTable() {
         </TableBody>
       </Table>
 
-      {!isTableLoading && totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination
-            total={totalPages}
-            page={filters.page || 1}
-            onChange={handlePageChange}
-          />
-        </div>
-      )}
+      <Pagination
+        total={totalPages}
+        currentPage={filters.page || 1}
+        onPageChange={handlePageChange}
+        pageSize={filters.limit || 10}
+      />
 
       <DeleteConfirmationModal
         isOpen={deleteModalOpen}

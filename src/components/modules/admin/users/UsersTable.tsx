@@ -10,7 +10,6 @@ import {
   TableCell,
   Skeleton,
   Button,
-  Pagination,
   Avatar,
   Dropdown,
   DropdownTrigger,
@@ -23,6 +22,7 @@ import { useUsersStore } from "@/store/users";
 import { tableStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import { getStatusColor, USER_STATUSES } from "@/lib/constants";
+import { Pagination } from "@/components/common/navigation/Pagination";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -66,6 +66,11 @@ const RoleChip = ({ role }: { role: string }) => {
   const backgroundColor = getColorForRole(role);
   const textColor = getContrastColor(backgroundColor);
 
+  if (!role)
+    return (
+      <p className="text-sm font-semibold capitalize text-gray-600">No role</p>
+    );
+
   return (
     <div
       className="px-3 py-1 rounded-full text-xs font-semibold inline-flex capitalize"
@@ -99,8 +104,6 @@ export function UsersTable() {
     totalPages,
     validateUser,
   } = useUsersStore();
-
-  console.log(users);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -262,15 +265,12 @@ export function UsersTable() {
         </TableBody>
       </Table>
 
-      {!isTableLoading && totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination
-            total={totalPages}
-            page={filters.page || 1}
-            onChange={handlePageChange}
-          />
-        </div>
-      )}
+      <Pagination
+        total={totalPages}
+        currentPage={filters.page || 1}
+        onPageChange={handlePageChange}
+        pageSize={filters.limit || 10}
+      />
 
       <DeleteConfirmationModal
         isOpen={deleteModalOpen}
