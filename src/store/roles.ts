@@ -8,6 +8,7 @@ import type {
 } from "@/services/roles/types";
 import { roleService } from "@/services/roles/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 interface RolesState {
   // Data
@@ -65,25 +66,42 @@ export const useRolesStore = create<RolesState>((set) => ({
 
   // Actions
   addRole: () => {
-    window.location.href = "/admin/roles/new";
+    navigationService.navigate("/admin/roles/new");
   },
   editRole: (role) => {
-    window.location.href = `/admin/roles/${role.id}/edit`;
+    navigationService.navigate(`/admin/roles/${role.id}/edit`);
   },
   deleteRole: async (roleId) => {
-    await roleService.delete(roleId);
-    set((state) => ({
-      roles: state.roles.filter((r) => r.id !== roleId),
-      totalRoles: state.totalRoles - 1,
-    }));
+    set({ isTableLoading: true });
+    try {
+      await roleService.delete(roleId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting role:", error);
+        },
+      });
+    } finally {
+      set({ isTableLoading: false });
+    }
   },
   createRole: async (roleData) => {
-    await roleService.create(roleData);
-    window.location.href = "/admin/roles";
+    await roleService.create(roleData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/roles");
   },
   updateRole: async (id, roleData) => {
-    await roleService.update(id, roleData);
-    window.location.href = "/admin/roles";
+    await roleService.update(id, roleData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/roles");
   },
 
   // Loading States

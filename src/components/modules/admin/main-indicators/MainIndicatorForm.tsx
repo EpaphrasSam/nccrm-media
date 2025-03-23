@@ -14,7 +14,6 @@ import {
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import useSWR from "swr";
@@ -35,7 +34,6 @@ interface MainIndicatorFormProps {
 }
 
 export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
-  const router = useRouter();
   const {
     createMainIndicator,
     updateMainIndicator,
@@ -104,7 +102,6 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
           status: data.status ? "active" : "inactive",
         });
       }
-      // router.push("/admin/main-indicators");
     } catch (error) {
       console.error("Failed to save main indicator:", error);
     }
@@ -116,7 +113,6 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     try {
       setIsDeleting(true);
       await deleteMainIndicator(currentMainIndicator.id);
-      router.push("/admin/main-indicators");
     } catch (error) {
       console.error("Failed to delete main indicator:", error);
     } finally {

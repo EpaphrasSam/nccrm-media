@@ -13,7 +13,6 @@ import {
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useSubIndicatorsStore } from "@/store/sub-indicators";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import useSWR from "swr";
@@ -37,7 +36,6 @@ interface SubIndicatorFormProps {
 }
 
 export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
-  const router = useRouter();
   const {
     createSubIndicator,
     updateSubIndicator,
@@ -106,7 +104,6 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
           status: data.status ? "active" : "inactive",
         });
       }
-      router.push("/admin/sub-indicators");
     } catch (error) {
       console.error("Failed to save sub indicator:", error);
     }
@@ -118,7 +115,6 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     try {
       setIsDeleting(true);
       await deleteSubIndicator(currentSubIndicator.id);
-      router.push("/admin/sub-indicators");
     } catch (error) {
       console.error("Failed to delete sub indicator:", error);
     } finally {

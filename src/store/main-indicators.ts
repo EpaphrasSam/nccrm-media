@@ -8,6 +8,7 @@ import type {
 } from "@/services/main-indicators/types";
 import { mainIndicatorService } from "@/services/main-indicators/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 interface MainIndicatorsState {
   // Data
@@ -70,28 +71,50 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
 
   // Actions
   addMainIndicator: () => {
-    window.location.href = "/admin/main-indicators/new";
+    navigationService.navigate("/admin/main-indicators/ ");
   },
   editMainIndicator: (mainIndicator) => {
-    window.location.href = `/admin/main-indicators/${mainIndicator.id}/edit`;
+    navigationService.navigate(
+      `/admin/main-indicators/${mainIndicator.id}/edit`
+    );
   },
   deleteMainIndicator: async (mainIndicatorId) => {
-    await mainIndicatorService.delete(mainIndicatorId);
-    set((state) => ({
-      mainIndicators: state.mainIndicators.filter(
-        (m) => m.id !== mainIndicatorId
-      ),
-      totalMainIndicators: state.totalMainIndicators - 1,
-    }));
+    set({ isTableLoading: true });
+    try {
+      await mainIndicatorService.delete(mainIndicatorId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting main indicator:", error);
+        },
+      });
+    } finally {
+      set({ isTableLoading: false });
+    }
   },
   createMainIndicator: async (mainIndicatorData) => {
-    console.log("mainIndicatorData", mainIndicatorData);
-    await mainIndicatorService.create(mainIndicatorData);
-    window.location.href = "/admin/main-indicators";
+    set({ isFormLoading: true });
+    try {
+      await mainIndicatorService.create(mainIndicatorData, false, {
+        handleError: (error) => {
+          console.error("Error creating main indicator:", error);
+        },
+      });
+      navigationService.navigate("/admin/main-indicators");
+    } finally {
+      set({ isFormLoading: false });
+    }
   },
   updateMainIndicator: async (id, mainIndicatorData) => {
-    await mainIndicatorService.update(id, mainIndicatorData);
-    window.location.href = "/admin/main-indicators";
+    set({ isFormLoading: true });
+    try {
+      await mainIndicatorService.update(id, mainIndicatorData, false, {
+        handleError: (error) => {
+          console.error("Error updating main indicator:", error);
+        },
+      });
+      navigationService.navigate("/admin/main-indicators");
+    } finally {
+      set({ isFormLoading: false });
+    }
   },
 
   // Loading States

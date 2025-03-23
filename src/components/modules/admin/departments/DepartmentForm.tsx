@@ -6,7 +6,6 @@ import { z } from "zod";
 import { Input, Button, Switch, Skeleton } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useDepartmentsStore } from "@/store/departments";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 
@@ -23,7 +22,6 @@ interface DepartmentFormProps {
 }
 
 export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
-  const router = useRouter();
   const {
     createDepartment,
     updateDepartment,
@@ -75,7 +73,6 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
           status: data.status ? "active" : "inactive",
         });
       }
-      router.push("/admin/departments");
     } catch (error) {
       console.error("Failed to save department:", error);
     }
@@ -87,7 +84,6 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
     try {
       setIsDeleting(true);
       await deleteDepartment(currentDepartment.id);
-      router.push("/admin/departments");
     } catch (error) {
       console.error("Failed to delete department:", error);
     } finally {

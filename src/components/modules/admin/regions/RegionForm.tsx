@@ -6,7 +6,6 @@ import { z } from "zod";
 import { Input, Button, Switch, Skeleton } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useRegionsStore } from "@/store/regions";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 
@@ -22,7 +21,6 @@ interface RegionFormProps {
 }
 
 export function RegionForm({ isNew = false }: RegionFormProps) {
-  const router = useRouter();
   const {
     createRegion,
     updateRegion,
@@ -71,7 +69,6 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
           status: data.status ? "active" : "inactive",
         });
       }
-      router.push("/admin/regions");
     } catch (error) {
       console.error("Failed to save region:", error);
     }
@@ -83,7 +80,6 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
     try {
       setIsDeleting(true);
       await deleteRegion(currentRegion.id);
-      router.push("/admin/regions");
     } catch (error) {
       console.error("Failed to delete region:", error);
     } finally {

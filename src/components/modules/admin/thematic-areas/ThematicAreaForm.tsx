@@ -6,7 +6,6 @@ import { z } from "zod";
 import { Input, Button, Switch, Skeleton } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useThematicAreasStore } from "@/store/thematic-areas";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 
@@ -23,7 +22,6 @@ interface ThematicAreaFormProps {
 }
 
 export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
-  const router = useRouter();
   const {
     createThematicArea,
     updateThematicArea,
@@ -77,7 +75,6 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
           status: data.status ? "active" : "inactive",
         });
       }
-      router.push("/admin/thematic-areas");
     } catch (error) {
       console.error("Failed to save thematic area:", error);
     }
@@ -89,7 +86,6 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     try {
       setIsDeleting(true);
       await deleteThematicArea(currentThematicArea.id);
-      router.push("/admin/thematic-areas");
     } catch (error) {
       console.error("Failed to delete thematic area:", error);
     } finally {

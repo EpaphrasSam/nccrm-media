@@ -19,7 +19,10 @@ const clearErrorAfterDelay = (errorKey: string) => {
 export async function clientApiCall<T>(
   promise: Promise<T>,
   fallback: T,
-  showSuccessMessage = true // Default to true since most actions need feedback
+  showSuccessMessage = true, // Default to true since most actions need feedback
+  options?: {
+    handleError?: (error: string) => void;
+  }
 ): Promise<T> {
   try {
     let result = await promise;
@@ -42,7 +45,7 @@ export async function clientApiCall<T>(
 
     return result;
   } catch (error: any) {
-    console.log("ERROR", error.response.data);
+    console.log("ERROR", error);
     const message =
       error.response?.data?.error?.message ||
       error.message ||
@@ -57,6 +60,11 @@ export async function clientApiCall<T>(
         color: "danger",
       });
       clearErrorAfterDelay(message);
+    }
+
+    // Call error handler if provided
+    if (options?.handleError) {
+      options.handleError(message);
     }
 
     return fallback;

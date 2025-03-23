@@ -8,6 +8,7 @@ import type {
 } from "@/services/sub-indicators/types";
 import { subIndicatorService } from "@/services/sub-indicators/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 interface SubIndicatorsState {
   // Data
@@ -68,25 +69,42 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
 
   // Actions
   addSubIndicator: () => {
-    window.location.href = "/admin/sub-indicators/new";
+    navigationService.navigate("/admin/sub-indicators/new");
   },
   editSubIndicator: (subIndicator) => {
-    window.location.href = `/admin/sub-indicators/${subIndicator.id}/edit`;
+    navigationService.navigate(`/admin/sub-indicators/${subIndicator.id}/edit`);
   },
   deleteSubIndicator: async (subIndicatorId) => {
-    await subIndicatorService.delete(subIndicatorId);
-    set((state) => ({
-      subIndicators: state.subIndicators.filter((s) => s.id !== subIndicatorId),
-      totalSubIndicators: state.totalSubIndicators - 1,
-    }));
+    set({ isTableLoading: true });
+    try {
+      await subIndicatorService.delete(subIndicatorId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting sub indicator:", error);
+        },
+      });
+    } finally {
+      set({ isTableLoading: false });
+    }
   },
   createSubIndicator: async (subIndicatorData) => {
-    await subIndicatorService.create(subIndicatorData);
-    window.location.href = "/admin/sub-indicators";
+    await subIndicatorService.create(subIndicatorData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/sub-indicators");
   },
   updateSubIndicator: async (id, subIndicatorData) => {
-    await subIndicatorService.update(id, subIndicatorData);
-    window.location.href = "/admin/sub-indicators";
+    await subIndicatorService.update(id, subIndicatorData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/sub-indicators");
   },
 
   // Loading States

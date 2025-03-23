@@ -8,6 +8,7 @@ import type {
 } from "@/services/thematic-areas/types";
 import { thematicAreaService } from "@/services/thematic-areas/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 interface ThematicAreasState {
   // Data
@@ -68,10 +69,10 @@ export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
 
   // Actions
   addThematicArea: () => {
-    window.location.href = "/admin/thematic-areas/new";
+    navigationService.navigate("/admin/thematic-areas/new");
   },
   editThematicArea: (thematicArea) => {
-    window.location.href = `/admin/thematic-areas/${thematicArea.id}/edit`;
+    navigationService.navigate(`/admin/thematic-areas/${thematicArea.id}/edit`);
   },
   deleteThematicArea: async (thematicAreaId) => {
     await thematicAreaService.delete(thematicAreaId);
@@ -81,12 +82,24 @@ export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
     }));
   },
   createThematicArea: async (thematicAreaData) => {
-    await thematicAreaService.create(thematicAreaData);
-    window.location.href = "/admin/thematic-areas";
+    await thematicAreaService.create(thematicAreaData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/thematic-areas");
   },
   updateThematicArea: async (id, thematicAreaData) => {
-    await thematicAreaService.update(id, thematicAreaData);
-    window.location.href = "/admin/thematic-areas";
+    await thematicAreaService.update(id, thematicAreaData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/thematic-areas");
   },
 
   // Loading States

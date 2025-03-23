@@ -9,8 +9,16 @@ import type {
 } from "./types";
 import { fetchClient } from "@/utils/fetch-client";
 
+type ApiOptions = {
+  handleError?: (error: string) => void;
+};
+
 export const userService = {
-  fetchAll(params: UserQueryParams = {}, isServer = false) {
+  fetchAll(
+    params: UserQueryParams = {},
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .get<UserListResponse>(`/admin/all-users`, {
         params: {
@@ -38,31 +46,37 @@ export const userService = {
             totalUsers: 0,
             totalPages: 0,
           },
-          false // No success message for fetching
+          false, // No success message for fetching
+          options
         );
   },
 
-  fetchById(id: string, isServer = false) {
+  fetchById(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .get<UserDetailResponse>(`/admin/user/${id}`)
       .then((res) => res.data.user);
 
     return isServer
       ? serverApiCall(promise, null)
-      : clientApiCall(promise, null, false); // No success message for fetching
+      : clientApiCall(promise, null, false, options); // No success message for fetching
   },
 
-  create(userData: UserCreateInput, isServer = false) {
+  create(userData: UserCreateInput, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .post<{ message: string }>(`/admin/add-user`, userData)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" }); // Keep success message
+      : clientApiCall(promise, { message: "" }, true, options); // Keep success message
   },
 
-  update(id: string, userData: UserUpdateInput, isServer = false) {
+  update(
+    id: string,
+    userData: UserUpdateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     let promise;
 
     // If there's an image, use FormData
@@ -94,26 +108,31 @@ export const userService = {
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" }); // Keep success message
+      : clientApiCall(promise, { message: "" }, true, options); // Keep success message
   },
 
-  delete(id: string, isServer = false) {
+  delete(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .delete<{ message: string }>(`/admin/delete-user/${id}`)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" }); // Keep success message
+      : clientApiCall(promise, { message: "" }, true, options); // Keep success message
   },
 
-  validate(id: string, status: UserValidateInput, isServer = false) {
+  validate(
+    id: string,
+    status: UserValidateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .put<{ message: string }>(`/admin/validate-user/${id}`, status)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" }); // Keep success message
+      : clientApiCall(promise, { message: "" }, true, options); // Keep success message
   },
 };

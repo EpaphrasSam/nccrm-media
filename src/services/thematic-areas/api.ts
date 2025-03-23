@@ -9,8 +9,16 @@ import type {
   ThematicAreaQueryParams,
 } from "./types";
 
+type ApiOptions = {
+  handleError?: (error: string) => void;
+};
+
 export const thematicAreaService = {
-  fetchAll(params?: Partial<ThematicAreaQueryParams>, isServer = false) {
+  fetchAll(
+    params?: Partial<ThematicAreaQueryParams>,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .get<ThematicAreaListResponse>("/admin/all-thematic-areas", {
         params: {
@@ -36,47 +44,57 @@ export const thematicAreaService = {
             totalThematicAreas: 0,
             totalPages: 0,
           },
-          false
+          false,
+          options
         );
   },
 
-  fetchById(id: string, isServer = false) {
+  fetchById(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .get<ThematicAreaDetailResponse>(`/admin/thematic-area/${id}`)
       .then((res) => res.data.thematicArea);
 
     return isServer
       ? serverApiCall(promise, {} as ThematicArea)
-      : clientApiCall(promise, {} as ThematicArea, false);
+      : clientApiCall(promise, {} as ThematicArea, false, options);
   },
 
-  create(data: ThematicAreaCreateInput, isServer = false) {
+  create(
+    data: ThematicAreaCreateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .post<{ message: string }>("/admin/add-thematic-area", data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  update(id: string, data: ThematicAreaUpdateInput, isServer = false) {
+  update(
+    id: string,
+    data: ThematicAreaUpdateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .put<{ message: string }>(`/admin/edit-thematic-area/${id}`, data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  delete(id: string, isServer = false) {
+  delete(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .delete<{ message: string }>(`/admin/delete-thematic-area/${id}`)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 };

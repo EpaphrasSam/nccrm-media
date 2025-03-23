@@ -8,6 +8,7 @@ import type {
 } from "@/services/departments/types";
 import { departmentService } from "@/services/departments/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 interface DepartmentsState {
   // Data
@@ -68,25 +69,48 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
 
   // Actions
   addDepartment: () => {
-    window.location.href = "/admin/departments/new";
+    navigationService.navigate("/admin/departments/new");
   },
   editDepartment: (department) => {
-    window.location.href = `/admin/departments/${department.id}/edit`;
+    navigationService.navigate(`/admin/departments/${department.id}/edit`);
   },
   deleteDepartment: async (departmentId) => {
-    await departmentService.delete(departmentId);
-    set((state) => ({
-      departments: state.departments.filter((d) => d.id !== departmentId),
-      totalDepartments: state.totalDepartments - 1,
-    }));
+    set({ isTableLoading: true });
+    try {
+      await departmentService.delete(departmentId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting department:", error);
+        },
+      });
+    } finally {
+      set({ isTableLoading: false });
+    }
   },
   createDepartment: async (departmentData) => {
-    await departmentService.create(departmentData);
-    window.location.href = "/admin/departments";
+    set({ isFormLoading: true });
+    try {
+      await departmentService.create(departmentData, false, {
+        handleError: (error) => {
+          console.error("Error creating department:", error);
+        },
+      });
+      navigationService.navigate("/admin/departments");
+    } finally {
+      set({ isFormLoading: false });
+    }
   },
   updateDepartment: async (id, departmentData) => {
-    await departmentService.update(id, departmentData);
-    window.location.href = "/admin/departments";
+    set({ isFormLoading: true });
+    try {
+      await departmentService.update(id, departmentData, false, {
+        handleError: (error) => {
+          console.error("Error updating department:", error);
+        },
+      });
+      navigationService.navigate("/admin/departments");
+    } finally {
+      set({ isFormLoading: false });
+    }
   },
 
   // Loading States

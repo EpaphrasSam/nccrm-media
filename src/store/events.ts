@@ -10,6 +10,7 @@ import type { SubIndicator } from "@/services/sub-indicators/types";
 import type { ThematicArea } from "@/services/thematic-areas/types";
 import { eventService } from "@/services/events/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 // Form step types
 export type EventFormStep =
@@ -208,47 +209,46 @@ export const useEventsStore = create<EventsState>((set, get) => ({
 
   // Event actions
   addEvent: () => {
-    window.location.href = "/events/new";
+    navigationService.navigate("/events/new");
   },
   editEvent: (event) => {
-    window.location.href = `/events/${event.id}/edit`;
+    navigationService.navigate(`/events/${event.id}/edit`);
   },
   deleteEvent: async (eventId) => {
+    set({ isTableLoading: true });
     try {
-      set({ isTableLoading: true });
-      await eventService.delete(eventId);
-      set((state) => ({
-        events: state.events.filter((e) => e.id !== eventId),
-        totalEvents: state.totalEvents - 1,
-      }));
-    } catch (error) {
-      console.error("Failed to delete event:", error);
-      throw error;
+      await eventService.delete(eventId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting event:", error);
+        },
+      });
     } finally {
       set({ isTableLoading: false });
     }
   },
   createEvent: async (data) => {
+    set({ isFormLoading: true });
     try {
-      set({ isFormLoading: true });
-      await eventService.create(data);
+      await eventService.create(data, false, {
+        handleError: (error: string) => {
+          console.error("Error creating event:", error);
+        },
+      });
       get().resetForm();
-      // window.location.href = "/events";
-    } catch (error) {
-      console.error("Failed to create event:", error);
-      throw error;
+      navigationService.navigate("/events");
     } finally {
       set({ isFormLoading: false });
     }
   },
   updateEvent: async (id, data) => {
+    set({ isFormLoading: true });
     try {
-      set({ isFormLoading: true });
-      await eventService.update(id, data);
-      // window.location.href = "/events";
-    } catch (error) {
-      console.error("Failed to update event:", error);
-      throw error;
+      await eventService.update(id, data, false, {
+        handleError: (error: string) => {
+          console.error("Error updating event:", error);
+        },
+      });
+      navigationService.navigate("/events");
     } finally {
       set({ isFormLoading: false });
     }

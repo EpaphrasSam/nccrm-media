@@ -8,6 +8,7 @@ import type {
 } from "@/services/regions/types";
 import { regionService } from "@/services/regions/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 interface RegionsState {
   // Data
@@ -65,25 +66,48 @@ export const useRegionsStore = create<RegionsState>((set) => ({
 
   // Actions
   addRegion: () => {
-    window.location.href = "/admin/regions/new";
+    navigationService.navigate("/admin/regions/new");
   },
   editRegion: (region) => {
-    window.location.href = `/admin/regions/${region.id}/edit`;
+    navigationService.navigate(`/admin/regions/${region.id}/edit`);
   },
   deleteRegion: async (regionId) => {
-    await regionService.delete(regionId);
-    set((state) => ({
-      regions: state.regions.filter((r) => r.id !== regionId),
-      totalRegions: state.totalRegions - 1,
-    }));
+    set({ isTableLoading: true });
+    try {
+      await regionService.delete(regionId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting region:", error);
+        },
+      });
+    } finally {
+      set({ isTableLoading: false });
+    }
   },
   createRegion: async (regionData) => {
-    await regionService.create(regionData);
-    window.location.href = "/admin/regions";
+    set({ isFormLoading: true });
+    try {
+      await regionService.create(regionData, false, {
+        handleError: (error) => {
+          console.error("Error creating region:", error);
+        },
+      });
+      navigationService.navigate("/admin/regions");
+    } finally {
+      set({ isFormLoading: false });
+    }
   },
   updateRegion: async (id, regionData) => {
-    await regionService.update(id, regionData);
-    window.location.href = "/admin/regions";
+    set({ isFormLoading: true });
+    try {
+      await regionService.update(id, regionData, false, {
+        handleError: (error) => {
+          console.error("Error updating region:", error);
+        },
+      });
+      navigationService.navigate("/admin/regions");
+    } finally {
+      set({ isFormLoading: false });
+    }
   },
 
   // Loading States

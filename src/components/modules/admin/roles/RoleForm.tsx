@@ -121,7 +121,6 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
           functions: data.functions,
         });
       }
-      router.push("/admin/roles");
     } catch (error) {
       console.error("Failed to save role:", error);
     }

@@ -9,6 +9,7 @@ import type {
 } from "@/services/users/types";
 import { userService } from "@/services/users/api";
 import { urlSync } from "@/utils/url-sync";
+import { navigationService } from "@/utils/navigation";
 
 interface UsersState {
   // Data
@@ -80,10 +81,10 @@ export const useUsersStore = create<UsersState>((set) => ({
 
   // Actions
   addUser: () => {
-    window.location.href = "/admin/users/new";
+    navigationService.navigate("/admin/users/new");
   },
   editUser: (user) => {
-    window.location.href = `/admin/users/${user.id}/edit`;
+    navigationService.navigate(`/admin/users/${user.id}/edit`);
   },
   deleteUser: async (userId) => {
     await userService.delete(userId);
@@ -93,16 +94,34 @@ export const useUsersStore = create<UsersState>((set) => ({
     }));
   },
   createUser: async (userData) => {
-    await userService.create(userData);
-    window.location.href = "/admin/users";
+    await userService.create(userData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/users");
   },
   updateUser: async (id, userData) => {
-    await userService.update(id, userData);
-    // window.location.href = "/admin/users";
+    await userService.update(id, userData, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/users");
   },
   validateUser: async (userId, status) => {
-    await userService.validate(userId, status);
-    window.location.href = "/admin/users";
+    await userService.validate(userId, status, false, {
+      handleError: () => {
+        // Don't navigate on error
+        return;
+      },
+    });
+    // Only navigate on success
+    navigationService.navigate("/admin/users");
   },
 
   // Loading States

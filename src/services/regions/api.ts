@@ -9,8 +9,16 @@ import type {
   RegionQueryParams,
 } from "./types";
 
+type ApiOptions = {
+  handleError?: (error: string) => void;
+};
+
 export const regionService = {
-  fetchAll(params?: Partial<RegionQueryParams>, isServer = false) {
+  fetchAll(
+    params?: Partial<RegionQueryParams>,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .get<RegionListResponse>("/admin/all-regions", {
         params: {
@@ -36,47 +44,53 @@ export const regionService = {
             totalRegions: 0,
             totalPages: 0,
           },
-          false
+          false,
+          options
         );
   },
 
-  fetchById(id: string, isServer = false) {
+  fetchById(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .get<RegionDetailResponse>(`/admin/region/${id}`)
       .then((res) => res.data.region);
 
     return isServer
       ? serverApiCall(promise, {} as Region)
-      : clientApiCall(promise, {} as Region, false);
+      : clientApiCall(promise, {} as Region, false, options);
   },
 
-  create(data: RegionCreateInput, isServer = false) {
+  create(data: RegionCreateInput, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .post<{ message: string }>("/admin/add-region", data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  update(id: string, data: RegionUpdateInput, isServer = false) {
+  update(
+    id: string,
+    data: RegionUpdateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .put<{ message: string }>(`/admin/edit-region/${id}`, data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  delete(id: string, isServer = false) {
+  delete(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .delete<{ message: string }>(`/admin/delete-region/${id}`)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 };

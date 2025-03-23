@@ -89,7 +89,6 @@ export function UserCreateForm() {
   const onSubmit = async (data: UserCreateFormData) => {
     try {
       await createUser(data);
-      router.push("/admin/users");
     } catch (error) {
       console.error("Failed to create user:", error);
     }
@@ -344,7 +343,7 @@ export function UserCreateForm() {
                 errorMessage={errors.role_id?.message}
               >
                 {roles.map((role: { id: string; name: string }) => (
-                  <SelectItem key={role.id} textValue={role.id}>
+                  <SelectItem key={role.id} textValue={role.name}>
                     {role.name}
                   </SelectItem>
                 ))}
@@ -371,7 +370,7 @@ export function UserCreateForm() {
                 errorMessage={errors.department_id?.message}
               >
                 {departments.map((dept: { id: string; name: string }) => (
-                  <SelectItem key={dept.id} textValue={dept.id}>
+                  <SelectItem key={dept.id} textValue={dept.name}>
                     {dept.name}
                   </SelectItem>
                 ))}

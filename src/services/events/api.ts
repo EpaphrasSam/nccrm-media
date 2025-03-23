@@ -8,8 +8,16 @@ import type {
   EventQueryParams,
 } from "./types";
 
+type ApiOptions = {
+  handleError?: (error: string) => void;
+};
+
 export const eventService = {
-  fetchAll(params: Partial<EventQueryParams> = {}, isServer = false) {
+  fetchAll(
+    params: Partial<EventQueryParams> = {},
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .get<EventListResponse>("/get-events", {
         params: {
@@ -33,76 +41,53 @@ export const eventService = {
       : clientApiCall(
           promise,
           { message: "", events: [], totalEvents: 0, totalPages: 0 },
-          false
+          false,
+          options
         );
   },
 
-  fetchById(id: string, isServer = false) {
+  fetchById(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
-      .get<EventDetailResponse>(`/get-event/${id}`)
+      .get<EventDetailResponse>(`/event/${id}`)
       .then((res) => res.data.event);
 
     return isServer
       ? serverApiCall(promise, {} as Event)
-      : clientApiCall(promise, {} as Event, false);
+      : clientApiCall(promise, {} as Event, false, options);
   },
 
-  create(eventData: EventCreateInput, isServer = false) {
-    // Create FormData for file upload
-    const formData = new FormData();
-
-    Object.entries(eventData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (key === "docs" && Array.isArray(value)) {
-          value.forEach((file) => {
-            formData.append("docs", file);
-          });
-        } else {
-          formData.append(key, String(value));
-        }
-      }
-    });
-
+  create(data: EventCreateInput, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
-      .post<{ message: string }>("/add-event", formData)
+      .post<{ message: string }>("/add-event", data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  update(id: string, eventData: Partial<EventCreateInput>, isServer = false) {
-    // Create FormData for file upload if needed
-    const formData = new FormData();
-    Object.entries(eventData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (key === "docs" && Array.isArray(value)) {
-          value.forEach((file) => {
-            formData.append("docs", file);
-          });
-        } else {
-          formData.append(key, String(value));
-        }
-      }
-    });
-
+  update(
+    id: string,
+    data: Partial<Event>,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
-      .put<{ message: string }>(`/edit-event/${id}`, formData)
+      .put<{ message: string }>(`/edit-event/${id}`, data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  delete(id: string, isServer = false) {
+  delete(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .delete<{ message: string }>(`/delete-event/${id}`)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 };

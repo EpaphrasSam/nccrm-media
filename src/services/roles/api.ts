@@ -9,14 +9,22 @@ import type {
   RoleQueryParams,
 } from "./types";
 
+type ApiOptions = {
+  handleError?: (error: string) => void;
+};
+
 export const roleService = {
-  fetchAll: async (params?: Partial<RoleQueryParams>, isServer = false) => {
+  fetchAll: async (
+    params?: Partial<RoleQueryParams>,
+    isServer = false,
+    options?: ApiOptions
+  ) => {
     const promise = fetchClient
       .get<RoleListResponse>("/admin/all-roles", {
         params: {
           page: params?.page || 1,
-          limit: params?.limit || 10,
-          search: params?.search || "",
+          limit: params?.limit || 20,
+          ...(params?.search && { search: params.search }),
         },
       })
       .then((res) => res.data);
@@ -36,47 +44,57 @@ export const roleService = {
             totalRoles: 0,
             totalPages: 0,
           },
-          false
+          false,
+          options
         );
   },
 
-  fetchById: async (id: string, isServer = false) => {
+  fetchById: async (id: string, isServer = false, options?: ApiOptions) => {
     const promise = fetchClient
       .get<RoleDetailResponse>(`/admin/role/${id}`)
       .then((res) => res.data.role);
 
     return isServer
       ? serverApiCall(promise, {} as Role)
-      : clientApiCall(promise, {} as Role, false);
+      : clientApiCall(promise, {} as Role, false, options);
   },
 
-  create: async (data: RoleCreateInput, isServer = false) => {
+  create: async (
+    data: RoleCreateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) => {
     const promise = fetchClient
-      .post<{ message: string; role: Role }>("/admin/add-role", data)
+      .post<{ message: string }>("/admin/add-role", data)
       .then((res) => res.data);
 
     return isServer
-      ? serverApiCall(promise, { message: "", role: {} as Role })
-      : clientApiCall(promise, { message: "", role: {} as Role });
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  update: async (id: string, data: RoleUpdateInput, isServer = false) => {
+  update: async (
+    id: string,
+    data: RoleUpdateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) => {
     const promise = fetchClient
-      .put<{ message: string; role: Role }>(`/admin/edit-role/${id}`, data)
+      .put<{ message: string }>(`/admin/edit-role/${id}`, data)
       .then((res) => res.data);
 
     return isServer
-      ? serverApiCall(promise, { message: "", role: {} as Role })
-      : clientApiCall(promise, { message: "", role: {} as Role });
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  delete: async (id: string, isServer = false) => {
+  delete: async (id: string, isServer = false, options?: ApiOptions) => {
     const promise = fetchClient
       .delete<{ message: string }>(`/admin/delete-role/${id}`)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 };

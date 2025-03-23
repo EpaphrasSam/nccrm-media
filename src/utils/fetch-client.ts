@@ -26,6 +26,53 @@ interface FetchError extends Error {
   data?: any;
 }
 
+async function signOut() {
+  try {
+    const signOutUrl = new URL("/api/auth/signout", authUrl).toString();
+    await fetch(signOutUrl, { method: "POST" });
+
+    // The middleware will handle the redirect, but just in case
+    window.location.href = "/login";
+  } catch (error) {
+    console.error("Error during sign out:", error);
+    // Fallback redirect
+    window.location.href = "/login";
+  }
+}
+
+function getDefaultErrorMessage(status: number): string {
+  switch (status) {
+    case 400:
+      return "Invalid request. Please check your data and try again.";
+    case 401:
+      return "Unauthorized. Please log in and try again.";
+    case 403:
+      return "You don't have permission to perform this action.";
+    case 404:
+      return "The requested resource was not found.";
+    case 405:
+      return "This action is not allowed.";
+    case 408:
+      return "Request timeout. Please try again.";
+    case 409:
+      return "This operation conflicts with another request.";
+    case 422:
+      return "Invalid data provided. Please check your input.";
+    case 429:
+      return "Too many requests. Please try again later.";
+    case 500:
+      return "Internal server error. Please try again later.";
+    case 502:
+      return "Server is temporarily unavailable. Please try again later.";
+    case 503:
+      return "Service unavailable. Please try again later.";
+    default:
+      return status >= 500
+        ? "Server error. Please try again later."
+        : "Something went wrong. Please try again.";
+  }
+}
+
 async function getAuthSession() {
   try {
     const sessionUrl = new URL("/api/auth/session", authUrl).toString();
@@ -89,9 +136,24 @@ async function customFetch<T>(
       : response.text());
 
     if (!response.ok) {
-      const error = new Error("Request failed") as FetchError;
+      const error = new Error() as FetchError;
       error.status = response.status;
       error.data = data;
+
+      // Get error message from response or use default
+      const errorMessage =
+        data?.error?.message || // Check for error message in response
+        data?.message || // Check for message in response
+        (typeof data === "string" ? data : null) || // Use data if it's a string
+        getDefaultErrorMessage(response.status); // Use default message based on status
+
+      error.message = errorMessage;
+
+      // If it's a 404, sign out the user
+      if (response.status === 404) {
+        await signOut();
+      }
+
       throw error;
     }
 
@@ -100,8 +162,20 @@ async function customFetch<T>(
       status: response.status,
       ok: response.ok,
     };
-  } catch (error) {
-    console.error("Fetch error:", error);
+  } catch (error: any) {
+    // Handle network errors or other non-HTTP errors
+    if (!error.status) {
+      error.message =
+        error.message || "Network error. Please check your connection.";
+      error.status = 0;
+    }
+
+    console.error("Fetch error:", {
+      url,
+      status: error.status,
+      message: error.message,
+      data: error.data,
+    });
     throw error;
   }
 }

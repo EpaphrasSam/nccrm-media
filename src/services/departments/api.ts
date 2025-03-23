@@ -9,8 +9,16 @@ import type {
   DepartmentQueryParams,
 } from "./types";
 
+type ApiOptions = {
+  handleError?: (error: string) => void;
+};
+
 export const departmentService = {
-  fetchAll(params: DepartmentQueryParams = {}, isServer = false) {
+  fetchAll(
+    params: DepartmentQueryParams = {},
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .get<DepartmentListResponse>("/admin/all-departments", {
         params: {
@@ -36,47 +44,53 @@ export const departmentService = {
             totalDepartments: 0,
             totalPages: 0,
           },
-          false
+          false,
+          options
         );
   },
 
-  fetchById(id: string, isServer = false) {
+  fetchById(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .get<DepartmentDetailResponse>(`/admin/department/${id}`)
       .then((res) => res.data.department);
 
     return isServer
       ? serverApiCall(promise, {} as Department)
-      : clientApiCall(promise, {} as Department, false);
+      : clientApiCall(promise, {} as Department, false, options);
   },
 
-  create(data: DepartmentCreateInput, isServer = false) {
+  create(data: DepartmentCreateInput, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .post<{ message: string }>("/admin/add-department", data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  update(id: string, data: DepartmentUpdateInput, isServer = false) {
+  update(
+    id: string,
+    data: DepartmentUpdateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
       .put<{ message: string }>(`/admin/edit-department/${id}`, data)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  delete(id: string, isServer = false) {
+  delete(id: string, isServer = false, options?: ApiOptions) {
     const promise = fetchClient
       .delete<{ message: string }>(`/admin/delete-department/${id}`)
       .then((res) => res.data);
 
     return isServer
       ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" });
+      : clientApiCall(promise, { message: "" }, true, options);
   },
 };
