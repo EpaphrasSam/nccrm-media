@@ -41,6 +41,11 @@ export const routes: RouteConfig = [
     icon: FiFileText,
   },
   {
+    label: "Situational Reporting",
+    path: "/situational-reporting",
+    icon: FiFileText,
+  },
+  {
     label: "Admin",
     requiredRole: "admin",
     routes: [
