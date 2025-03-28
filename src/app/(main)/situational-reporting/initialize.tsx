@@ -1,81 +1,81 @@
 "use client";
 
-import { useEventsStore } from "@/store/events";
-import { userService } from "@/services/users/api";
-import { subIndicatorService } from "@/services/sub-indicators/api";
-import { regionService } from "@/services/regions/api";
-import { thematicAreaService } from "@/services/thematic-areas/api";
+import { useEffect } from "react";
 import useSWR from "swr";
+import { useSituationalReportingStore } from "@/store/situational-reporting";
+import { situationalReportingService } from "@/services/situational-reporting/api";
+import type { SituationalReportQueryParams } from "@/services/situational-reporting/types";
+import { urlSync } from "@/utils/url-sync";
 
-export function InitializeNewEvent() {
-  const { setFormLoading } = useEventsStore();
+interface InitializeSituationalReportingProps {
+  initialFilters: Partial<SituationalReportQueryParams>;
+}
+
+const DEFAULT_FILTERS: SituationalReportQueryParams = {
+  page: 1,
+  limit: 10,
+  year: new Date().getFullYear(),
+};
+
+export function InitializeSituationalReporting({
+  initialFilters,
+}: InitializeSituationalReportingProps) {
+  const { filters, setFilters, setTableLoading } =
+    useSituationalReportingStore();
+
+  // Set initial filters from URL or defaults
+  useEffect(() => {
+    const hasInitialFilters = Object.keys(initialFilters).length > 0;
+    if (hasInitialFilters) {
+      setFilters(initialFilters);
+    } else {
+      // If no URL params exist, set defaults and push to URL
+      setFilters(DEFAULT_FILTERS);
+      urlSync.pushToUrl(DEFAULT_FILTERS);
+    }
+  }, [initialFilters, setFilters]);
 
   // Common SWR config to handle errors
   const swrConfig = {
     onError: (error: Error) => {
-      // Error is already handled by clientApiCall
       console.error("SWR Error:", error);
     },
     shouldRetryOnError: false,
   };
 
-  // Fetch reference data
-  const { isLoading } = useSWR(
-    "newEventReferenceData",
+  // Fetch reports data - will refetch when filters change
+  const { isLoading: isReportsLoading } = useSWR(
+    ["reports", filters],
     async () => {
       try {
-        const [
-          usersResponse,
-          subIndicatorsResponse,
-          regionsResponse,
-          thematicAreasResponse,
-        ] = await Promise.all([
-          userService.fetchAll(),
-          subIndicatorService.fetchAll(),
-          regionService.fetchAll(),
-          thematicAreaService.fetchAll(),
-        ]);
+        const response = await situationalReportingService.getReports(filters);
+        const data = "data" in response ? response.data : response;
 
-        // Extract data from responses
-        const users =
-          usersResponse && "data" in usersResponse
-            ? usersResponse.data.users
-            : usersResponse.users;
-        const subIndicators =
-          subIndicatorsResponse && "data" in subIndicatorsResponse
-            ? subIndicatorsResponse.data.subIndicators
-            : subIndicatorsResponse.subIndicators;
-        const regions =
-          regionsResponse && "data" in regionsResponse
-            ? regionsResponse.data.regions
-            : regionsResponse.regions;
-        const thematicAreas =
-          thematicAreasResponse && "data" in thematicAreasResponse
-            ? thematicAreasResponse.data.thematicAreas
-            : thematicAreasResponse.thematicAreas;
-
-        // Set reference data in store
-        useEventsStore.setState({
-          reporters: users,
-          subIndicators,
-          regions,
-          thematicAreas,
+        useSituationalReportingStore.setState({
+          reports: data.situationalReportsDetails.situationalReports,
+          totalReports: data.situationalReportsDetails.totalReports,
+          totalPages: data.situationalReportsDetails.totalPages,
         });
 
-        return {
-          users,
-          subIndicators,
-          regions,
-          thematicAreas,
-        };
+        return data;
       } finally {
-        if (isLoading) {
-          setFormLoading(false);
+        if (isReportsLoading) {
+          setTableLoading(false);
         }
       }
     },
-    swrConfig
+    {
+      ...swrConfig,
+      keepPreviousData: true,
+    }
   );
+
+  // Update loading states based on SWR's initial loading state
+  useEffect(() => {
+    if (isReportsLoading) {
+      setTableLoading(true);
+    }
+  }, [isReportsLoading, setTableLoading]);
 
   return null;
 }
