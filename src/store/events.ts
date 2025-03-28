@@ -180,7 +180,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   },
 
   // Loading States
-  isTableLoading: false,
+  isTableLoading: true,
   isFiltersLoading: false,
   isFormLoading: false,
   isExporting: false,

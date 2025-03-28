@@ -114,7 +114,7 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
   },
 
   // Loading States
-  isTableLoading: false,
+  isTableLoading: true,
   isFiltersLoading: false,
   isFormLoading: false,
   setTableLoading: (loading) => set({ isTableLoading: loading }),
