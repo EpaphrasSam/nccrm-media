@@ -3,7 +3,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input, Button, Switch, Skeleton } from "@heroui/react";
+import { Input, Button, Switch, Skeleton, Textarea } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useThematicAreasStore } from "@/store/thematic-areas";
 import { useState, useEffect, useCallback } from "react";
@@ -32,6 +32,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -48,7 +49,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     control,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ThematicAreaFormValues>({
     resolver: zodResolver(thematicAreaSchema),
     defaultValues: getDefaultValues(),
@@ -62,6 +63,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
 
   const onSubmit = async (data: ThematicAreaFormValues) => {
     try {
+      setIsSubmitting(true);
       if (isNew) {
         await createThematicArea({
           name: data.name,
@@ -77,6 +79,8 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
       }
     } catch (error) {
       console.error("Failed to save thematic area:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -94,7 +98,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     }
   };
 
-  if (isFormLoading) {
+  if (isFormLoading && !isSubmitting && !isDeleting) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -136,7 +140,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
         name="description"
         control={control}
         render={({ field }) => (
-          <Input
+          <Textarea
             {...field}
             label="Description"
             labelPlacement="outside"

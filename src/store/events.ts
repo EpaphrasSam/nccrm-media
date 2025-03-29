@@ -227,7 +227,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     }
   },
   createEvent: async (data) => {
-    set({ isFormLoading: true });
     try {
       await eventService.create(data, false, {
         handleError: (error: string) => {
@@ -237,11 +236,9 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       get().resetForm();
       navigationService.navigate("/events");
     } finally {
-      set({ isFormLoading: false });
     }
   },
   updateEvent: async (id, data) => {
-    set({ isFormLoading: true });
     try {
       await eventService.update(id, data, false, {
         handleError: (error: string) => {
@@ -250,7 +247,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       });
       navigationService.navigate("/events");
     } finally {
-      set({ isFormLoading: false });
     }
   },
   exportToExcel: async () => {

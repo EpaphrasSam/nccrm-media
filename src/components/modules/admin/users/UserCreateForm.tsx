@@ -42,6 +42,7 @@ export function UserCreateForm() {
   const { createUser, isFormLoading } = useUsersStore();
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch departments and roles using SWR
   const { data: departmentsResponse, error: departmentsError } =
@@ -68,7 +69,7 @@ export function UserCreateForm() {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<UserCreateFormData>({
     resolver: zodResolver(userCreateSchema),
   });
@@ -88,13 +89,16 @@ export function UserCreateForm() {
 
   const onSubmit = async (data: UserCreateFormData) => {
     try {
+      setIsSubmitting(true);
       await createUser(data);
     } catch (error) {
       console.error("Failed to create user:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (isFormLoading || !departments || !roles) {
+  if ((isFormLoading && !isSubmitting) || !departments || !roles) {
     return (
       <div className="space-y-12 max-w-5xl mx-auto">
         {/* Personal Information Section Loading */}
@@ -385,15 +389,15 @@ export function UserCreateForm() {
           type="submit"
           color="primary"
           isLoading={isSubmitting}
-          className={`${buttonStyles} bg-brand-red-dark px-12`}
+          className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
-          Add New User
+          Create User
         </Button>
         <Button
           type="button"
-          variant="ghost"
-          className={`${buttonStyles} px-12 border border-solid`}
-          onPress={() => router.push("/admin/users")}
+          variant="bordered"
+          onPress={() => router.back()}
+          className={buttonStyles}
         >
           Cancel
         </Button>

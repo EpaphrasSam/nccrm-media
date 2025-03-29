@@ -20,6 +20,11 @@ export interface Analysis {
   updated_at: string;
 }
 
+export interface SituationalAnalysis {
+  thematic_area: string;
+  average_score: number;
+}
+
 export interface SituationalReportCreateInput {
   name: string;
   year: number;
@@ -50,14 +55,26 @@ export interface ApiResponse<T> {
 
 export interface SituationalReportsResponse {
   message: string;
-  situationalReportsDetails: {
-    situationalReports: SituationalReport[];
-    totalReports: number;
-    totalPages: number;
-  };
+  situationalReportsDetails: SituationalReportsDetails;
+}
+
+export interface SituationalReportsDetails {
+  situationalReports: SituationalReport[];
+  totalReports: number;
+  totalPages: number;
 }
 
 export interface AnalysisResponse {
   message: string;
   existingAnalysis: Analysis | null;
+}
+
+export interface OverviewSummaryFilters {
+  from?: string;
+  to?: string;
+}
+
+export interface OverviewSummaryResponse {
+  message: string;
+  situationalAnalysis: SituationalAnalysis[];
 }

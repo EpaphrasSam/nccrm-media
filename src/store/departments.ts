@@ -75,7 +75,6 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
     navigationService.navigate(`/admin/departments/${department.id}/edit`);
   },
   deleteDepartment: async (departmentId) => {
-    set({ isTableLoading: true });
     try {
       await departmentService.delete(departmentId, false, {
         handleError: (error: string) => {
@@ -83,11 +82,9 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
         },
       });
     } finally {
-      set({ isTableLoading: false });
     }
   },
   createDepartment: async (departmentData) => {
-    set({ isFormLoading: true });
     try {
       await departmentService.create(departmentData, false, {
         handleError: (error) => {
@@ -96,11 +93,9 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
       });
       navigationService.navigate("/admin/departments");
     } finally {
-      set({ isFormLoading: false });
     }
   },
   updateDepartment: async (id, departmentData) => {
-    set({ isFormLoading: true });
     try {
       await departmentService.update(id, departmentData, false, {
         handleError: (error) => {
@@ -109,7 +104,6 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
       });
       navigationService.navigate("/admin/departments");
     } finally {
-      set({ isFormLoading: false });
     }
   },
 

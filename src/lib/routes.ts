@@ -12,7 +12,7 @@ import {
   FiTrendingUp,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
-
+import { TbReportAnalytics } from "react-icons/tb";
 export interface Route {
   label: string;
   path?: string;
@@ -43,7 +43,7 @@ export const routes: RouteConfig = [
   {
     label: "Situational Reporting",
     path: "/situational-reporting",
-    icon: FiFileText,
+    icon: TbReportAnalytics,
   },
   {
     label: "Admin",

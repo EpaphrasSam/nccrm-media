@@ -72,7 +72,6 @@ export const useRegionsStore = create<RegionsState>((set) => ({
     navigationService.navigate(`/admin/regions/${region.id}/edit`);
   },
   deleteRegion: async (regionId) => {
-    set({ isTableLoading: true });
     try {
       await regionService.delete(regionId, false, {
         handleError: (error: string) => {
@@ -80,11 +79,9 @@ export const useRegionsStore = create<RegionsState>((set) => ({
         },
       });
     } finally {
-      set({ isTableLoading: false });
     }
   },
   createRegion: async (regionData) => {
-    set({ isFormLoading: true });
     try {
       await regionService.create(regionData, false, {
         handleError: (error) => {
@@ -106,7 +103,6 @@ export const useRegionsStore = create<RegionsState>((set) => ({
       });
       navigationService.navigate("/admin/regions");
     } finally {
-      set({ isFormLoading: false });
     }
   },
 

@@ -2,12 +2,15 @@ import { fetchClient } from "@/utils/fetch-client";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
 import type {
   SituationalReport,
-  Analysis,
   SituationalReportCreateInput,
   AnalysisCreateInput,
   SituationalReportQueryParams,
   SituationalReportsResponse,
+  SituationalReportsDetails,
   AnalysisResponse,
+  SituationalAnalysis,
+  OverviewSummaryFilters,
+  OverviewSummaryResponse,
 } from "./types";
 
 type ApiOptions = {
@@ -26,18 +29,17 @@ export const situationalReportingService = {
         params: {
           page: params.page || 1,
           limit: params.limit || 10,
+          search: params.search,
           ...(params.year && { year: params.year }),
         },
       })
-      .then((res) => res.data);
+      .then((res) => res.data)
+      .then((data) => data.situationalReportsDetails);
 
-    const defaultResponse = {
-      message: "",
-      situationalReportsDetails: {
-        situationalReports: [],
-        totalReports: 0,
-        totalPages: 0,
-      },
+    const defaultResponse: SituationalReportsDetails = {
+      situationalReports: [],
+      totalReports: 0,
+      totalPages: 0,
     };
 
     return isServer
@@ -111,16 +113,38 @@ export const situationalReportingService = {
       : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  getAnalysis(reportId: string, isServer = false, options?: ApiOptions) {
+  updateAnalysis(
+    id: string,
+    data: AnalysisCreateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
-      .get<{ message: string; analysis: Analysis[] }>(
-        "/get-situational-analysis"
-      )
-      .then((res) => res.data.analysis);
+      .put<{ message: string }>(`/edit-situational-analysis/${id}`, data)
+      .then((res) => res.data);
 
     return isServer
-      ? serverApiCall(promise, [] as Analysis[])
-      : clientApiCall(promise, [] as Analysis[], false, options);
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" }, true, options);
+  },
+
+  getAnalysis(
+    params: Partial<OverviewSummaryFilters> = {},
+    isServer = false,
+    options?: ApiOptions
+  ) {
+    const promise = fetchClient
+      .get<OverviewSummaryResponse>("/get-situational-analysis", {
+        params: {
+          ...(params.from && { from: params.from }),
+          ...(params.to && { to: params.to }),
+        },
+      })
+      .then((res) => res.data.situationalAnalysis);
+
+    return isServer
+      ? serverApiCall(promise, [] as SituationalAnalysis[])
+      : clientApiCall(promise, [] as SituationalAnalysis[], false, options);
   },
 
   getExistingAnalysis(

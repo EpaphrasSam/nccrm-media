@@ -10,15 +10,17 @@ import {
   Button,
   Skeleton,
 } from "@heroui/react";
-import { FaRegEdit } from "react-icons/fa";
+import { FaRegEdit, FaChartBar } from "react-icons/fa";
 import { useSituationalReportingStore } from "@/store/situational-reporting";
 import { Pagination } from "@/components/common/navigation/Pagination";
 import { tableStyles } from "@/lib/styles";
+import { useRouter } from "next/navigation";
 
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
   { key: "name", label: "Name" },
+  { key: "year", label: "Year" },
   { key: "actions", label: "Actions" },
 ] as const;
 
@@ -31,9 +33,14 @@ export function SituationalReportingTable() {
     setFilters,
     totalPages,
   } = useSituationalReportingStore();
+  const router = useRouter();
 
   const handlePageChange = (page: number) => {
     setFilters({ page });
+  };
+
+  const handleViewAnalysis = (reportId: string) => {
+    router.push(`/situational-reporting/analysis/${reportId}`);
   };
 
   return (
@@ -55,7 +62,11 @@ export function SituationalReportingTable() {
                       <Skeleton className="h-5 w-48" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-5 w-16" />
+                    </TableCell>
+                    <TableCell>
                       <div className="flex gap-2">
+                        <Skeleton className="h-9 w-9 rounded-lg" />
                         <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
                     </TableCell>
@@ -70,7 +81,10 @@ export function SituationalReportingTable() {
                   <span className="text-sm font-semibold">{report.name}</span>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <span className="text-sm">{report.year}</span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center">
                     <Button
                       isIconOnly
                       variant="light"
@@ -79,6 +93,15 @@ export function SituationalReportingTable() {
                       size="sm"
                     >
                       <FaRegEdit className="w-4 h-4" color="blue" />
+                    </Button>
+                    <Button
+                      isIconOnly
+                      variant="light"
+                      onPress={() => handleViewAnalysis(report.id)}
+                      className="text-brand-green-dark"
+                      size="sm"
+                    >
+                      <FaChartBar className="w-4 h-4" />
                     </Button>
                   </div>
                 </TableCell>

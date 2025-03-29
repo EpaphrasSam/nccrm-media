@@ -3,7 +3,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input, Button, Switch, Skeleton } from "@heroui/react";
+import { Input, Button, Switch, Skeleton, Textarea } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useDepartmentsStore } from "@/store/departments";
 import { useState, useEffect, useCallback } from "react";
@@ -134,7 +134,7 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
         name="description"
         control={control}
         render={({ field }) => (
-          <Input
+          <Textarea
             {...field}
             label="Description"
             labelPlacement="outside"

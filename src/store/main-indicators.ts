@@ -71,7 +71,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
 
   // Actions
   addMainIndicator: () => {
-    navigationService.navigate("/admin/main-indicators/ ");
+    navigationService.navigate("/admin/main-indicators/new");
   },
   editMainIndicator: (mainIndicator) => {
     navigationService.navigate(
@@ -79,7 +79,6 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
     );
   },
   deleteMainIndicator: async (mainIndicatorId) => {
-    set({ isTableLoading: true });
     try {
       await mainIndicatorService.delete(mainIndicatorId, false, {
         handleError: (error: string) => {
@@ -87,11 +86,9 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
         },
       });
     } finally {
-      set({ isTableLoading: false });
     }
   },
   createMainIndicator: async (mainIndicatorData) => {
-    set({ isFormLoading: true });
     try {
       await mainIndicatorService.create(mainIndicatorData, false, {
         handleError: (error) => {
@@ -100,11 +97,9 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
       });
       navigationService.navigate("/admin/main-indicators");
     } finally {
-      set({ isFormLoading: false });
     }
   },
   updateMainIndicator: async (id, mainIndicatorData) => {
-    set({ isFormLoading: true });
     try {
       await mainIndicatorService.update(id, mainIndicatorData, false, {
         handleError: (error) => {
@@ -113,7 +108,6 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
       });
       navigationService.navigate("/admin/main-indicators");
     } finally {
-      set({ isFormLoading: false });
     }
   },
 

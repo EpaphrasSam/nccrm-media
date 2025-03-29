@@ -4,6 +4,13 @@ export const urlSync = {
     if (typeof window === "undefined") return;
     const searchParams = new URLSearchParams(window.location.search);
 
+    // If params is empty, clear all parameters
+    if (Object.keys(params).length === 0) {
+      window.history.pushState({}, "", window.location.pathname);
+      return;
+    }
+
+    // Otherwise, update parameters as before
     Object.entries(params).forEach(([key, value]) => {
       if (value && value !== "all") {
         searchParams.set(key, String(value));

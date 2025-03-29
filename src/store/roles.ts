@@ -72,7 +72,6 @@ export const useRolesStore = create<RolesState>((set) => ({
     navigationService.navigate(`/admin/roles/${role.id}/edit`);
   },
   deleteRole: async (roleId) => {
-    set({ isTableLoading: true });
     try {
       await roleService.delete(roleId, false, {
         handleError: (error: string) => {
@@ -80,7 +79,6 @@ export const useRolesStore = create<RolesState>((set) => ({
         },
       });
     } finally {
-      set({ isTableLoading: false });
     }
   },
   createRole: async (roleData) => {

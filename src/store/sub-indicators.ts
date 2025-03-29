@@ -75,7 +75,6 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
     navigationService.navigate(`/admin/sub-indicators/${subIndicator.id}/edit`);
   },
   deleteSubIndicator: async (subIndicatorId) => {
-    set({ isTableLoading: true });
     try {
       await subIndicatorService.delete(subIndicatorId, false, {
         handleError: (error: string) => {
@@ -83,7 +82,6 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
         },
       });
     } finally {
-      set({ isTableLoading: false });
     }
   },
   createSubIndicator: async (subIndicatorData) => {

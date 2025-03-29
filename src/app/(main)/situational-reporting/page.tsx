@@ -4,6 +4,7 @@ import { AdminPageHeader } from "@/components/modules/admin/layout/AdminPageHead
 import { SituationalReportingToolbar } from "@/components/modules/main/situational-reporting/SituationalReportingToolbar";
 import { SituationalReportingTable } from "@/components/modules/main/situational-reporting/SituationalReportingTable";
 import { InitializeSituationalReporting } from "./initialize";
+import { OverviewSummaryButton } from "@/components/modules/main/situational-reporting/OverviewSummaryButton";
 
 function getStringParam(
   param: string | string[] | undefined
@@ -39,10 +40,15 @@ export default async function SituationalReportingPage({
       </Suspense>
       <AdminPageLayout
         header={
-          <AdminPageHeader
-            title="Situational Reporting"
-            description="Organize situational reporting within the system. Add, edit, or remove situational reportings."
-          />
+          <div className="flex lg:flex-row flex-col justify-between items-center gap-4">
+            <AdminPageHeader
+              title="Situational Reporting"
+              description="Organize situational reporting within the system. Add, edit, or remove situational reportings."
+            />
+            <div className="flex justify-end">
+              <OverviewSummaryButton />
+            </div>
+          </div>
         }
       >
         <SituationalReportingToolbar />

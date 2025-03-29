@@ -25,6 +25,7 @@ import { departmentService } from "@/services/departments/api";
 import { roleService } from "@/services/roles/api";
 import type { DepartmentListResponse } from "@/services/departments/types";
 import type { RoleListResponse } from "@/services/roles/types";
+import { useRouter } from "next/navigation";
 
 // Section schemas
 const profileSchema = z.object({
@@ -49,6 +50,7 @@ type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
 type AccountInfoFormData = z.infer<typeof accountInfoSchema>;
 
 export function UserEditForm() {
+  const router = useRouter();
   const { currentUser, updateUser, isFormLoading } = useUsersStore();
   const [localLoading, setLocalLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<string | undefined>(
@@ -56,6 +58,7 @@ export function UserEditForm() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch departments and roles using SWR
   const { data: departmentsResponse, error: departmentsError } =
@@ -163,9 +166,11 @@ export function UserEditForm() {
     }
   };
 
-  const handleProfileSubmit = async (data: ProfileFormData) => {
+  const onSubmit = async (data: ProfileFormData) => {
     if (!currentUser) return;
+
     try {
+      setIsSubmitting(true);
       const updateData = { ...data };
       if (profileImage && profileImage !== currentUser.image) {
         // Only include image if it has changed
@@ -176,29 +181,42 @@ export function UserEditForm() {
       }
       await updateUser(currentUser.id, updateData);
     } catch (error) {
-      console.error("Failed to update profile:", error);
+      console.error("Failed to update user:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handlePersonalInfoSubmit = async (data: PersonalInfoFormData) => {
     if (!currentUser) return;
     try {
+      setIsSubmitting(true);
       await updateUser(currentUser.id, data);
     } catch (error) {
       console.error("Failed to update personal info:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAccountInfoSubmit = async (data: AccountInfoFormData) => {
     if (!currentUser) return;
     try {
+      setIsSubmitting(true);
       await updateUser(currentUser.id, data);
     } catch (error) {
       console.error("Failed to update account info:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (isFormLoading || localLoading || !departments || !roles) {
+  if (
+    (isFormLoading && !isSubmitting) ||
+    localLoading ||
+    !departments ||
+    !roles
+  ) {
     return (
       <div className="space-y-8 max-w-5xl">
         {/* Profile Section Loading */}
@@ -257,7 +275,7 @@ export function UserEditForm() {
       <section className="space-y-10">
         <h2 className="text-xl font-semibold">Profile Information</h2>
         <form
-          onSubmit={profileForm.handleSubmit(handleProfileSubmit)}
+          onSubmit={profileForm.handleSubmit(onSubmit)}
           className="space-y-6"
         >
           <div className="flex items-start gap-6">
@@ -357,7 +375,7 @@ export function UserEditForm() {
             <Button
               type="submit"
               color="primary"
-              isLoading={profileForm.formState.isSubmitting}
+              isLoading={isSubmitting}
               className={`${buttonStyles} bg-brand-green-dark px-8`}
             >
               Save
@@ -425,7 +443,7 @@ export function UserEditForm() {
             <Button
               type="submit"
               color="primary"
-              isLoading={personalInfoForm.formState.isSubmitting}
+              isLoading={isSubmitting}
               className={`${buttonStyles} bg-brand-green-dark px-8`}
             >
               Save
@@ -551,7 +569,7 @@ export function UserEditForm() {
             <Button
               type="submit"
               color="primary"
-              isLoading={accountInfoForm.formState.isSubmitting}
+              isLoading={isSubmitting}
               className={`${buttonStyles} bg-brand-green-dark px-8`}
             >
               Save
@@ -559,6 +577,25 @@ export function UserEditForm() {
           </div>
         </form>
       </section>
+
+      <div className="flex justify-center gap-3">
+        <Button
+          type="submit"
+          color="primary"
+          isLoading={isSubmitting}
+          className={`${buttonStyles} bg-brand-green-dark px-6`}
+        >
+          Save Changes
+        </Button>
+        <Button
+          type="button"
+          variant="bordered"
+          onPress={() => router.back()}
+          className={buttonStyles}
+        >
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }

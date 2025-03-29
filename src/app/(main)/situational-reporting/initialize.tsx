@@ -14,7 +14,7 @@ interface InitializeSituationalReportingProps {
 const DEFAULT_FILTERS: SituationalReportQueryParams = {
   page: 1,
   limit: 10,
-  year: new Date().getFullYear(),
+  // year: new Date().getFullYear(),
 };
 
 export function InitializeSituationalReporting({
@@ -38,9 +38,10 @@ export function InitializeSituationalReporting({
   // Common SWR config to handle errors
   const swrConfig = {
     onError: (error: Error) => {
+      // Error is already handled by clientApiCall
       console.error("SWR Error:", error);
     },
-    shouldRetryOnError: false,
+    shouldRetryOnError: false, // Disable automatic retries
   };
 
   // Fetch reports data - will refetch when filters change
@@ -49,16 +50,21 @@ export function InitializeSituationalReporting({
     async () => {
       try {
         const response = await situationalReportingService.getReports(filters);
+        const situationalAnalysis =
+          await situationalReportingService.getAnalysis();
+        console.log("Situational Analysis", situationalAnalysis);
+
         const data = "data" in response ? response.data : response;
 
         useSituationalReportingStore.setState({
-          reports: data.situationalReportsDetails.situationalReports,
-          totalReports: data.situationalReportsDetails.totalReports,
-          totalPages: data.situationalReportsDetails.totalPages,
+          reports: data.situationalReports,
+          totalReports: data.totalReports,
+          totalPages: data.totalPages,
         });
 
         return data;
       } finally {
+        // Only update loading state after initial load
         if (isReportsLoading) {
           setTableLoading(false);
         }
