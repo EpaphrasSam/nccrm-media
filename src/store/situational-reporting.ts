@@ -144,13 +144,16 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
         await situationalReportingService.deleteReport(reportId, false, {
           handleError: (error: string) => {
             console.error("Error deleting report:", error);
+            throw new Error(error);
           },
         });
         set((state) => ({
           reports: state.reports.filter((r) => r.id !== reportId),
           totalReports: state.totalReports - 1,
         }));
-      } finally {
+      } catch {
+        // Error has been handled by handleError, we just need to stop execution
+        return;
       }
     },
     createReport: async (data) => {
@@ -158,10 +161,13 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
         await situationalReportingService.createReport(data, false, {
           handleError: (error: string) => {
             console.error("Error creating report:", error);
+            throw new Error(error);
           },
         });
-        navigationService.navigate("/situational-reporting");
-      } finally {
+        navigationService.replace("/situational-reporting");
+      } catch {
+        // Error has been handled by handleError, we just need to stop execution
+        return;
       }
     },
     updateReport: async (id, data) => {
@@ -169,10 +175,13 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
         await situationalReportingService.updateReport(id, data, false, {
           handleError: (error: string) => {
             console.error("Error updating report:", error);
+            throw new Error(error);
           },
         });
-        navigationService.navigate("/situational-reporting");
-      } finally {
+        navigationService.replace("/situational-reporting");
+      } catch {
+        // Error has been handled by handleError, we just need to stop execution
+        return;
       }
     },
 
@@ -200,6 +209,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
           {
             handleError: (error: string) => {
               console.error("Error fetching analysis:", error);
+              throw new Error(error);
             },
           }
         );
@@ -207,6 +217,9 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
           const analysis = "data" in response ? response.data : response;
           set({ currentAnalysis: analysis || undefined });
         }
+      } catch {
+        // Error has been handled by handleError, we just need to stop execution
+        return;
       } finally {
         set({ isAnalysisLoading: false });
       }
@@ -216,6 +229,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
         await situationalReportingService.createAnalysis(data, false, {
           handleError: (error: string) => {
             console.error("Error creating analysis:", error);
+            throw new Error(error);
           },
         });
         // After successful creation, fetch the latest analysis to refresh the form
@@ -227,6 +241,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
             {
               handleError: (error: string) => {
                 console.error("Error fetching updated analysis:", error);
+                throw new Error(error);
               },
             }
           )
@@ -236,7 +251,9 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
               set({ currentAnalysis: analysis || undefined });
             }
           });
-      } finally {
+      } catch {
+        // Error has been handled by handleError, we just need to stop execution
+        return;
       }
     },
     updateAnalysis: async (id, data) => {
@@ -244,6 +261,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
         await situationalReportingService.updateAnalysis(id, data, false, {
           handleError: (error: string) => {
             console.error("Error updating analysis:", error);
+            throw new Error(error);
           },
         });
         // After successful update, fetch the latest analysis to refresh the form
@@ -255,6 +273,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
             {
               handleError: (error: string) => {
                 console.error("Error fetching updated analysis:", error);
+                throw new Error(error);
               },
             }
           )
@@ -264,7 +283,9 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
               set({ currentAnalysis: analysis || undefined });
             }
           });
-      } finally {
+      } catch {
+        // Error has been handled by handleError, we just need to stop execution
+        return;
       }
     },
 

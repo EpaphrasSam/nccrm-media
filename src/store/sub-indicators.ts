@@ -79,30 +79,47 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
       await subIndicatorService.delete(subIndicatorId, false, {
         handleError: (error: string) => {
           console.error("Error deleting sub indicator:", error);
+          throw new Error(error);
         },
       });
-    } finally {
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   createSubIndicator: async (subIndicatorData) => {
-    await subIndicatorService.create(subIndicatorData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/sub-indicators");
+    try {
+      await subIndicatorService.create(subIndicatorData, false, {
+        handleError: (error: string) => {
+          console.error("Error creating sub indicator:", error);
+          throw new Error(error);
+        },
+      });
+      set({
+        currentSubIndicator: undefined,
+      });
+      navigationService.replace("/admin/sub-indicators");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
   updateSubIndicator: async (id, subIndicatorData) => {
-    await subIndicatorService.update(id, subIndicatorData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/sub-indicators");
+    try {
+      await subIndicatorService.update(id, subIndicatorData, false, {
+        handleError: (error: string) => {
+          console.error("Error updating sub indicator:", error);
+          throw new Error(error);
+        },
+      });
+      set({
+        totalSubIndicators: 0,
+      });
+      navigationService.replace("/admin/sub-indicators");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
 
   // Loading States

@@ -87,41 +87,66 @@ export const useUsersStore = create<UsersState>((set) => ({
     navigationService.navigate(`/admin/users/${user.id}/edit`);
   },
   deleteUser: async (userId) => {
-    await userService.delete(userId);
-    set((state) => ({
-      users: state.users.filter((u) => u.id !== userId),
-      totalUsers: state.totalUsers - 1,
-    }));
+    try {
+      await userService.delete(userId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting user:", error);
+          throw new Error(error);
+        },
+      });
+      set((state) => ({
+        users: state.users.filter((u) => u.id !== userId),
+        totalUsers: state.totalUsers - 1,
+      }));
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
   createUser: async (userData) => {
-    await userService.create(userData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/users");
+    try {
+      await userService.create(userData, false, {
+        handleError: (error: string) => {
+          console.error("Error creating user:", error);
+          throw new Error(error);
+        },
+      });
+      set({ currentUser: undefined, users: [], totalUsers: 0 });
+      navigationService.replace("/admin/users");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
   updateUser: async (id, userData) => {
-    await userService.update(id, userData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/users");
+    try {
+      await userService.update(id, userData, false, {
+        handleError: (error: string) => {
+          console.error("Error updating user:", error);
+          throw new Error(error);
+        },
+      });
+      set({ currentUser: undefined });
+      navigationService.replace("/admin/users");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
   validateUser: async (userId, status) => {
-    await userService.validate(userId, status, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/users");
+    try {
+      await userService.validate(userId, status, false, {
+        handleError: (error: string) => {
+          console.error("Error validating user:", error);
+          throw new Error(error);
+        },
+      });
+      set({ currentUser: undefined });
+      navigationService.replace("/admin/users");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
 
   // Loading States

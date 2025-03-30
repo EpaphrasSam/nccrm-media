@@ -1,20 +1,27 @@
-export interface RoleFunctions {
+// Base function type without approve
+export interface BaseFunctions {
   view: boolean;
   add: boolean;
   edit: boolean;
   delete: boolean;
+}
+
+// Extended function type with approve
+export interface RoleFunctions extends BaseFunctions {
   approve?: boolean;
 }
 
 export interface RolePermissions {
-  role: RoleFunctions;
-  department: RoleFunctions;
-  region: RoleFunctions;
-  thematic_area: RoleFunctions;
-  main_indicator: RoleFunctions;
-  sub_indicator: RoleFunctions;
-  event: RoleFunctions & { approve: boolean };
-  user: RoleFunctions & { approve: boolean };
+  role: BaseFunctions;
+  department: BaseFunctions;
+  region: BaseFunctions;
+  thematic_area: BaseFunctions;
+  main_indicator: BaseFunctions;
+  sub_indicator: BaseFunctions;
+  event: RoleFunctions;
+  user: RoleFunctions;
+  situational_report: RoleFunctions;
+  situational_analysis: RoleFunctions;
 }
 
 export interface Role {

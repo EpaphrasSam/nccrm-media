@@ -83,9 +83,12 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
       await mainIndicatorService.delete(mainIndicatorId, false, {
         handleError: (error: string) => {
           console.error("Error deleting main indicator:", error);
+          throw new Error(error);
         },
       });
-    } finally {
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   createMainIndicator: async (mainIndicatorData) => {
@@ -93,10 +96,16 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
       await mainIndicatorService.create(mainIndicatorData, false, {
         handleError: (error) => {
           console.error("Error creating main indicator:", error);
+          throw new Error(error);
         },
       });
-      navigationService.navigate("/admin/main-indicators");
-    } finally {
+      set({
+        currentMainIndicator: undefined,
+      });
+      navigationService.replace("/admin/main-indicators");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   updateMainIndicator: async (id, mainIndicatorData) => {
@@ -104,10 +113,16 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
       await mainIndicatorService.update(id, mainIndicatorData, false, {
         handleError: (error) => {
           console.error("Error updating main indicator:", error);
+          throw new Error(error);
         },
       });
-      navigationService.navigate("/admin/main-indicators");
-    } finally {
+      set({
+        currentMainIndicator: undefined,
+      });
+      navigationService.replace("/admin/main-indicators");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
 

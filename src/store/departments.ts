@@ -79,9 +79,12 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
       await departmentService.delete(departmentId, false, {
         handleError: (error: string) => {
           console.error("Error deleting department:", error);
+          throw new Error(error);
         },
       });
-    } finally {
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   createDepartment: async (departmentData) => {
@@ -89,10 +92,16 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
       await departmentService.create(departmentData, false, {
         handleError: (error) => {
           console.error("Error creating department:", error);
+          throw new Error(error);
         },
       });
-      navigationService.navigate("/admin/departments");
-    } finally {
+      set({
+        currentDepartment: undefined,
+      });
+      navigationService.replace("/admin/departments");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   updateDepartment: async (id, departmentData) => {
@@ -100,10 +109,18 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
       await departmentService.update(id, departmentData, false, {
         handleError: (error) => {
           console.error("Error updating department:", error);
+          throw new Error(error);
         },
       });
-      navigationService.navigate("/admin/departments");
-    } finally {
+      set({
+        currentDepartment: undefined,
+        departments: [],
+        totalDepartments: 0,
+      });
+      navigationService.replace("/admin/departments");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
 

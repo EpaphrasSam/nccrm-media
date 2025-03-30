@@ -75,31 +75,61 @@ export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
     navigationService.navigate(`/admin/thematic-areas/${thematicArea.id}/edit`);
   },
   deleteThematicArea: async (thematicAreaId) => {
-    await thematicAreaService.delete(thematicAreaId);
-    set((state) => ({
-      thematicAreas: state.thematicAreas.filter((t) => t.id !== thematicAreaId),
-      totalThematicAreas: state.totalThematicAreas - 1,
-    }));
+    try {
+      await thematicAreaService.delete(thematicAreaId, false, {
+        handleError: (error: string) => {
+          console.error("Error deleting thematic area:", error);
+          throw new Error(error);
+        },
+      });
+      set((state) => ({
+        thematicAreas: state.thematicAreas.filter(
+          (t) => t.id !== thematicAreaId
+        ),
+        totalThematicAreas: state.totalThematicAreas - 1,
+      }));
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
   createThematicArea: async (thematicAreaData) => {
-    await thematicAreaService.create(thematicAreaData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/thematic-areas");
+    try {
+      await thematicAreaService.create(thematicAreaData, false, {
+        handleError: (error: string) => {
+          console.error("Error creating thematic area:", error);
+          throw new Error(error);
+        },
+      });
+      set({
+        currentThematicArea: undefined,
+        thematicAreas: [],
+        totalThematicAreas: 0,
+      });
+      navigationService.replace("/admin/thematic-areas");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
   updateThematicArea: async (id, thematicAreaData) => {
-    await thematicAreaService.update(id, thematicAreaData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/thematic-areas");
+    try {
+      await thematicAreaService.update(id, thematicAreaData, false, {
+        handleError: (error: string) => {
+          console.error("Error updating thematic area:", error);
+          throw new Error(error);
+        },
+      });
+      set({
+        currentThematicArea: undefined,
+        thematicAreas: [],
+        totalThematicAreas: 0,
+      });
+      navigationService.replace("/admin/thematic-areas");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
 
   // Loading States

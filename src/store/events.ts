@@ -218,8 +218,16 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       await eventService.delete(eventId, false, {
         handleError: (error: string) => {
           console.error("Error deleting event:", error);
+          throw new Error(error);
         },
       });
+      set((state) => ({
+        events: state.events.filter((r) => r.id !== eventId),
+        totalEvents: state.totalEvents - 1,
+      }));
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     } finally {
       set({ isTableLoading: false });
     }
@@ -229,11 +237,14 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       await eventService.create(data, false, {
         handleError: (error: string) => {
           console.error("Error creating event:", error);
+          throw new Error(error);
         },
       });
       get().resetForm();
-      navigationService.navigate("/events");
-    } finally {
+      navigationService.replace("/events");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   updateEvent: async (id, data) => {
@@ -241,10 +252,12 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       await eventService.update(id, data, false, {
         handleError: (error: string) => {
           console.error("Error updating event:", error);
+          throw new Error(error);
         },
       });
-      // window.location.reload();
-    } finally {
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   exportToExcel: async () => {

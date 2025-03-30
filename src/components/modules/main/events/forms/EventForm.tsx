@@ -75,7 +75,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
   const getDefaultValues = useCallback(
     () => ({
       reporter_id: session?.user?.id || "",
-      report_date: formatDateForInput(formData.event?.report_date) || "",
+      report_date: formatDateForInput(new Date().toISOString()),
       details: formData.event?.details || "",
       event_date: formatDateForInput(formData.event?.event_date) || "",
       region_id: formData.event?.region_id || "",
@@ -91,6 +91,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
     handleSubmit,
     reset,
     register,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -130,6 +131,21 @@ export function EventForm({ isNew = false }: EventFormProps) {
   }, [reset, getDefaultValues, session?.user?.id]);
 
   const onSubmit = async (data: EventFormValues) => {
+    // Check if event_date is in the future
+    if (data.event_date) {
+      const eventDate = new Date(data.event_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day for fair comparison
+
+      if (eventDate > today) {
+        setError("event_date", {
+          type: "manual",
+          message: "Event date cannot be in the future",
+        });
+        return;
+      }
+    }
+
     const formattedData = {
       ...data,
       report_date: formatDateForSubmit(data.report_date),
@@ -195,22 +211,20 @@ export function EventForm({ isNew = false }: EventFormProps) {
           render={({ field }) => <Input {...field} type="hidden" />}
         />
 
+        <Input
+          value={formatDateForInput(new Date().toISOString())}
+          type="date"
+          label="Report Date"
+          labelPlacement="outside"
+          variant="bordered"
+          classNames={inputStyles}
+          readOnly
+        />
+
         <Controller
           name="report_date"
           control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              type="date"
-              label="Report Date"
-              labelPlacement="outside"
-              placeholder="Select the report date"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.report_date}
-              errorMessage={errors.report_date?.message}
-            />
-          )}
+          render={({ field }) => <Input {...field} type="hidden" />}
         />
 
         <Controller

@@ -76,9 +76,12 @@ export const useRegionsStore = create<RegionsState>((set) => ({
       await regionService.delete(regionId, false, {
         handleError: (error: string) => {
           console.error("Error deleting region:", error);
+          throw new Error(error);
         },
       });
-    } finally {
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   createRegion: async (regionData) => {
@@ -86,9 +89,14 @@ export const useRegionsStore = create<RegionsState>((set) => ({
       await regionService.create(regionData, false, {
         handleError: (error) => {
           console.error("Error creating region:", error);
+          throw new Error(error);
         },
       });
-      navigationService.navigate("/admin/regions");
+      set({ currentRegion: undefined });
+      navigationService.replace("/admin/regions");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     } finally {
       set({ isFormLoading: false });
     }
@@ -99,10 +107,14 @@ export const useRegionsStore = create<RegionsState>((set) => ({
       await regionService.update(id, regionData, false, {
         handleError: (error) => {
           console.error("Error updating region:", error);
+          throw new Error(error);
         },
       });
-      navigationService.navigate("/admin/regions");
-    } finally {
+      set({ currentRegion: undefined });
+      navigationService.replace("/admin/regions");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
 

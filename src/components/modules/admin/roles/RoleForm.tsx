@@ -6,28 +6,39 @@ import { z } from "zod";
 import { Input, Button, Skeleton, Textarea, Checkbox } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useRolesStore } from "@/store/roles";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
-import type { RoleFunctions, RolePermissions } from "@/services/roles/types";
+import type {
+  BaseFunctions,
+  RoleFunctions,
+  RolePermissions,
+} from "@/services/roles/types";
 
-const roleFunctionsSchema = z.object({
+const PERMISSION_FUNCTIONS = ["view", "add", "edit", "delete"] as const;
+type PermissionFunction = (typeof PERMISSION_FUNCTIONS)[number];
+
+const baseFunctionsSchema = z.object({
   view: z.boolean(),
   add: z.boolean(),
   edit: z.boolean(),
   delete: z.boolean(),
-  approve: z.boolean().optional(),
+});
+
+const roleFunctionsSchema = baseFunctionsSchema.extend({
+  approve: z.boolean(),
 });
 
 const rolePermissionsSchema = z.object({
-  role: roleFunctionsSchema,
-  department: roleFunctionsSchema,
-  region: roleFunctionsSchema,
-  thematic_area: roleFunctionsSchema,
-  main_indicator: roleFunctionsSchema,
-  sub_indicator: roleFunctionsSchema,
-  event: roleFunctionsSchema.extend({ approve: z.boolean() }),
-  user: roleFunctionsSchema.extend({ approve: z.boolean() }),
+  role: baseFunctionsSchema,
+  department: baseFunctionsSchema,
+  region: baseFunctionsSchema,
+  thematic_area: baseFunctionsSchema,
+  main_indicator: baseFunctionsSchema,
+  sub_indicator: baseFunctionsSchema,
+  event: roleFunctionsSchema,
+  user: roleFunctionsSchema,
+  situational_report: roleFunctionsSchema,
+  situational_analysis: roleFunctionsSchema,
 });
 
 const roleSchema = z.object({
@@ -42,43 +53,54 @@ interface RoleFormProps {
   isNew?: boolean;
 }
 
-const PERMISSION_SECTIONS = [
-  { key: "role" as const, label: "Roles", hasApprove: false },
-  { key: "department" as const, label: "Departments", hasApprove: false },
-  { key: "region" as const, label: "Regions", hasApprove: false },
-  { key: "thematic_area" as const, label: "Thematic Areas", hasApprove: false },
-  {
-    key: "main_indicator" as const,
-    label: "Main Indicators",
-    hasApprove: false,
-  },
-  { key: "sub_indicator" as const, label: "Sub Indicators", hasApprove: false },
-  { key: "event" as const, label: "Events", hasApprove: true },
-  { key: "user" as const, label: "Users", hasApprove: true },
-] as const;
+// Helper type to get keys of RolePermissions
+type PermissionKey = keyof RolePermissions;
 
-const PERMISSION_FUNCTIONS = ["view", "add", "edit", "delete"] as const;
+// Helper to check if a module has approve permission using type information
+const hasApprovePermission = (key: PermissionKey): boolean => {
+  // Use type guard to check if the permission has approve
+  return (
+    key === "event" ||
+    key === "user" ||
+    key === "situational_report" ||
+    key === "situational_analysis"
+  );
+};
 
-const DEFAULT_FUNCTIONS: RoleFunctions = {
+// Helper to format label from key
+const formatLabel = (key: string): string => {
+  return key
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+const BASE_FUNCTIONS: BaseFunctions = {
   view: false,
   add: false,
   edit: false,
   delete: false,
 };
 
+const ROLE_FUNCTIONS: RoleFunctions = {
+  ...BASE_FUNCTIONS,
+  approve: false,
+};
+
 const DEFAULT_PERMISSIONS: RolePermissions = {
-  role: DEFAULT_FUNCTIONS,
-  department: DEFAULT_FUNCTIONS,
-  region: DEFAULT_FUNCTIONS,
-  thematic_area: DEFAULT_FUNCTIONS,
-  main_indicator: DEFAULT_FUNCTIONS,
-  sub_indicator: DEFAULT_FUNCTIONS,
-  event: { ...DEFAULT_FUNCTIONS, approve: false },
-  user: { ...DEFAULT_FUNCTIONS, approve: false },
+  role: BASE_FUNCTIONS,
+  department: BASE_FUNCTIONS,
+  region: BASE_FUNCTIONS,
+  thematic_area: BASE_FUNCTIONS,
+  main_indicator: BASE_FUNCTIONS,
+  sub_indicator: BASE_FUNCTIONS,
+  event: ROLE_FUNCTIONS,
+  user: ROLE_FUNCTIONS,
+  situational_report: ROLE_FUNCTIONS,
+  situational_analysis: ROLE_FUNCTIONS,
 };
 
 export function RoleForm({ isNew = false }: RoleFormProps) {
-  const router = useRouter();
   const { createRole, updateRole, deleteRole, currentRole, isFormLoading } =
     useRolesStore();
 
@@ -132,7 +154,6 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     try {
       setIsDeleting(true);
       await deleteRole(currentRole.id);
-      router.push("/admin/roles");
     } catch (error) {
       console.error("Failed to delete role:", error);
     } finally {
@@ -201,39 +222,39 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
       {/* Permissions Section */}
       <div className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PERMISSION_SECTIONS.map(({ key, label, hasApprove }) => (
+          {(Object.keys(DEFAULT_PERMISSIONS) as PermissionKey[]).map((key) => (
             <div key={key} className="flex">
               <div className="w-32 shrink-0">
-                <h4 className="text-base font-medium">{label}</h4>
+                <h4 className="text-base font-medium">{formatLabel(key)}</h4>
               </div>
               <div className="flex flex-col gap-2">
-                {PERMISSION_FUNCTIONS.map((func) => (
+                {PERMISSION_FUNCTIONS.map((func: PermissionFunction) => (
                   <Controller
                     key={func}
-                    name={`functions.${key}.${func}`}
+                    name={`functions.${key}.${func}` as const}
                     control={control}
-                    render={({ field }) => (
+                    render={({ field: { value, onChange } }) => (
                       <Checkbox
-                        isSelected={field.value}
-                        onValueChange={field.onChange}
+                        isSelected={!!value}
+                        onValueChange={onChange}
                         color="danger"
                       >
-                        Can {func} {label.toLowerCase().slice(0, -1)}
+                        Can {func}
                       </Checkbox>
                     )}
                   />
                 ))}
-                {hasApprove && (
+                {hasApprovePermission(key) && (
                   <Controller
-                    name={`functions.${key}.approve`}
+                    name={`functions.${key}.approve` as keyof RoleFormValues}
                     control={control}
-                    render={({ field }) => (
+                    render={({ field: { value, onChange } }) => (
                       <Checkbox
-                        isSelected={field.value}
-                        onValueChange={field.onChange}
+                        isSelected={!!value}
+                        onValueChange={onChange}
                         color="danger"
                       >
-                        Can approve {label.toLowerCase().slice(0, -1)}
+                        Can approve
                       </Checkbox>
                     )}
                   />

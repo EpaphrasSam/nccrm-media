@@ -76,30 +76,45 @@ export const useRolesStore = create<RolesState>((set) => ({
       await roleService.delete(roleId, false, {
         handleError: (error: string) => {
           console.error("Error deleting role:", error);
+          throw new Error(error);
         },
       });
-    } finally {
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
     }
   },
   createRole: async (roleData) => {
-    await roleService.create(roleData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/roles");
+    try {
+      await roleService.create(roleData, false, {
+        handleError: (error: string) => {
+          console.error("Error creating role:", error);
+          throw new Error(error);
+        },
+      });
+      // Only execute these if no error was thrown
+      set({ currentRole: undefined });
+      navigationService.replace("/admin/roles");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
   updateRole: async (id, roleData) => {
-    await roleService.update(id, roleData, false, {
-      handleError: () => {
-        // Don't navigate on error
-        return;
-      },
-    });
-    // Only navigate on success
-    navigationService.navigate("/admin/roles");
+    try {
+      await roleService.update(id, roleData, false, {
+        handleError: (error: string) => {
+          console.error("Error updating role:", error);
+          throw new Error(error);
+        },
+      });
+      // Only execute these if no error was thrown
+      set({ currentRole: undefined });
+      navigationService.replace("/admin/roles");
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
   },
 
   // Loading States
