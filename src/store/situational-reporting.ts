@@ -6,7 +6,6 @@ import type {
   AnalysisCreateInput,
   SituationalReportQueryParams,
   OverviewSummaryFilters,
-  SituationalAnalysis,
 } from "@/services/situational-reporting/types";
 import { situationalReportingService } from "@/services/situational-reporting/api";
 import { urlSync } from "@/utils/url-sync";
@@ -63,12 +62,20 @@ interface SituationalReportingState {
   updateAnalysis: (id: string, data: AnalysisCreateInput) => Promise<void>;
 
   // Overview Summary Data
-  overviewData: SituationalAnalysis[];
+  overviewData: {
+    [year: string]: {
+      [thematicArea: string]: number;
+    };
+  };
   overviewFilters: OverviewSummaryFilters;
   isOverviewTableLoading: boolean;
 
   // Overview Summary Actions
-  setOverviewData: (data: SituationalAnalysis[]) => void;
+  setOverviewData: (data: {
+    [year: string]: {
+      [thematicArea: string]: number;
+    };
+  }) => void;
   setOverviewFilters: (filters: Partial<OverviewSummaryFilters>) => void;
   resetOverviewFilters: () => void;
   setOverviewTableLoading: (loading: boolean) => void;
@@ -262,13 +269,12 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
     },
 
     // Overview Summary Initial State
-    overviewData: [],
+    overviewData: {},
     overviewFilters: DEFAULT_OVERVIEW_FILTERS,
     isOverviewTableLoading: true,
 
     // Overview Summary Actions
-    setOverviewData: (data: SituationalAnalysis[]) =>
-      set({ overviewData: data }),
+    setOverviewData: (data) => set({ overviewData: data }),
     setOverviewFilters: (newFilters: Partial<OverviewSummaryFilters>) =>
       set((state) => ({
         overviewFilters: { ...state.overviewFilters, ...newFilters },

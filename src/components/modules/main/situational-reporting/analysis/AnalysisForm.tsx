@@ -20,7 +20,6 @@ import { inputStyles } from "@/lib/styles";
 import { useParams } from "next/navigation";
 
 const analysisSchema = z.object({
-  mainIndicatorId: z.string().min(1, "Please select a main indicator"),
   currentStatus: z.enum([
     "Bad",
     "Somewhat Bad",
@@ -46,7 +45,6 @@ const analysisSchema = z.object({
     .array(z.string())
     .min(1, "Please select at least one risk group"),
   comments: z.string().optional(),
-  situationalReportId: z.string(),
 });
 
 type FormData = z.infer<typeof analysisSchema>;
@@ -116,19 +114,17 @@ export function AnalysisForm() {
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(analysisSchema),
     defaultValues: {
-      mainIndicatorId: currentMainIndicator || "",
       currentStatus: undefined,
       escalationPotential: undefined,
       responseAdequacy: undefined,
       atRiskGroup: [],
-      situationalReportId: "",
     },
   });
 
@@ -141,19 +137,16 @@ export function AnalysisForm() {
   useEffect(() => {
     const resetFormData = () => {
       reset({
-        mainIndicatorId: currentMainIndicator || "",
         currentStatus: undefined,
         escalationPotential: undefined,
         responseAdequacy: undefined,
         atRiskGroup: [],
         comments: "",
-        situationalReportId: reportId as string,
       });
     };
 
     if (currentAnalysis) {
       const resetData = {
-        mainIndicatorId: currentAnalysis.mainIndicatorId,
         currentStatus: getKeyByValue(STATUS_MAP, currentAnalysis.currentStatus),
         escalationPotential: getKeyByValue(
           ESCALATION_MAP,
@@ -165,52 +158,52 @@ export function AnalysisForm() {
         ),
         atRiskGroup: currentAnalysis.atRiskGroup,
         comments: currentAnalysis.comments,
-        situationalReportId: currentAnalysis.situationalReportId,
       };
       reset(resetData);
     } else {
       resetFormData();
     }
 
-    // Cleanup function to reset form and clear analysis when component unmounts
     return () => {
       resetFormData();
     };
-  }, [currentAnalysis, currentMainIndicator, reportId, reset]);
+  }, [currentAnalysis, currentMainIndicator, reset]);
 
   // Clear form when thematic area changes
   useEffect(() => {
     if (!currentThematicArea) {
       reset({
-        mainIndicatorId: "",
         currentStatus: undefined,
         escalationPotential: undefined,
         responseAdequacy: undefined,
         atRiskGroup: [],
         comments: "",
-        situationalReportId: reportId as string,
       });
     }
-  }, [currentThematicArea, reportId, reset]);
+  }, [currentThematicArea, reset]);
 
   // Clear form on unmount or when switching reports
   useEffect(() => {
     return () => {
       reset({
-        mainIndicatorId: "",
         currentStatus: undefined,
         escalationPotential: undefined,
         responseAdequacy: undefined,
         atRiskGroup: [],
         comments: "",
-        situationalReportId: "",
       });
     };
-  }, [reset, reportId]);
+  }, [reset]);
 
   const onSubmit = async (data: FormData) => {
+    if (!currentMainIndicator || !reportId) {
+      console.error("Missing required IDs");
+      return;
+    }
+
     const mappedData = {
       ...data,
+      mainIndicatorId: currentMainIndicator,
       situationalReportId: reportId,
       currentStatus: STATUS_MAP[data.currentStatus],
       escalationPotential: ESCALATION_MAP[data.escalationPotential],
@@ -245,14 +238,13 @@ export function AnalysisForm() {
         <>
           {/* Main Indicator Section */}
           <div>
-            <h2 className="text-xl font-semibold mb-2">Main Indicator</h2>
+            <h2 className="text-base font-semibold mb-2">Main Indicator</h2>
             <Select
               placeholder="Select the main indicator..."
               selectedKeys={currentMainIndicator ? [currentMainIndicator] : []}
               onSelectionChange={async (keys) => {
                 const id = Array.from(keys)[0] as string;
                 setCurrentMainIndicator(id);
-                setValue("mainIndicatorId", id);
                 await getExistingAnalysis(id, reportId as string);
               }}
               isDisabled={!currentThematicArea || isAnalysisLoading}
@@ -264,11 +256,6 @@ export function AnalysisForm() {
                 <SelectItem key={indicator.id}>{indicator.name}</SelectItem>
               ))}
             </Select>
-            {errors.mainIndicatorId && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.mainIndicatorId.message}
-              </p>
-            )}
           </div>
 
           {isAnalysisLoading ? (
@@ -284,7 +271,7 @@ export function AnalysisForm() {
               {/* Current Status Section */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h2 className="text-xl font-semibold">Current Status</h2>
+                  <h2 className="text-base font-semibold">Current Status</h2>
                   <p className="text-gray-600">
                     Please assess the overall conditions within this thematic
                     context, from bad to good in the current reporting period
@@ -324,7 +311,7 @@ export function AnalysisForm() {
               {/* Escalation Potential Section */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-base font-semibold">
                     Escalation Potential
                   </h2>
                   <p className="text-gray-600">
@@ -369,7 +356,7 @@ export function AnalysisForm() {
               {/* Response Adequacy Section */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h2 className="text-xl font-semibold">Response Adequacy</h2>
+                  <h2 className="text-base font-semibold">Response Adequacy</h2>
                   <p className="text-gray-600">
                     Please assess the response adequacy in the scale of absent
                     to well-managed
@@ -408,7 +395,7 @@ export function AnalysisForm() {
               {/* At Risk Groups Section */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h2 className="text-xl font-semibold">At Risk Groups</h2>
+                  <h2 className="text-base font-semibold">At Risk Groups</h2>
                   <p className="text-gray-600">
                     Please select all risk groups (Multiple-choice)
                   </p>
@@ -436,7 +423,7 @@ export function AnalysisForm() {
 
               {/* Comments Section */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Comments</h2>
+                <h2 className="text-base font-semibold">Comments</h2>
                 <Textarea
                   {...register("comments")}
                   placeholder="Enter any additional details..."

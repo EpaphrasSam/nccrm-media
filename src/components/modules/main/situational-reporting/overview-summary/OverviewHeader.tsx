@@ -1,43 +1,56 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Popover, PopoverTrigger, PopoverContent } from "@heroui/react";
+import {
+  Button,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  Select,
+  SelectItem,
+} from "@heroui/react";
 import { PiMicrosoftExcelLogoThin } from "react-icons/pi";
 import { FaChevronLeft } from "react-icons/fa";
 import { FiFilter } from "react-icons/fi";
 import { useSituationalReportingStore } from "@/store/situational-reporting";
 import { navigationService } from "@/utils/navigation";
-import { buttonStyles } from "@/lib/styles";
+import { buttonStyles, inputStyles } from "@/lib/styles";
 import { urlSync } from "@/utils/url-sync";
 
 interface FilterState {
-  from: string;
-  to: string;
+  from: number | undefined;
+  to: number | undefined;
 }
+
+// Generate years from 2000 to current year
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: currentYear - 1999 }, (_, i) =>
+  (currentYear - i).toString()
+);
 
 export function OverviewHeader() {
   const { overviewFilters, setOverviewFilters, resetOverviewFilters } =
     useSituationalReportingStore();
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
-    from: overviewFilters?.from || "",
-    to: overviewFilters?.to || "",
+    from: overviewFilters?.from,
+    to: overviewFilters?.to,
   });
 
   const handleApplyFilters = () => {
-    // Only set filters if both dates are provided
+    // Only set filters if both years are provided
     if (tempFilters.from && tempFilters.to) {
       setOverviewFilters(tempFilters);
       urlSync.pushToUrl({
-        from: tempFilters.from,
-        to: tempFilters.to,
+        from: tempFilters.from.toString(),
+        to: tempFilters.to.toString(),
       });
     }
   };
 
   const handleClearFilters = () => {
     resetOverviewFilters();
-    setTempFilters({ from: "", to: "" });
+    setTempFilters({ from: undefined, to: undefined });
     // Clear URL parameters
     urlSync.pushToUrl({});
   };
@@ -85,26 +98,46 @@ export function OverviewHeader() {
               <div className="w-full space-y-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm text-gray-600">From</label>
-                  <input
-                    type="date"
-                    value={tempFilters.from}
-                    onChange={(e) =>
-                      setTempFilters({ ...tempFilters, from: e.target.value })
+                  <Select
+                    placeholder="Select year"
+                    selectedKeys={
+                      tempFilters.from ? [tempFilters.from.toString()] : []
                     }
-                    className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-300"
-                  />
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0]?.toString();
+                      setTempFilters({
+                        ...tempFilters,
+                        from: value ? parseInt(value) : undefined,
+                      });
+                    }}
+                    classNames={inputStyles}
+                  >
+                    {years.map((year) => (
+                      <SelectItem key={year}>{year}</SelectItem>
+                    ))}
+                  </Select>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm text-gray-600">To</label>
-                  <input
-                    type="date"
-                    value={tempFilters.to}
-                    onChange={(e) =>
-                      setTempFilters({ ...tempFilters, to: e.target.value })
+                  <Select
+                    placeholder="Select year"
+                    selectedKeys={
+                      tempFilters.to ? [tempFilters.to.toString()] : []
                     }
-                    className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-300"
-                  />
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0]?.toString();
+                      setTempFilters({
+                        ...tempFilters,
+                        to: value ? parseInt(value) : undefined,
+                      });
+                    }}
+                    classNames={inputStyles}
+                  >
+                    {years.map((year) => (
+                      <SelectItem key={year}>{year}</SelectItem>
+                    ))}
+                  </Select>
                 </div>
               </div>
 

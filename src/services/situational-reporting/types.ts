@@ -21,8 +21,9 @@ export interface Analysis {
 }
 
 export interface SituationalAnalysis {
-  thematic_area: string;
-  average_score: number;
+  [year: string]: {
+    [thematicArea: string]: number;
+  };
 }
 
 export interface SituationalReportCreateInput {
@@ -70,11 +71,33 @@ export interface AnalysisResponse {
 }
 
 export interface OverviewSummaryFilters {
-  from?: string;
-  to?: string;
+  from?: number;
+  to?: number;
 }
 
 export interface OverviewSummaryResponse {
   message: string;
-  situationalAnalysis: SituationalAnalysis[];
+  situationalAnalysis: SituationalAnalysis;
+}
+
+export interface SubIndicatorStatistic {
+  id: string;
+  name: string;
+  event_count: number;
+}
+
+export interface Statistics {
+  id: string;
+  mainIndicator: string;
+  sub_indicators: SubIndicatorStatistic[];
+}
+
+export interface StatisticsResponse {
+  message: string;
+  statistics: Statistics;
+}
+
+export interface StatisticsFilters {
+  from?: string;
+  to?: string;
 }

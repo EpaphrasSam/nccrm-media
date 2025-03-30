@@ -11,6 +11,9 @@ import type {
   SituationalAnalysis,
   OverviewSummaryFilters,
   OverviewSummaryResponse,
+  StatisticsResponse,
+  StatisticsFilters,
+  Statistics,
 } from "./types";
 
 type ApiOptions = {
@@ -143,8 +146,8 @@ export const situationalReportingService = {
       .then((res) => res.data.situationalAnalysis);
 
     return isServer
-      ? serverApiCall(promise, [] as SituationalAnalysis[])
-      : clientApiCall(promise, [] as SituationalAnalysis[], false, options);
+      ? serverApiCall(promise, {} as SituationalAnalysis)
+      : clientApiCall(promise, {} as SituationalAnalysis, false, options);
   },
 
   getExistingAnalysis(
@@ -162,5 +165,31 @@ export const situationalReportingService = {
     return isServer
       ? serverApiCall(promise, null)
       : clientApiCall(promise, null, false, options);
+  },
+
+  getStatistics(
+    mainIndicatorId: string,
+    params: Partial<StatisticsFilters> = {},
+    isServer = false,
+    options?: ApiOptions
+  ) {
+    const promise = fetchClient
+      .get<StatisticsResponse>(`/get-statistics/${mainIndicatorId}`, {
+        params: {
+          ...(params.from && { from: params.from }),
+          ...(params.to && { to: params.to }),
+        },
+      })
+      .then((res) => res.data.statistics);
+
+    const defaultResponse: Statistics = {
+      id: "",
+      mainIndicator: "",
+      sub_indicators: [],
+    };
+
+    return isServer
+      ? serverApiCall(promise, defaultResponse)
+      : clientApiCall(promise, defaultResponse, false, options);
   },
 };

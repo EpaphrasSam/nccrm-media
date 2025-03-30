@@ -31,7 +31,7 @@ export function InitializeOverviewSummary({
   }, [initialFilters, setOverviewFilters]);
 
   // Always fetch data, with or without filters
-  const { isLoading } = useSWR(
+  const { isLoading } = useSWR<SituationalAnalysis>(
     ["overview-summary", overviewFilters],
     async () => {
       const response = await situationalReportingService.getAnalysis(
@@ -43,11 +43,11 @@ export function InitializeOverviewSummary({
           },
         }
       );
-      // Convert object with numeric keys into a proper array
-      return Object.values(response);
+      console.log(response);
+      return response as SituationalAnalysis;
     },
     {
-      onSuccess: (data: SituationalAnalysis[]) => {
+      onSuccess: (data) => {
         setOverviewData(data);
       },
     }

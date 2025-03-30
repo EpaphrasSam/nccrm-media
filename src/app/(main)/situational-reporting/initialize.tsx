@@ -50,10 +50,6 @@ export function InitializeSituationalReporting({
     async () => {
       try {
         const response = await situationalReportingService.getReports(filters);
-        const situationalAnalysis =
-          await situationalReportingService.getAnalysis();
-        console.log("Situational Analysis", situationalAnalysis);
-
         const data = "data" in response ? response.data : response;
 
         useSituationalReportingStore.setState({
