@@ -1,8 +1,9 @@
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useSession } from "next-auth/react";
 import {
   Input,
   Button,
@@ -15,7 +16,7 @@ import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { FaChevronRight } from "react-icons/fa";
+import { FaChevronRight, FaPlus, FaTrash } from "react-icons/fa";
 
 // Helper functions for date formatting
 const formatDateForInput = (dateString: string | null | undefined) => {
@@ -31,12 +32,12 @@ const formatDateForSubmit = (dateString: string) => {
 const eventSchema = z.object({
   reporter_id: z.string().min(1, "Reporter is required"),
   report_date: z.string().min(1, "Report date is required"),
-  details: z.string().min(1, "Event details are required"),
-  event_date: z.string().min(1, "Event date is required"),
+  details: z.string().optional(),
+  event_date: z.string().optional(),
   region_id: z.string().min(1, "Region is required"),
-  location_details: z.string().min(1, "Location details are required"),
+  location_details: z.string().optional(),
   sub_indicator_id: z.string().min(1, "Sub indicator is required"),
-  thematic_area_id: z.string().min(1, "Thematic area is required"),
+  follow_ups: z.array(z.string()).default([]),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -45,7 +46,19 @@ interface EventFormProps {
   isNew?: boolean;
 }
 
+export interface EventFormData {
+  reporter_id: string;
+  report_date: string;
+  details?: string;
+  event_date?: string;
+  region_id: string;
+  location_details?: string;
+  sub_indicator_id: string;
+  follow_ups: string[];
+}
+
 export function EventForm({ isNew = false }: EventFormProps) {
+  const { data: session } = useSession();
   const {
     setEventForm,
     currentEvent,
@@ -53,67 +66,76 @@ export function EventForm({ isNew = false }: EventFormProps) {
     setFormLoading,
     formData,
     setCurrentStep,
-    reporters,
     regions,
     subIndicators,
-    thematicAreas,
   } = useEventsStore();
 
-  const [localLoading, setLocalLoading] = useState(true);
+  const [localLoading, setLocalLoading] = useState(!formData.event);
 
   const getDefaultValues = useCallback(
     () => ({
-      reporter_id: formData.event?.reporter_id || "",
+      reporter_id: session?.user?.id || "",
       report_date: formatDateForInput(formData.event?.report_date) || "",
       details: formData.event?.details || "",
       event_date: formatDateForInput(formData.event?.event_date) || "",
       region_id: formData.event?.region_id || "",
       location_details: formData.event?.location_details || "",
       sub_indicator_id: formData.event?.sub_indicator_id || "",
-      thematic_area_id: formData.event?.thematic_area_id || "",
+      follow_ups: currentEvent?.follow_ups || [],
     }),
-    [formData.event]
+    [formData.event, currentEvent, session?.user?.id]
   );
 
   const {
     control,
     handleSubmit,
     reset,
+    register,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "follow_ups" as never,
+  });
+
+  // Handle loading states
   useEffect(() => {
-    if (isNew) {
-      setFormLoading(false);
+    if (formData.event) {
+      // If we already have form data, no loading needed
       setLocalLoading(false);
+      setFormLoading(false);
+    } else if (isNew) {
+      // For new forms, no loading needed
+      setLocalLoading(false);
+      setFormLoading(false);
     } else if (!isFormLoading && currentEvent) {
-      reset(getDefaultValues());
+      // For edit mode, add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
-      }, 1000);
+      }, 500);
       return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
-  }, [
-    isNew,
-    currentEvent,
-    isFormLoading,
-    reset,
-    getDefaultValues,
-    setFormLoading,
-  ]);
+  }, [isNew, currentEvent, isFormLoading, formData.event, setFormLoading]);
+
+  // Handle form reset
+  useEffect(() => {
+    reset({
+      ...getDefaultValues(),
+      reporter_id: session?.user?.id || "",
+    });
+  }, [reset, getDefaultValues, session?.user?.id]);
 
   const onSubmit = async (data: EventFormValues) => {
-    // Format dates before submitting
     const formattedData = {
       ...data,
       report_date: formatDateForSubmit(data.report_date),
-      event_date: formatDateForSubmit(data.event_date),
+      event_date: data.event_date ? formatDateForSubmit(data.event_date) : "",
+      details: data.details || "",
+      location_details: data.location_details || "",
     };
     setEventForm(formattedData);
     setCurrentStep("perpetrator");
@@ -121,7 +143,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
 
   if (isFormLoading || localLoading) {
     return (
-      <div className="flex flex-col min-h-[calc(100vh-14rem)]">
+      <div className="flex flex-col h-screen">
         <div className="space-y-6">
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
@@ -130,6 +152,14 @@ export function EventForm({ isNew = false }: EventFormProps) {
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-10 w-full max-w-2xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-32 w-full max-w-2xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-32 w-full max-w-2xl" />
           </div>
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
@@ -149,31 +179,20 @@ export function EventForm({ isNew = false }: EventFormProps) {
       className="flex flex-col min-h-[calc(100vh-14rem)]"
     >
       <div className="flex flex-col gap-6">
+        <Input
+          value={session?.user?.name || ""}
+          label="Reporter"
+          labelPlacement="outside"
+          readOnly
+          variant="bordered"
+          classNames={inputStyles}
+        />
+
         <Controller
           name="reporter_id"
           control={control}
-          render={({ field }) => (
-            <Select
-              selectedKeys={field.value ? [field.value] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
-              }}
-              label="Reporter"
-              labelPlacement="outside"
-              placeholder="Select the reporter"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.reporter_id}
-              errorMessage={errors.reporter_id?.message}
-            >
-              {reporters?.map((reporter) => (
-                <SelectItem key={reporter.id} textValue={reporter.name}>
-                  {reporter.name}
-                </SelectItem>
-              ))}
-            </Select>
-          )}
+          defaultValue={session?.user?.id || ""}
+          render={({ field }) => <Input {...field} type="hidden" />}
         />
 
         <Controller
@@ -300,32 +319,45 @@ export function EventForm({ isNew = false }: EventFormProps) {
           )}
         />
 
-        <Controller
-          name="thematic_area_id"
-          control={control}
-          render={({ field }) => (
-            <Select
-              selectedKeys={field.value ? [field.value] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
-              }}
-              label="Thematic Area"
-              labelPlacement="outside"
-              placeholder="Select the thematic area"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.thematic_area_id}
-              errorMessage={errors.thematic_area_id?.message}
-            >
-              {thematicAreas?.map((area) => (
-                <SelectItem key={area.id} textValue={area.name}>
-                  {area.name}
-                </SelectItem>
+        {!isNew && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold">Follow-ups</h2>
+              <Button
+                type="button"
+                variant="light"
+                color="primary"
+                startContent={<FaPlus className="h-4 w-4" />}
+                onPress={() => append("")}
+                className={buttonStyles}
+              >
+                Add Follow-up
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex items-start gap-2">
+                  <Textarea
+                    {...register(`follow_ups.${index}`)}
+                    placeholder={`Follow-up ${index + 1}`}
+                    className="flex-1"
+                    classNames={inputStyles}
+                  />
+                  <Button
+                    type="button"
+                    isIconOnly
+                    variant="light"
+                    color="danger"
+                    onPress={() => remove(index)}
+                    className="mt-1"
+                  >
+                    <FaTrash className="h-4 w-4" />
+                  </Button>
+                </div>
               ))}
-            </Select>
-          )}
-        />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end mt-auto pt-8">

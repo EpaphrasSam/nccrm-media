@@ -5,6 +5,7 @@ import type {
   EventListResponse,
   EventDetailResponse,
   EventCreateInput,
+  EventUpdateInput,
   EventQueryParams,
 } from "./types";
 
@@ -46,9 +47,14 @@ export const eventService = {
         );
   },
 
-  fetchById(id: string, isServer = false, options?: ApiOptions) {
+  fetchById(
+    id: string,
+    userId: string,
+    isServer = false,
+    options?: ApiOptions
+  ) {
     const promise = fetchClient
-      .get<EventDetailResponse>(`/event/${id}`)
+      .get<EventDetailResponse>(`/get-event/${id}/${userId}`)
       .then((res) => res.data.event);
 
     return isServer
@@ -57,9 +63,37 @@ export const eventService = {
   },
 
   create(data: EventCreateInput, isServer = false, options?: ApiOptions) {
+    const formData = new FormData();
+
+    // Append all non-file fields
+    Object.entries(data).forEach(([key, value]) => {
+      if (key !== "docs" && value !== undefined) {
+        if (Array.isArray(value)) {
+          value.forEach((item) => formData.append(key, item));
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
+
+    // Append files
+    if (data.docs) {
+      data.docs.forEach((file) => {
+        formData.append("docs", file);
+      });
+    }
+
     const promise = fetchClient
-      .post<{ message: string }>("/add-event", data)
-      .then((res) => res.data);
+      .post<{ message: string }>("/add-event", formData)
+      .then((res) => res.data)
+      .catch((error) => {
+        const message =
+          error.response?.data?.message || "Failed to create event";
+        if (options?.handleError) {
+          options.handleError(message);
+        }
+        throw error;
+      });
 
     return isServer
       ? serverApiCall(promise, { message: "" })
@@ -68,13 +102,48 @@ export const eventService = {
 
   update(
     id: string,
-    data: Partial<Event>,
+    data: EventUpdateInput,
     isServer = false,
     options?: ApiOptions
   ) {
+    const formData = new FormData();
+
+    // Append all non-file fields
+    Object.entries(data).forEach(([key, value]) => {
+      if (!["files", "newDocs"].includes(key) && value !== undefined) {
+        if (Array.isArray(value)) {
+          value.forEach((item) => formData.append(key, item));
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
+
+    // Append existing file URLs
+    if (data.files) {
+      data.files.forEach((url) => {
+        formData.append("files", url);
+      });
+    }
+
+    // Append new files
+    if (data.newDocs) {
+      data.newDocs.forEach((file) => {
+        formData.append("newDocs", file);
+      });
+    }
+
     const promise = fetchClient
-      .put<{ message: string }>(`/edit-event/${id}`, data)
-      .then((res) => res.data);
+      .put<{ message: string }>(`/edit-event/${id}`, formData)
+      .then((res) => res.data)
+      .catch((error) => {
+        const message =
+          error.response?.data?.message || "Failed to update event";
+        if (options?.handleError) {
+          options.handleError(message);
+        }
+        throw error;
+      });
 
     return isServer
       ? serverApiCall(promise, { message: "" })

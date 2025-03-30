@@ -6,29 +6,19 @@ import { z } from "zod";
 import { Input, Button, Skeleton, Textarea } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const outcomeSchema = z.object({
-  death_count_men: z.coerce
-    .number()
-    .min(0, "Deaths (Men) must be 0 or greater"),
-  death_count_women_chldren: z.coerce
-    .number()
-    .min(0, "Deaths (Women and Children) must be 0 or greater"),
-  death_details: z.string().min(1, "Death details are required"),
-  injury_count_men: z.coerce
-    .number()
-    .min(0, "Injuries (Men) must be 0 or greater"),
-  injury_count_women_chldren: z.coerce
-    .number()
-    .min(0, "Injuries (Women and Children) must be 0 or greater"),
-  injury_details: z.string().min(1, "Injuries details are required"),
-  losses_count: z.coerce
-    .number()
-    .min(0, "Property losses must be 0 or greater"),
-  losses_details: z.string().min(1, "Losses details are required"),
+  death_count_men: z.coerce.number().optional(),
+  death_count_women_chldren: z.coerce.number().optional(),
+  death_details: z.string().optional(),
+  injury_count_men: z.coerce.number().optional(),
+  injury_count_women_chldren: z.coerce.number().optional(),
+  injury_details: z.string().optional(),
+  losses_count: z.coerce.number().optional(),
+  losses_details: z.string().optional(),
 });
 
 type OutcomeFormValues = z.infer<typeof outcomeSchema>;
@@ -46,8 +36,6 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
     formData,
     setCurrentStep,
   } = useEventsStore();
-
-  const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -75,19 +63,11 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
-      setLocalLoading(false);
     } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
   }, [
     isNew,
@@ -103,7 +83,7 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
     setCurrentStep("context");
   };
 
-  if (isFormLoading || localLoading) {
+  if (isFormLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -141,7 +121,7 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
             <Input
               {...field}
               type="number"
-              value={value.toString()}
+              value={value?.toString() || ""}
               onChange={(e) => onChange(Number(e.target.value))}
               label="Deaths (Men)"
               labelPlacement="outside"
@@ -161,7 +141,7 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
             <Input
               {...field}
               type="number"
-              value={value.toString()}
+              value={value?.toString() || ""}
               onChange={(e) => onChange(Number(e.target.value))}
               label="Deaths (Women and Children)"
               labelPlacement="outside"
@@ -198,7 +178,7 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
             <Input
               {...field}
               type="number"
-              value={value.toString()}
+              value={value?.toString() || ""}
               onChange={(e) => onChange(Number(e.target.value))}
               label="Injuries (Men)"
               labelPlacement="outside"
@@ -218,7 +198,7 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
             <Input
               {...field}
               type="number"
-              value={value.toString()}
+              value={value?.toString() || ""}
               onChange={(e) => onChange(Number(e.target.value))}
               label="Injuries (Women and Children)"
               labelPlacement="outside"
@@ -255,7 +235,7 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
             <Input
               {...field}
               type="number"
-              value={value.toString()}
+              value={value?.toString() || ""}
               onChange={(e) => onChange(Number(e.target.value))}
               label="Losses (Property)"
               labelPlacement="outside"

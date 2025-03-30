@@ -5,14 +5,14 @@ import { eventService } from "@/services/events/api";
 import { userService } from "@/services/users/api";
 import { subIndicatorService } from "@/services/sub-indicators/api";
 import { regionService } from "@/services/regions/api";
-import { thematicAreaService } from "@/services/thematic-areas/api";
 import useSWR from "swr";
 
 interface InitializeEventProps {
   id: string;
+  userId: string;
 }
 
-export function InitializeEvent({ id }: InitializeEventProps) {
+export function InitializeEvent({ id, userId }: InitializeEventProps) {
   const { setFormLoading } = useEventsStore();
 
   // Common SWR config to handle errors
@@ -22,6 +22,9 @@ export function InitializeEvent({ id }: InitializeEventProps) {
       console.error("SWR Error:", error);
     },
     shouldRetryOnError: false,
+    revalidateOnFocus: false, // Prevent revalidation on window focus
+    revalidateIfStale: false, // Prevent revalidation of stale data
+    revalidateOnReconnect: false, // Prevent revalidation on reconnect
   };
 
   // Fetch event data and reference data
@@ -34,13 +37,11 @@ export function InitializeEvent({ id }: InitializeEventProps) {
           usersResponse,
           subIndicatorsResponse,
           regionsResponse,
-          thematicAreasResponse,
         ] = await Promise.all([
-          eventService.fetchById(id),
+          eventService.fetchById(id, userId),
           userService.fetchAll(),
           subIndicatorService.fetchAll(),
           regionService.fetchAll(),
-          thematicAreaService.fetchAll(),
         ]);
 
         // Extract data from responses
@@ -60,10 +61,6 @@ export function InitializeEvent({ id }: InitializeEventProps) {
           regionsResponse && "data" in regionsResponse
             ? regionsResponse.data.regions
             : regionsResponse.regions;
-        const thematicAreas =
-          thematicAreasResponse && "data" in thematicAreasResponse
-            ? thematicAreasResponse.data.thematicAreas
-            : thematicAreasResponse.thematicAreas;
 
         // Set all data in store
         useEventsStore.setState({
@@ -71,17 +68,18 @@ export function InitializeEvent({ id }: InitializeEventProps) {
           reporters: users,
           subIndicators,
           regions,
-          thematicAreas,
           formData: {
             event: {
               reporter_id: event.reporter_id,
               report_date: event.report_date,
-              details: event.details,
-              event_date: event.event_date,
+              details: event.details || "",
+              event_date: event.event_date || "",
               region_id: event.region_id,
-              location_details: event.location_details,
+              location_details: event.location_details || "",
               sub_indicator_id: event.sub_indicator_id,
-              thematic_area_id: event.thematic_area_id,
+              follow_ups: Array.isArray(event.follow_ups)
+                ? event.follow_ups
+                : [],
             },
             perpetrator: {
               perpetrator: event.perpetrator,

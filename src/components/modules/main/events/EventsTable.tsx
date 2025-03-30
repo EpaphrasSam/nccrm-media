@@ -117,21 +117,13 @@ export function EventsTable() {
               <TableRow key={event.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <HeroUser
-                      name={event.reporter?.name || "Unknown"}
-                      description={new Date(
-                        event.report_date
-                      ).toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    />
+                    <HeroUser name={event.reporter?.name || "Unknown"} />
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm font-semibold">
-                    {event.sub_indicator?.name || "Unknown"}
+                  <span className="text-sm">
+                    {event.sub_indicator?.main_indicator.thematic_area.name ||
+                      "Unknown"}
                   </span>
                 </TableCell>
                 <TableCell>

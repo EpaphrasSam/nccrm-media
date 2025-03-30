@@ -10,21 +10,25 @@ import {
   Textarea,
   Select,
   SelectItem,
+  cn,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
-import { useState, useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useCallback } from "react";
 import { FaChevronLeft } from "react-icons/fa";
+import { Gender } from "@/services/events/types";
+import { FileUpload } from "./FileUpload";
 
 const contextSchema = z.object({
-  info_credibility: z.string().min(1, "Information credibility is required"),
-  info_source: z.string().min(1, "Information source is required"),
-  geo_scope: z.string().min(1, "Geographic scope is required"),
-  impact: z.string().min(1, "Impact is required"),
-  weapons_use: z.string().min(1, "Weapons use is required"),
-  context_details: z.string().min(1, "Details are required"),
+  info_credibility: z.string().optional(),
+  info_source: z.string().optional(),
+  geo_scope: z.string().optional(),
+  impact: z.string().optional(),
+  weapons_use: z.string().optional(),
+  context_details: z.string().optional(),
   docs: z.array(z.instanceof(File)).optional(),
+  files: z.array(z.string()).optional(),
+  newDocs: z.array(z.instanceof(File)).optional(),
 });
 
 type ContextFormValues = z.infer<typeof contextSchema>;
@@ -45,8 +49,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     updateEvent,
   } = useEventsStore();
 
-  const [localLoading, setLocalLoading] = useState(true);
-
   const getDefaultValues = useCallback(
     () => ({
       info_credibility: formData.context?.info_credibility || "",
@@ -55,34 +57,29 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
       impact: formData.context?.impact || "",
       weapons_use: formData.context?.weapons_use || "",
       context_details: formData.context?.context_details || "",
-      docs: formData.context?.docs || [],
+      docs: [],
+      files: currentEvent?.files || [],
+      newDocs: [],
     }),
-    [formData.context]
+    [formData.context, currentEvent]
   );
 
   const {
     control,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    setValue,
+    formState: { isSubmitting },
   } = useForm<ContextFormValues>({
     resolver: zodResolver(contextSchema),
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
-      setLocalLoading(false);
     } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
   }, [
     isNew,
@@ -95,28 +92,30 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
 
   const onSubmit = async (data: ContextFormValues) => {
     try {
-      // Save context form data to store
       setContextForm(data);
 
-      // Get the complete form data with required fields
+      if (!formData.event?.region_id) {
+        throw new Error("Region ID is required");
+      }
+
       const completeFormData = {
-        reporter_id: formData.event?.reporter_id || "",
-        report_date: formData.event?.report_date || "",
-        details: formData.event?.details || "",
-        event_date: formData.event?.event_date || "",
-        region_id: formData.event?.region_id || "",
-        location_details: formData.event?.location_details || "",
-        sub_indicator_id: formData.event?.sub_indicator_id || "",
-        thematic_area_id: formData.event?.thematic_area_id || "",
+        reporter_id: formData.event.reporter_id || "",
+        report_date: formData.event.report_date || new Date().toISOString(),
+        details: formData.event.details || "",
+        event_date: formData.event.event_date || new Date().toISOString(),
+        region_id: formData.event.region_id,
+        location_details: formData.event.location_details || "",
+        sub_indicator_id: formData.event.sub_indicator_id || "",
+        follow_ups: formData.event.follow_ups || [],
         perpetrator: formData.perpetrator?.perpetrator || "",
         pep_age: formData.perpetrator?.pep_age || 0,
-        pep_gender: formData.perpetrator?.pep_gender || "",
+        pep_gender: (formData.perpetrator?.pep_gender || "male") as Gender,
         pep_occupation: formData.perpetrator?.pep_occupation || "",
         pep_organization: formData.perpetrator?.pep_organization || "",
         pep_note: formData.perpetrator?.pep_note || "",
         victim: formData.victim?.victim || "",
         victim_age: formData.victim?.victim_age || 0,
-        victim_gender: formData.victim?.victim_gender || "",
+        victim_gender: (formData.victim?.victim_gender || "male") as Gender,
         victim_occupation: formData.victim?.victim_occupation || "",
         victim_organization: formData.victim?.victim_organization || "",
         victim_note: formData.victim?.victim_note || "",
@@ -131,7 +130,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
         losses_count: formData.outcome?.losses_count || 0,
         losses_details: formData.outcome?.losses_details || "",
         ...data,
-      } as const;
+      };
 
       if (currentEvent) {
         await updateEvent(currentEvent.id, completeFormData);
@@ -143,7 +142,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     }
   };
 
-  if (isFormLoading || localLoading) {
+  if (isFormLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -200,8 +199,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Select the level of information credibility"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.info_credibility}
-              errorMessage={errors.info_credibility?.message}
             >
               {credibilityOptions.map((option) => (
                 <SelectItem key={option.id} textValue={option.name}>
@@ -223,8 +220,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter the type of information source"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.info_source}
-              errorMessage={errors.info_source?.message}
             />
           )}
         />
@@ -240,8 +235,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter the geographic scope definition"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.geo_scope}
-              errorMessage={errors.geo_scope?.message}
             />
           )}
         />
@@ -261,8 +254,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Select the level of impact"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.impact}
-              errorMessage={errors.impact?.message}
             >
               {impactOptions.map((option) => (
                 <SelectItem key={option.id} textValue={option.name}>
@@ -284,8 +275,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter the weapon use description"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.weapons_use}
-              errorMessage={errors.weapons_use?.message}
             />
           )}
         />
@@ -301,53 +290,98 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               placeholder="Enter any additional details"
               variant="bordered"
               classNames={inputStyles}
-              isInvalid={!!errors.context_details}
-              errorMessage={errors.context_details?.message}
             />
           )}
         />
 
-        <Controller
-          name="docs"
-          control={control}
-          render={({ field }) => (
-            <Input
-              type="file"
-              multiple
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                field.onChange(files);
-              }}
-              label="Documents"
-              labelPlacement="outside"
-              placeholder="Upload supporting documents"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.docs}
-              errorMessage={errors.docs?.message}
-            />
+        <div className="space-y-4">
+          <h2 className="text-base font-semibold">Documents</h2>
+          {!isNew && currentEvent?.files && currentEvent.files.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">Existing Files:</p>
+              <div className="flex flex-wrap gap-2">
+                {currentEvent.files.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-2 bg-gray-100 rounded"
+                  >
+                    <a
+                      href={file}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      File {index + 1}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-        />
-      </div>
 
-      <div className="flex gap-4 justify-between mt-auto pt-8">
-        <Button
-          type="button"
-          variant="flat"
-          startContent={<FaChevronLeft />}
-          className={cn(buttonStyles, "bg-brand-red-dark px-10 text-white")}
-          onClick={() => setCurrentStep("outcome")}
-        >
-          Previous
-        </Button>
-        <Button
-          type="submit"
-          color="primary"
-          className={cn(buttonStyles, "bg-brand-green-dark px-10")}
-          isLoading={isSubmitting}
-        >
-          Submit
-        </Button>
+          <Controller
+            name={isNew ? "docs" : "files"}
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <FileUpload
+                isNew={isNew}
+                existingFiles={isNew ? [] : (value as string[])}
+                onFileChange={(files) => {
+                  if (isNew) {
+                    // In create mode, directly update docs array
+                    const currentDocs = control._formValues?.docs || [];
+                    onChange([...currentDocs, ...files]);
+                  } else {
+                    // In edit mode, update newDocs array
+                    const currentNewDocs = control._formValues?.newDocs || [];
+                    setValue("newDocs", [...currentNewDocs, ...files]);
+                  }
+                }}
+                onExistingFileRemove={(fileUrl) => {
+                  // Only handle in edit mode
+                  if (!isNew) {
+                    const currentFiles = value as string[];
+                    onChange(currentFiles.filter((f: string) => f !== fileUrl));
+                  }
+                }}
+                onNewFileRemove={(file) => {
+                  if (isNew) {
+                    // Remove from docs array in create mode
+                    const currentDocs = control._formValues?.docs || [];
+                    onChange(currentDocs.filter((f: File) => f !== file));
+                  } else {
+                    // Remove from newDocs array in edit mode
+                    const currentNewDocs = control._formValues?.newDocs || [];
+                    setValue(
+                      "newDocs",
+                      currentNewDocs.filter((f: File) => f !== file)
+                    );
+                  }
+                }}
+              />
+            )}
+          />
+        </div>
+
+        <div className="flex justify-between mt-auto pt-8">
+          <Button
+            type="button"
+            variant="flat"
+            startContent={<FaChevronLeft />}
+            className={cn(buttonStyles, "bg-brand-red-dark px-10 text-white")}
+            onClick={() => setCurrentStep("outcome")}
+          >
+            Previous
+          </Button>
+          <Button
+            type="submit"
+            color="primary"
+            className={`${buttonStyles} bg-brand-green-dark px-12`}
+            isLoading={isSubmitting}
+          >
+            Save
+          </Button>
+        </div>
       </div>
     </form>
   );

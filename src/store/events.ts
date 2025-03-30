@@ -3,11 +3,11 @@ import type {
   Event,
   EventCreateInput,
   EventQueryParams,
+  EventUpdateInput,
 } from "@/services/events/types";
 import type { UserListItem } from "@/services/users/types";
 import type { Region } from "@/services/regions/types";
 import type { SubIndicator } from "@/services/sub-indicators/types";
-import type { ThematicArea } from "@/services/thematic-areas/types";
 import { eventService } from "@/services/events/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
@@ -29,46 +29,48 @@ export interface EventFormData {
   region_id: string;
   location_details: string;
   sub_indicator_id: string;
-  thematic_area_id: string;
+  follow_ups: string[];
 }
 
 export interface PerpetratorFormData {
-  perpetrator: string;
-  pep_gender: string;
-  pep_age: number;
-  pep_occupation: string;
-  pep_organization: string;
-  pep_note: string;
+  perpetrator?: string;
+  pep_gender?: string;
+  pep_age?: number;
+  pep_occupation?: string;
+  pep_organization?: string;
+  pep_note?: string;
 }
 
 export interface VictimFormData {
-  victim: string;
-  victim_age: number;
-  victim_gender: string;
-  victim_occupation: string;
-  victim_organization: string;
-  victim_note: string;
+  victim?: string;
+  victim_age?: number;
+  victim_gender?: string;
+  victim_occupation?: string;
+  victim_organization?: string;
+  victim_note?: string;
 }
 
 export interface OutcomeFormData {
-  death_count_men: number;
-  death_count_women_chldren: number;
-  death_details: string;
-  injury_count_men: number;
-  injury_count_women_chldren: number;
-  injury_details: string;
-  losses_count: number;
-  losses_details: string;
+  death_count_men?: number;
+  death_count_women_chldren?: number;
+  death_details?: string;
+  injury_count_men?: number;
+  injury_count_women_chldren?: number;
+  injury_details?: string;
+  losses_count?: number;
+  losses_details?: string;
 }
 
 export interface ContextFormData {
-  info_credibility: string;
-  info_source: string;
-  geo_scope: string;
-  impact: string;
-  weapons_use: string;
-  context_details: string;
+  info_credibility?: string;
+  info_source?: string;
+  geo_scope?: string;
+  impact?: string;
+  weapons_use?: string;
+  context_details?: string;
   docs?: File[];
+  files?: string[];
+  newDocs?: File[];
 }
 
 interface FormDataState {
@@ -89,11 +91,9 @@ interface EventsState {
   reporters: UserListItem[];
   regions: Region[];
   subIndicators: SubIndicator[];
-  thematicAreas: ThematicArea[];
   setReporters: (reporters: UserListItem[]) => void;
   setRegions: (regions: Region[]) => void;
   setSubIndicators: (indicators: SubIndicator[]) => void;
-  setThematicAreas: (areas: ThematicArea[]) => void;
 
   // Data
   events: Event[];
@@ -128,7 +128,7 @@ interface EventsState {
   editEvent: (event: Event) => void;
   deleteEvent: (eventId: string) => Promise<void>;
   createEvent: (data: EventCreateInput) => Promise<void>;
-  updateEvent: (id: string, data: Partial<Event>) => Promise<void>;
+  updateEvent: (id: string, data: EventUpdateInput) => Promise<void>;
   exportToExcel: () => Promise<void>;
 }
 
@@ -155,11 +155,9 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   reporters: [],
   regions: [],
   subIndicators: [],
-  thematicAreas: [],
   setReporters: (reporters) => set({ reporters }),
   setRegions: (regions) => set({ regions }),
   setSubIndicators: (indicators) => set({ subIndicators: indicators }),
-  setThematicAreas: (areas) => set({ thematicAreas: areas }),
 
   // Initial Data
   events: [],
@@ -245,7 +243,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
           console.error("Error updating event:", error);
         },
       });
-      navigationService.navigate("/events");
+      // window.location.reload();
     } finally {
     }
   },

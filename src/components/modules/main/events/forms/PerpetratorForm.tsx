@@ -13,17 +13,17 @@ import {
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const perpetratorSchema = z.object({
-  perpetrator: z.string().min(1, "Name is required"),
-  pep_age: z.coerce.number().min(1, "Age is required"),
-  pep_gender: z.string().min(1, "Gender is required"),
-  pep_occupation: z.string().min(1, "Occupation is required"),
-  pep_organization: z.string().min(1, "Organization is required"),
-  pep_note: z.string().min(1, "Note is required"),
+  perpetrator: z.string().optional(),
+  pep_age: z.coerce.number().optional(),
+  pep_gender: z.string().optional(),
+  pep_occupation: z.string().optional(),
+  pep_organization: z.string().optional(),
+  pep_note: z.string().optional(),
 });
 
 type PerpetratorFormValues = z.infer<typeof perpetratorSchema>;
@@ -41,8 +41,6 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
     formData,
     setCurrentStep,
   } = useEventsStore();
-
-  const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -70,15 +68,8 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
-      setLocalLoading(false);
     } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
   }, [
     isNew,
@@ -94,7 +85,7 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
     setCurrentStep("victim");
   };
 
-  if (isFormLoading || localLoading) {
+  if (isFormLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -149,7 +140,7 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
             <Input
               {...field}
               type="number"
-              value={value.toString()}
+              value={value?.toString() || ""}
               onChange={(e) => onChange(Number(e.target.value))}
               label="Age"
               labelPlacement="outside"

@@ -13,17 +13,17 @@ import {
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const victimSchema = z.object({
-  victim: z.string().min(1, "Name is required"),
-  victim_age: z.coerce.number().min(1, "Age is required"),
-  victim_gender: z.string().min(1, "Gender is required"),
-  victim_occupation: z.string().min(1, "Occupation is required"),
-  victim_organization: z.string().min(1, "Organization is required"),
-  victim_note: z.string().min(1, "Note is required"),
+  victim: z.string().optional(),
+  victim_age: z.coerce.number().optional(),
+  victim_gender: z.string().optional(),
+  victim_occupation: z.string().optional(),
+  victim_organization: z.string().optional(),
+  victim_note: z.string().optional(),
 });
 
 type VictimFormValues = z.infer<typeof victimSchema>;
@@ -41,8 +41,6 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
     formData,
     setCurrentStep,
   } = useEventsStore();
-
-  const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -66,19 +64,11 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
     defaultValues: getDefaultValues(),
   });
 
-  // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
-      setLocalLoading(false);
     } else if (!isFormLoading && currentEvent) {
       reset(getDefaultValues());
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(true);
     }
   }, [
     isNew,
@@ -94,7 +84,7 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
     setCurrentStep("outcome");
   };
 
-  if (isFormLoading || localLoading) {
+  if (isFormLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -149,7 +139,7 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
             <Input
               {...field}
               type="number"
-              value={value.toString()}
+              value={value?.toString() || ""}
               onChange={(e) => onChange(Number(e.target.value))}
               label="Age"
               labelPlacement="outside"

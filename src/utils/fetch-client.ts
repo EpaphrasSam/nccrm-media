@@ -109,11 +109,19 @@ async function customFetch<T>(
 
     // Construct headers
     const headers = new Headers(customHeaders);
+
+    // Don't set Content-Type for FormData, let the browser handle it
     if (!headers.has("Content-Type") && !(body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
+
     if (session?.user?.token) {
       headers.set("Authorization", session.user.token);
+    }
+
+    // If it's FormData, remove any Content-Type header to let browser set it
+    if (body instanceof FormData) {
+      headers.delete("Content-Type");
     }
 
     // Make the request
@@ -129,11 +137,13 @@ async function customFetch<T>(
     });
 
     // Parse response
-    const data = await (response.headers
-      .get("content-type")
-      ?.includes("application/json")
-      ? response.json()
-      : response.text());
+    let data;
+    const contentType = response.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
 
     if (!response.ok) {
       const error = new Error() as FetchError;

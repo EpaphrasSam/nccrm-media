@@ -26,6 +26,13 @@ export const navigationService = {
       }
     }
   },
+  refresh: () => {
+    if (routerInstance) {
+      routerInstance.refresh();
+    } else {
+      window.location.reload();
+    }
+  },
 
   // Utility method for cases where you specifically want to replace
   replace: (path: string) => {
