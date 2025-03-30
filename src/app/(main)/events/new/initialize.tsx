@@ -24,17 +24,13 @@ export function InitializeNewEvent() {
     "newEventReferenceData",
     async () => {
       try {
-        const [
-          usersResponse,
-          subIndicatorsResponse,
-          regionsResponse,
-          thematicAreasResponse,
-        ] = await Promise.all([
-          userService.fetchAll(),
-          subIndicatorService.fetchAll(),
-          regionService.fetchAll(),
-          thematicAreaService.fetchAll(),
-        ]);
+        const [usersResponse, subIndicatorsResponse, regionsResponse] =
+          await Promise.all([
+            userService.fetchAll(),
+            subIndicatorService.fetchAll(),
+            regionService.fetchAll(),
+            thematicAreaService.fetchAll(),
+          ]);
 
         // Extract data from responses
         const users =
@@ -49,24 +45,18 @@ export function InitializeNewEvent() {
           regionsResponse && "data" in regionsResponse
             ? regionsResponse.data.regions
             : regionsResponse.regions;
-        const thematicAreas =
-          thematicAreasResponse && "data" in thematicAreasResponse
-            ? thematicAreasResponse.data.thematicAreas
-            : thematicAreasResponse.thematicAreas;
 
         // Set reference data in store
         useEventsStore.setState({
           reporters: users,
           subIndicators,
           regions,
-          thematicAreas,
         });
 
         return {
           users,
           subIndicators,
           regions,
-          thematicAreas,
         };
       } finally {
         if (isLoading) {

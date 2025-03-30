@@ -18,8 +18,12 @@ interface PageProps {
 export default async function OverviewSummaryPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const initialFilters = {
-    from: getStringParam(resolvedSearchParams.from),
-    to: getStringParam(resolvedSearchParams.to),
+    from: getStringParam(resolvedSearchParams.from)
+      ? Number(getStringParam(resolvedSearchParams.from))
+      : undefined,
+    to: getStringParam(resolvedSearchParams.to)
+      ? Number(getStringParam(resolvedSearchParams.to))
+      : undefined,
   };
 
   return (
