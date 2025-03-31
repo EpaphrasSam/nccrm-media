@@ -282,8 +282,90 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   exportToExcel: async () => {
     try {
       set({ isExporting: true });
-      // TODO: Add API call to export events
-      const blob = new Blob([""], { type: "text/csv" });
+
+      // Get current events from state
+      const { events } = get();
+
+      // Return early if no events
+      if (!events.length) {
+        console.log("No events to export");
+        return;
+      }
+
+      // Format data for CSV
+      const csvData = events.map((event) => ({
+        ID: event.id,
+        Reporter: event.reporter.name,
+        "Report Date": new Date(event.report_date).toLocaleDateString(),
+        Details: event.details || "",
+        Status: event.status,
+        "Event Date": event.event_date
+          ? new Date(event.event_date).toLocaleDateString()
+          : "",
+        Region: event.region.name,
+        "Location Details": event.location_details || "",
+        "Thematic Area": event.sub_indicator.main_indicator.thematic_area.name,
+        // Perpetrator Information
+        Perpetrator: event.perpetrator || "",
+        "Perpetrator Gender": event.pep_gender || "",
+        "Perpetrator Age": event.pep_age || "",
+        "Perpetrator Occupation": event.pep_occupation || "",
+        "Perpetrator Organization": event.pep_organization || "",
+        "Perpetrator Notes": event.pep_note || "",
+        // Victim Information
+        Victim: event.victim || "",
+        "Victim Gender": event.victim_gender || "",
+        "Victim Age": event.victim_age || "",
+        "Victim Occupation": event.victim_occupation || "",
+        "Victim Organization": event.victim_organization || "",
+        "Victim Notes": event.victim_note || "",
+        // Outcome Information
+        "Death Count (Men)": event.death_count_men || "",
+        "Death Count (Women/Children)": event.death_count_women_chldren || "",
+        "Death Details": event.death_details || "",
+        "Injury Count (Men)": event.injury_count_men || "",
+        "Injury Count (Women/Children)": event.injury_count_women_chldren || "",
+        "Injury Details": event.injury_details || "",
+        "Losses Count": event.losses_count || "",
+        "Losses Details": event.losses_details || "",
+        // Context Information
+        "Information Credibility": event.info_credibility || "",
+        "Information Source": event.info_source || "",
+        "Geographic Scope": event.geo_scope || "",
+        Impact: event.impact || "",
+        "Weapons Used": event.weapons_use || "",
+        "Context Details": event.context_details || "",
+        "Follow-ups": (event.follow_ups || []).join("; "),
+        "Created At": new Date(event.created_at).toLocaleString(),
+        "Updated At": new Date(event.updated_at).toLocaleString(),
+      }));
+
+      // Convert to CSV
+      const headers = Object.keys(csvData[0]);
+      const csvRows = [
+        // Add headers with quotes to handle commas in header names
+        headers.map((header) => `"${header}"`).join(","),
+        // Add data rows
+        ...csvData.map((row) =>
+          headers
+            .map((header) => {
+              const value = row[header as keyof typeof row];
+              // Escape commas and quotes in the value
+              const escapedValue = value?.toString().replace(/"/g, '""') || "";
+              return `"${escapedValue}"`;
+            })
+            .join(",")
+        ),
+      ];
+
+      // Add BOM and create CSV string
+      const BOM = "\uFEFF"; // Add BOM for Excel to auto-expand columns
+      const csvString = BOM + csvRows.join("\n");
+
+      // Create and download file
+      const blob = new Blob([csvString], {
+        type: "text/csv;charset=utf-8;",
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;

@@ -43,8 +43,13 @@ const years = Array.from({ length: currentYear - 1999 }, (_, i) =>
 );
 
 export function OverviewHeader() {
-  const { overviewFilters, setOverviewFilters, resetOverviewFilters } =
-    useSituationalReportingStore();
+  const {
+    overviewFilters,
+    setOverviewFilters,
+    resetOverviewFilters,
+    exportToExcel,
+    isExporting,
+  } = useSituationalReportingStore();
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
     from: overviewFilters?.from,
@@ -155,6 +160,8 @@ export function OverviewHeader() {
         <Button
           color="primary"
           startContent={<PiMicrosoftExcelLogoThin className="h-4 w-4" />}
+          onPress={exportToExcel}
+          isLoading={isExporting}
           className={`${buttonStyles} bg-brand-green-dark min-w-[48px]`}
         >
           Export Excel
@@ -179,6 +186,7 @@ export function OverviewHeader() {
                 selectedKey={activeTab}
                 onSelectionChange={(key) => setActiveTab(key.toString())}
                 variant="underlined"
+                color="danger"
               >
                 <Tab key="basic" title="Filters">
                   <div className="space-y-4 mt-4">
@@ -251,6 +259,7 @@ export function OverviewHeader() {
                                   onValueChange={() =>
                                     handleReportToggle(report.id)
                                   }
+                                  color="danger"
                                 >
                                   {report.name}
                                 </Checkbox>

@@ -69,6 +69,7 @@ interface SituationalReportingState {
   };
   overviewFilters: OverviewSummaryFilters;
   isOverviewTableLoading: boolean;
+  isExporting: boolean;
 
   // Overview Summary Actions
   setOverviewData: (data: {
@@ -79,6 +80,7 @@ interface SituationalReportingState {
   setOverviewFilters: (filters: Partial<OverviewSummaryFilters>) => void;
   resetOverviewFilters: () => void;
   setOverviewTableLoading: (loading: boolean) => void;
+  exportToExcel: () => Promise<void>;
 }
 
 const DEFAULT_FILTERS: SituationalReportQueryParams = {
@@ -93,7 +95,7 @@ const DEFAULT_OVERVIEW_FILTERS: OverviewSummaryFilters = {
 };
 
 export const useSituationalReportingStore = create<SituationalReportingState>(
-  (set) => ({
+  (set, get) => ({
     // Initial Data
     reports: [],
     totalReports: 0,
@@ -294,6 +296,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
     overviewData: {},
     overviewFilters: DEFAULT_OVERVIEW_FILTERS,
     isOverviewTableLoading: true,
+    isExporting: false,
 
     // Overview Summary Actions
     setOverviewData: (data) => set({ overviewData: data }),
@@ -305,5 +308,81 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
       set({ overviewFilters: DEFAULT_OVERVIEW_FILTERS }),
     setOverviewTableLoading: (loading: boolean) =>
       set({ isOverviewTableLoading: loading }),
+
+    exportToExcel: async () => {
+      try {
+        set({ isExporting: true });
+
+        // Get current overview data from state
+        const { overviewData } = get();
+
+        // Return early if no data
+        if (Object.keys(overviewData).length === 0) {
+          console.log("No data to export");
+          return;
+        }
+
+        // Get all unique thematic areas and years
+        const thematicAreas = new Set<string>();
+        const years = new Set<string>();
+
+        Object.entries(overviewData).forEach(([year, areas]) => {
+          years.add(year);
+          Object.keys(areas).forEach((area) => thematicAreas.add(area));
+        });
+
+        // Sort years descending and thematic areas alphabetically
+        const sortedYears = Array.from(years).sort(
+          (a, b) => parseInt(b) - parseInt(a)
+        );
+        const sortedAreas = Array.from(thematicAreas).sort();
+
+        // Create headers row
+        const headers = ["Year", ...sortedAreas];
+
+        // Create data rows
+        const rows = sortedYears.map((year) => {
+          const rowData = [year];
+          sortedAreas.forEach((area) => {
+            const value = overviewData[year]?.[area] ?? "";
+            rowData.push(value.toString());
+          });
+          return rowData;
+        });
+
+        // Convert to CSV
+        const csvRows = [
+          // Add headers
+          headers.map((header) => `"${header}"`).join(","),
+          // Add data rows
+          ...rows.map((row) => row.map((value) => `"${value}"`).join(",")),
+        ];
+
+        // Add BOM and create CSV string
+        const BOM = "\uFEFF"; // Add BOM for Excel to auto-expand columns
+        const csvString = BOM + csvRows.join("\n");
+
+        // Create and download file
+        const blob = new Blob([csvString], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute(
+          "download",
+          `overview_summary_${new Date().toISOString().split("T")[0]}.csv`
+        );
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Failed to export overview data:", error);
+        throw error;
+      } finally {
+        set({ isExporting: false });
+      }
+    },
   })
 );

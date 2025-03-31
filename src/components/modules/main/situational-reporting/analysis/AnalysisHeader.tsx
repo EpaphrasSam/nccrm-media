@@ -105,7 +105,7 @@ export function AnalysisHeader() {
                     </Button>
                   </div>
                 </div>
-                <div className="max-h-[300px] overflow-y-auto">
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                   {isLoading ? (
                     <div className="space-y-2">
                       <Skeleton className="h-16 w-full rounded-lg" />
