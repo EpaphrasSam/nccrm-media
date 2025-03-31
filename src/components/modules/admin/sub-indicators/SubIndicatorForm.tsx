@@ -46,6 +46,7 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   // Fetch main indicators using SWR
   const { data: mainIndicatorsResponse, error: mainIndicatorsError } =
@@ -81,8 +82,32 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     defaultValues: getDefaultValues(),
   });
 
+  // Handle loading states
   useEffect(() => {
-    if (!isNew && currentSubIndicator) {
+    if (isNew) {
+      // For new forms, no loading needed
+      setLocalLoading(false);
+    } else if (!isFormLoading && currentSubIndicator) {
+      // For edit mode, add delay only on initial load
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, currentSubIndicator, isFormLoading]);
+
+  // Handle form reset
+  useEffect(() => {
+    if (isNew) {
+      // Clear the store and reset form when in new mode
+      useSubIndicatorsStore.setState({ currentSubIndicator: undefined });
+      reset({
+        name: "",
+        main_indicator_id: "",
+        status: true,
+      });
+    } else if (currentSubIndicator) {
+      // Only reset with current data in edit mode
       reset(getDefaultValues());
     }
   }, [isNew, currentSubIndicator, reset, getDefaultValues]);
@@ -123,7 +148,7 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     }
   };
 
-  if (isFormLoading || !mainIndicators) {
+  if (isFormLoading || localLoading || !mainIndicators) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">

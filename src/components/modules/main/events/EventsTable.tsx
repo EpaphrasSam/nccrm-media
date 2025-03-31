@@ -10,14 +10,19 @@ import {
   User as HeroUser,
   Button,
   Skeleton,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
 import { FaRegEdit } from "react-icons/fa";
-import { FiTrash2 } from "react-icons/fi";
+import { FiTrash2, FiMoreVertical, FiCheck, FiX } from "react-icons/fi";
 import { useEventsStore } from "@/store/events";
 import { Pagination } from "@/components/common/navigation/Pagination";
 import { tableStyles } from "@/lib/styles";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { getStatusColor } from "@/lib/constants";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -26,14 +31,25 @@ const columns = [
   { key: "incidentType", label: "Incident Type" },
   { key: "region", label: "Region" },
   { key: "date", label: "Date" },
+  { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
 ] as const;
+
+const StatusText = ({ status }: { status: string }) => {
+  const color = getStatusColor(status);
+  return (
+    <span className="text-sm font-semibold capitalize" style={{ color }}>
+      {status}
+    </span>
+  );
+};
 
 export function EventsTable() {
   const {
     events,
     editEvent,
     deleteEvent,
+    validateEvent,
     isTableLoading,
     filters,
     setFilters,
@@ -64,6 +80,14 @@ export function EventsTable() {
       setIsDeleting(false);
       setSelectedEventId(null);
     }
+  };
+
+  const handleApprove = (eventId: string) => {
+    validateEvent(eventId, { status: "approved" });
+  };
+
+  const handleReject = (eventId: string) => {
+    validateEvent(eventId, { status: "rejected" });
   };
 
   console.log(events);
@@ -100,6 +124,9 @@ export function EventsTable() {
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-6 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -141,6 +168,9 @@ export function EventsTable() {
                   </span>
                 </TableCell>
                 <TableCell>
+                  <StatusText status={event.status} />
+                </TableCell>
+                <TableCell>
                   <div className="flex items-center gap-2">
                     <Button
                       isIconOnly
@@ -160,6 +190,33 @@ export function EventsTable() {
                     >
                       <FiTrash2 className="w-4 h-4" />
                     </Button>
+                    {event.status === "pending" && (
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Button isIconOnly variant="light">
+                            <FiMoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label="Event actions">
+                          <DropdownItem
+                            key="approve"
+                            startContent={<FiCheck className="w-4 h-4" />}
+                            onPress={() => handleApprove(event.id)}
+                            className="text-success"
+                          >
+                            Approve
+                          </DropdownItem>
+                          <DropdownItem
+                            key="reject"
+                            startContent={<FiX className="w-4 h-4" />}
+                            onPress={() => handleReject(event.id)}
+                            className="text-danger"
+                          >
+                            Reject
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

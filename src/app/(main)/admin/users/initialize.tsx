@@ -43,36 +43,6 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
     shouldRetryOnError: false, // Disable automatic retries
   };
 
-  // Fetch filter options (departments and roles)
-  const { isLoading: isFilterOptionsLoading } = useSWR(
-    "filterOptions",
-    async () => {
-      try {
-        const [departmentsResponse, rolesResponse] = await Promise.all([
-          departmentService.fetchAll(undefined),
-          roleService.fetchAll(undefined),
-        ]);
-
-        return {
-          departments:
-            "data" in departmentsResponse
-              ? departmentsResponse.data.departments
-              : departmentsResponse.departments,
-          roles:
-            "data" in rolesResponse
-              ? rolesResponse.data.roles
-              : rolesResponse.roles,
-        };
-      } finally {
-        // Only update loading state after initial load
-        if (isFilterOptionsLoading) {
-          setFiltersLoading(false);
-        }
-      }
-    },
-    swrConfig
-  );
-
   // Fetch users data - will refetch when filters change
   const { isLoading: isUsersLoading } = useSWR(
     ["users", filters],
@@ -99,6 +69,46 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
       ...swrConfig,
       keepPreviousData: true,
     }
+  );
+
+  // Fetch filter options (departments and roles)
+  const { isLoading: isFilterOptionsLoading } = useSWR(
+    "filterOptions",
+    async () => {
+      try {
+        const [departmentsResponse, rolesResponse] = await Promise.all([
+          departmentService.fetchAll(undefined),
+          roleService.fetchAll(undefined),
+        ]);
+
+        const departments =
+          "data" in departmentsResponse
+            ? departmentsResponse.data.departments
+            : departmentsResponse.departments;
+
+        const roles =
+          "data" in rolesResponse
+            ? rolesResponse.data.roles
+            : rolesResponse.roles;
+
+        // Set departments and roles in the store
+        useUsersStore.setState({
+          departments,
+          roles,
+        });
+
+        return {
+          departments,
+          roles,
+        };
+      } finally {
+        // Only update loading state after initial load
+        if (isFilterOptionsLoading) {
+          setFiltersLoading(false);
+        }
+      }
+    },
+    swrConfig
   );
 
   // Update loading states based on SWR's initial loading state

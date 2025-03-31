@@ -7,14 +7,14 @@ import { useSession } from "next-auth/react";
 import {
   Input,
   Button,
-  Skeleton,
   Textarea,
   Select,
   SelectItem,
+  Skeleton,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { FaChevronRight, FaPlus, FaTrash } from "react-icons/fa";
 
@@ -62,12 +62,12 @@ export function EventForm({ isNew = false }: EventFormProps) {
   const {
     setEventForm,
     currentEvent,
-    isFormLoading,
-    setFormLoading,
     formData,
     setCurrentStep,
     regions,
     subIndicators,
+    isFormLoading,
+    setFormLoading,
   } = useEventsStore();
 
   const [localLoading, setLocalLoading] = useState(!formData.event);
@@ -75,7 +75,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
   const getDefaultValues = useCallback(
     () => ({
       reporter_id: session?.user?.id || "",
-      report_date: formatDateForInput(new Date().toISOString()),
+      report_date: formatDateForInput(
+        formData.event?.report_date || new Date().toISOString()
+      ),
       details: formData.event?.details || "",
       event_date: formatDateForInput(formData.event?.event_date) || "",
       region_id: formData.event?.region_id || "",
@@ -109,18 +111,14 @@ export function EventForm({ isNew = false }: EventFormProps) {
       // If we already have form data, no loading needed
       setLocalLoading(false);
       setFormLoading(false);
-    } else if (isNew) {
-      // For new forms, no loading needed
-      setLocalLoading(false);
-      setFormLoading(false);
-    } else if (!isFormLoading && currentEvent) {
-      // For edit mode, add delay only on initial load
+    } else if (!isFormLoading) {
+      // Add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isNew, currentEvent, isFormLoading, formData.event, setFormLoading]);
+  }, [formData.event, isFormLoading, setFormLoading]);
 
   // Handle form reset
   useEffect(() => {

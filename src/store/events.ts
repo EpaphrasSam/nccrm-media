@@ -4,6 +4,7 @@ import type {
   EventCreateInput,
   EventQueryParams,
   EventUpdateInput,
+  EventValidateInput,
 } from "@/services/events/types";
 import type { UserListItem } from "@/services/users/types";
 import type { Region } from "@/services/regions/types";
@@ -129,6 +130,7 @@ interface EventsState {
   deleteEvent: (eventId: string) => Promise<void>;
   createEvent: (data: EventCreateInput) => Promise<void>;
   updateEvent: (id: string, data: EventUpdateInput) => Promise<void>;
+  validateEvent: (eventId: string, status: EventValidateInput) => Promise<void>;
   exportToExcel: () => Promise<void>;
 }
 
@@ -255,6 +257,23 @@ export const useEventsStore = create<EventsState>((set, get) => ({
           throw new Error(error);
         },
       });
+      set({ currentStep: "event" });
+      navigationService.refresh();
+    } catch {
+      // Error has been handled by handleError, we just need to stop execution
+      return;
+    }
+  },
+  validateEvent: async (eventId, status) => {
+    try {
+      await eventService.validate(eventId, status, false, {
+        handleError: (error: string) => {
+          console.error("Error validating event:", error);
+          throw new Error(error);
+        },
+      });
+      set({ currentEvent: null });
+      navigationService.replace("/events");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

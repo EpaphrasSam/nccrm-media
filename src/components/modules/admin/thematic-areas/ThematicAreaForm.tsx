@@ -32,7 +32,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -55,15 +55,39 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     defaultValues: getDefaultValues(),
   });
 
+  // Handle loading states
   useEffect(() => {
-    if (!isNew && currentThematicArea) {
+    if (isNew) {
+      // For new forms, no loading needed
+      setLocalLoading(false);
+    } else if (!isFormLoading && currentThematicArea) {
+      // For edit mode, add delay only on initial load
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, currentThematicArea, isFormLoading]);
+
+  // Handle form reset
+  useEffect(() => {
+    if (isNew) {
+      // Clear the store and reset form when in new mode
+      useThematicAreasStore.setState({ currentThematicArea: undefined });
+      reset({
+        name: "",
+        description: "",
+        status: true,
+      });
+    } else if (currentThematicArea) {
+      // Only reset with current data in edit mode
       reset(getDefaultValues());
     }
   }, [isNew, currentThematicArea, reset, getDefaultValues]);
 
   const onSubmit = async (data: ThematicAreaFormValues) => {
     try {
-      setIsSubmitting(true);
+      setIsDeleting(true);
       if (isNew) {
         await createThematicArea({
           name: data.name,
@@ -80,7 +104,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     } catch (error) {
       console.error("Failed to save thematic area:", error);
     } finally {
-      setIsSubmitting(false);
+      setIsDeleting(false);
     }
   };
 
@@ -98,7 +122,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     }
   };
 
-  if (isFormLoading && !isSubmitting && !isDeleting) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -178,7 +202,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
         <Button
           type="submit"
           color="primary"
-          isLoading={isSubmitting}
+          isLoading={isDeleting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           {isNew ? "Create Thematic Area" : "Save Changes"}

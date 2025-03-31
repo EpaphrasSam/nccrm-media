@@ -89,6 +89,7 @@ const DEFAULT_FILTERS: SituationalReportQueryParams = {
 const DEFAULT_OVERVIEW_FILTERS: OverviewSummaryFilters = {
   from: undefined,
   to: undefined,
+  reports: undefined,
 };
 
 export const useSituationalReportingStore = create<SituationalReportingState>(

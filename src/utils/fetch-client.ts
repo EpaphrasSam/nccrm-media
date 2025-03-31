@@ -13,6 +13,7 @@ console.log("authUrl", authUrl);
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;
+  returnErrorStatus?: boolean;
 }
 
 interface FetchResponse<T = any> {
@@ -24,6 +25,7 @@ interface FetchResponse<T = any> {
 interface FetchError extends Error {
   status?: number;
   data?: any;
+  response?: { status: number };
 }
 
 async function signOut() {
@@ -32,11 +34,11 @@ async function signOut() {
     await fetch(signOutUrl, { method: "POST" });
 
     // The middleware will handle the redirect, but just in case
-    window.location.href = "/login";
+    // window.location.href = "/login";
   } catch (error) {
     console.error("Error during sign out:", error);
     // Fallback redirect
-    window.location.href = "/login";
+    // window.location.href = "/login";
   }
 }
 
@@ -149,6 +151,9 @@ async function customFetch<T>(
       const error = new Error() as FetchError;
       error.status = response.status;
       error.data = data;
+      error.response = {
+        status: response.status,
+      };
 
       // Get error message from response or use default
       const errorMessage =
@@ -159,12 +164,31 @@ async function customFetch<T>(
 
       error.message = errorMessage;
 
-      // If it's a 404, sign out the user
-      if (response.status === 404) {
+      // Check for JWT expiration in various possible response formats
+      const jwtExpiredMessage =
+        data?.error?.message === "jwt expired" ||
+        data?.message === "jwt expired" ||
+        errorMessage === "jwt expired";
+
+      // If it's jwt expired message, sign out the user
+      if (jwtExpiredMessage) {
         await signOut();
       }
 
-      throw error;
+      console.error("Fetch error:", {
+        url,
+        status: error.status,
+        message: error.message,
+        data: error.data,
+      });
+
+      if (options.returnErrorStatus) {
+        throw error;
+      }
+
+      // Otherwise throw just the message
+      const messageError = new Error(error.message);
+      throw messageError;
     }
 
     return {
@@ -180,13 +204,31 @@ async function customFetch<T>(
       error.status = 0;
     }
 
+    // Preserve the original error structure if it exists
+    if (!error.response && error.status) {
+      error.response = {
+        status: error.status,
+      };
+    }
+
     console.error("Fetch error:", {
       url,
       status: error.status,
       message: error.message,
       data: error.data,
     });
-    throw error;
+
+    if (options.returnErrorStatus) {
+      // Ensure we preserve the full error structure
+      if (error.data?.error) {
+        error.response = error.data.error;
+      }
+      throw error;
+    }
+
+    // Otherwise throw just the message
+    const messageError = new Error(error.message);
+    throw messageError;
   }
 }
 

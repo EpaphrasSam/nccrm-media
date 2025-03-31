@@ -31,6 +31,7 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -50,8 +51,31 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
     defaultValues: getDefaultValues(),
   });
 
+  // Handle loading states
   useEffect(() => {
-    if (!isNew && currentRegion) {
+    if (isNew) {
+      // For new forms, no loading needed
+      setLocalLoading(false);
+    } else if (!isFormLoading && currentRegion) {
+      // For edit mode, add delay only on initial load
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, currentRegion, isFormLoading]);
+
+  // Handle form reset
+  useEffect(() => {
+    if (isNew) {
+      // Clear the store and reset form when in new mode
+      useRegionsStore.setState({ currentRegion: undefined });
+      reset({
+        name: "",
+        status: true,
+      });
+    } else if (currentRegion) {
+      // Only reset with current data in edit mode
       reset(getDefaultValues());
     }
   }, [isNew, currentRegion, reset, getDefaultValues]);
@@ -88,7 +112,7 @@ export function RegionForm({ isNew = false }: RegionFormProps) {
     }
   };
 
-  if (isFormLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">

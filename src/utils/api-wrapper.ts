@@ -30,22 +30,28 @@ export async function clientApiCall<T>(
     // Handle message and data stripping
     if (result && typeof result === "object") {
       const { message, ...rest } = result as any;
-      const values = Object.values(rest);
-      result = values.length === 1 ? values[0] : rest;
 
-      // Show success message if enabled and message exists
-      if (showSuccessMessage && message) {
-        addToast({
-          title: "Success",
-          description: message,
-          color: "success",
-        });
+      // Only strip and transform if there was actually a message property
+      if (message !== undefined) {
+        const values = Object.values(rest);
+        result = values.length === 1 ? values[0] : rest;
+
+        // Show success message if enabled and message exists
+        if (showSuccessMessage && message) {
+          addToast({
+            title: "Success",
+            description: message,
+            color: "success",
+          });
+        }
+      } else {
+        // If no message property, keep the original result
+        result = result as any;
       }
     }
 
     return result;
   } catch (error: any) {
-    console.log("ERROR", error);
     const message =
       error.response?.data?.error?.message ||
       error.message ||

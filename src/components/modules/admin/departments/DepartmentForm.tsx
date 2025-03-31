@@ -32,6 +32,7 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -52,8 +53,32 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
     defaultValues: getDefaultValues(),
   });
 
+  // Handle loading states
   useEffect(() => {
-    if (!isNew && currentDepartment) {
+    if (isNew) {
+      // For new forms, no loading needed
+      setLocalLoading(false);
+    } else if (!isFormLoading && currentDepartment) {
+      // For edit mode, add delay only on initial load
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, currentDepartment, isFormLoading]);
+
+  // Handle form reset
+  useEffect(() => {
+    if (isNew) {
+      // Clear the store and reset form when in new mode
+      useDepartmentsStore.setState({ currentDepartment: undefined });
+      reset({
+        name: "",
+        description: "",
+        status: true,
+      });
+    } else if (currentDepartment) {
+      // Only reset with current department data in edit mode
       reset(getDefaultValues());
     }
   }, [isNew, currentDepartment, reset, getDefaultValues]);
@@ -92,7 +117,7 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
     }
   };
 
-  if (isFormLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">

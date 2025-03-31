@@ -7,19 +7,23 @@ export const AUTH_ERRORS = {
     message: "User not found",
   },
   INVALID_PASSWORD: {
-    code: "401",
+    code: "400",
     message: "Invalid password",
   },
   UNVERIFIED_ACCOUNT: {
     code: "403",
-    message: "Account not approved",
+    message: "Account not approved, please contact your administrator",
+  },
+  REJECTED_ACCOUNT: {
+    code: "405",
+    message: "Account has been rejected, please contact your administrator",
   },
   TOO_MANY_ATTEMPTS: {
     code: "429",
     message: "Too many login attempts, please try again later",
   },
   INVALID_CREDENTIALS: {
-    code: "400",
+    code: "401",
     message: "Invalid credentials",
   },
   INTERNAL_SERVER_ERROR: {

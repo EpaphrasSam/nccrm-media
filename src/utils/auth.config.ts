@@ -38,16 +38,23 @@ async function loginWithCredentials(
   try {
     const response = await fetchClient.post<LoginResponse>(
       "/auth/login",
-      credentials
+      credentials,
+      { returnErrorStatus: true }
     );
+
     const { user, token } = response.data;
 
-    // Role check - uncomment when ready to enforce role requirement
-    /* if (!user.role) {
+    if (user.status === "pending_verification") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const error: any = new Error("Account not verified");
       error.response = { status: 403 }; // Will map to UNVERIFIED_ACCOUNT
       throw error;
-    } */
+    } else if (user.status === "rejected") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const error: any = new Error("Account rejected");
+      error.response = { status: 405 }; // Will map to REJECTED_ACCOUNT
+      throw error;
+    }
 
     return {
       id: user.id,
@@ -145,6 +152,7 @@ export const authConfig = {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           const statusCode = error.response?.status || 500;
+          console.log("StatusCode", error);
           const ErrorClass =
             AuthErrorClasses[statusCode] || AuthErrorClasses["500"];
           throw new ErrorClass();

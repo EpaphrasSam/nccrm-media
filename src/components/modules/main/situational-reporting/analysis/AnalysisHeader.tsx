@@ -57,6 +57,8 @@ export function AnalysisHeader() {
       fetcher(args[0], args[1])
   );
 
+  console.log(statistics);
+
   return (
     <div className="mb-6">
       <div className="flex justify-end text-right mb-4 w-full">

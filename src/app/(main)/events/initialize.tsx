@@ -81,8 +81,6 @@ export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
         const response = await eventService.fetchAll(filters);
         const data = "data" in response ? response.data : response;
 
-        console.log("Events", data);
-
         useEventsStore.setState({
           events: data.events,
           totalEvents: data.totalEvents,

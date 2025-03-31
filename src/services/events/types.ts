@@ -159,3 +159,7 @@ export interface EventQueryParams {
   thematic_area?: string;
   search?: string;
 }
+
+export interface EventValidateInput {
+  status: "approved" | "rejected";
+}

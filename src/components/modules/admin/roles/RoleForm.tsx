@@ -106,6 +106,7 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -126,8 +127,32 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     defaultValues: getDefaultValues(),
   });
 
+  // Handle loading states
   useEffect(() => {
-    if (!isNew && currentRole) {
+    if (isNew) {
+      // For new forms, no loading needed
+      setLocalLoading(false);
+    } else if (!isFormLoading && currentRole) {
+      // For edit mode, add delay only on initial load
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, currentRole, isFormLoading]);
+
+  // Handle form reset
+  useEffect(() => {
+    if (isNew) {
+      // Clear the store and reset form when in new mode
+      useRolesStore.setState({ currentRole: undefined });
+      reset({
+        name: "",
+        description: "",
+        functions: DEFAULT_PERMISSIONS,
+      });
+    } else if (currentRole) {
+      // Only reset with current data in edit mode
       reset(getDefaultValues());
     }
   }, [isNew, currentRole, reset, getDefaultValues]);
@@ -162,7 +187,7 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     }
   };
 
-  if (isFormLoading) {
+  if (isFormLoading || localLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">

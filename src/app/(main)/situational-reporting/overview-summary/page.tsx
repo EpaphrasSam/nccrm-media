@@ -24,6 +24,7 @@ export default async function OverviewSummaryPage({ searchParams }: PageProps) {
     to: getStringParam(resolvedSearchParams.to)
       ? Number(getStringParam(resolvedSearchParams.to))
       : undefined,
+    reports: getStringParam(resolvedSearchParams.reports),
   };
 
   return (

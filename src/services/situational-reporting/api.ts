@@ -131,7 +131,7 @@ export const situationalReportingService = {
       : clientApiCall(promise, { message: "" }, true, options);
   },
 
-  getAnalysis(
+  async getAnalysis(
     params: Partial<OverviewSummaryFilters> = {},
     isServer = false,
     options?: ApiOptions
@@ -141,6 +141,7 @@ export const situationalReportingService = {
         params: {
           ...(params.from && { from: params.from }),
           ...(params.to && { to: params.to }),
+          ...(params.reports && { reports: params.reports }),
         },
       })
       .then((res) => res.data.situationalAnalysis);

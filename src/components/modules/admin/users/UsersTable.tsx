@@ -15,11 +15,18 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { FiCheck, FiX, FiUser, FiMoreVertical, FiTrash2 } from "react-icons/fi";
 import { FaRegEdit } from "react-icons/fa";
 import { useUsersStore } from "@/store/users";
-import { tableStyles } from "@/lib/styles";
+import { tableStyles, buttonStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import { getStatusColor, USER_STATUSES } from "@/lib/constants";
 import { Pagination } from "@/components/common/navigation/Pagination";
@@ -103,11 +110,18 @@ export function UsersTable() {
     setFilters,
     totalPages,
     validateUser,
+    updateUser,
+    departments,
+    roles,
   } = useUsersStore();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
 
   const handlePageChange = (page: number) => {
     setFilters({ page });
@@ -131,12 +145,45 @@ export function UsersTable() {
     }
   };
 
-  const handleApprove = (userId: string) => {
-    validateUser(userId, { status: "approved" });
+  const handleApprove = async (userId: string) => {
+    try {
+      await validateUser(userId, { status: "approved" });
+      setSelectedUserId(userId);
+      setAssignmentModalOpen(true);
+    } catch (error) {
+      console.error("Error approving user:", error);
+    }
   };
 
   const handleReject = (userId: string) => {
     validateUser(userId, { status: "rejected" });
+  };
+
+  const handleAssignmentConfirm = async () => {
+    if (!selectedUserId || !selectedDepartment || !selectedRole) return;
+
+    setIsAssigning(true);
+    try {
+      await updateUser(selectedUserId, {
+        department_id: selectedDepartment,
+        role_id: selectedRole,
+      });
+      setAssignmentModalOpen(false);
+      setSelectedUserId(null);
+      setSelectedDepartment("");
+      setSelectedRole("");
+    } catch (error) {
+      console.error("Error assigning role and department:", error);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleAssignmentCancel = () => {
+    setAssignmentModalOpen(false);
+    setSelectedUserId(null);
+    setSelectedDepartment("");
+    setSelectedRole("");
   };
 
   return (
@@ -203,7 +250,13 @@ export function UsersTable() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{user?.department?.name}</TableCell>
+                <TableCell>
+                  {user?.department?.name || (
+                    <p className="text-sm font-semibold capitalize text-gray-600">
+                      No department
+                    </p>
+                  )}
+                </TableCell>
                 <TableCell>
                   <RoleChip role={user?.role?.name} />
                 </TableCell>
@@ -280,6 +333,78 @@ export function UsersTable() {
         description="Are you sure you want to delete this user? This action cannot be undone."
         isLoading={isDeleting}
       />
+
+      <Modal
+        isOpen={assignmentModalOpen}
+        onClose={handleAssignmentCancel}
+        placement="center"
+        classNames={{
+          base: "max-w-md",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Assign Role and Department
+              </ModalHeader>
+              <ModalBody>
+                <div className="flex flex-col gap-4">
+                  <Select
+                    label="Department"
+                    placeholder="Select a department"
+                    selectedKeys={
+                      selectedDepartment ? [selectedDepartment] : []
+                    }
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0]?.toString();
+                      if (value) setSelectedDepartment(value);
+                    }}
+                  >
+                    {departments?.map((dept: { id: string; name: string }) => (
+                      <SelectItem key={dept.id}>{dept.name}</SelectItem>
+                    ))}
+                  </Select>
+
+                  <Select
+                    label="Role"
+                    placeholder="Select a role"
+                    selectedKeys={selectedRole ? [selectedRole] : []}
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0]?.toString();
+                      if (value) setSelectedRole(value);
+                    }}
+                  >
+                    {roles?.map((role: { id: string; name: string }) => (
+                      <SelectItem key={role.id}>{role.name}</SelectItem>
+                    ))}
+                  </Select>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  color="danger"
+                  variant="light"
+                  onPress={onClose}
+                  disabled={isAssigning}
+                  className={`${buttonStyles}`}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={handleAssignmentConfirm}
+                  isLoading={isAssigning}
+                  isDisabled={!selectedDepartment || !selectedRole}
+                  className={`${buttonStyles} bg-brand-red-dark text-white`}
+                >
+                  Assign
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

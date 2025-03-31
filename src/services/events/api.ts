@@ -7,6 +7,7 @@ import type {
   EventCreateInput,
   EventUpdateInput,
   EventQueryParams,
+  EventValidateInput,
 } from "./types";
 
 type ApiOptions = {
@@ -158,5 +159,19 @@ export const eventService = {
     return isServer
       ? serverApiCall(promise, { message: "" })
       : clientApiCall(promise, { message: "" }, true, options);
+  },
+  validate(
+    id: string,
+    status: EventValidateInput,
+    isServer = false,
+    options?: ApiOptions
+  ) {
+    const promise = fetchClient
+      .put<{ message: string }>(`/admin//update-event-status/${id}`, status)
+      .then((res) => res.data);
+
+    return isServer
+      ? serverApiCall(promise, { message: "" })
+      : clientApiCall(promise, { message: "" }, true, options); // Keep success message
   },
 };

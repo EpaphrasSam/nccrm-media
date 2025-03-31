@@ -17,6 +17,8 @@ interface UsersState {
   totalUsers: number;
   totalPages: number;
   currentUser?: UserDetail;
+  departments: Array<{ id: string; name: string }>;
+  roles: Array<{ id: string; name: string }>;
 
   // Filters & Pagination
   filters: UserQueryParams;
@@ -56,6 +58,8 @@ export const useUsersStore = create<UsersState>((set) => ({
   totalUsers: 0,
   totalPages: 0,
   currentUser: undefined,
+  departments: [],
+  roles: [],
 
   // Filters & Pagination
   filters: DEFAULT_FILTERS,
@@ -127,7 +131,7 @@ export const useUsersStore = create<UsersState>((set) => ({
         },
       });
       set({ currentUser: undefined });
-      navigationService.replace("/admin/users");
+      navigationService.refresh();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -142,7 +146,7 @@ export const useUsersStore = create<UsersState>((set) => ({
         },
       });
       set({ currentUser: undefined });
-      navigationService.replace("/admin/users");
+      navigationService.refresh();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

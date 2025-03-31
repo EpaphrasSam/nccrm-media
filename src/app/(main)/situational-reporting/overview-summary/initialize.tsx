@@ -23,9 +23,12 @@ export function InitializeOverviewSummary({
     setOverviewData,
   } = useSituationalReportingStore();
 
-  // Set initial filters only if both from and to are provided
+  // Set initial filters if any are provided
   useEffect(() => {
-    if (initialFilters?.from && initialFilters?.to) {
+    const hasFilters = Object.values(initialFilters).some(
+      (value) => value !== undefined
+    );
+    if (hasFilters) {
       setOverviewFilters(initialFilters);
     }
   }, [initialFilters, setOverviewFilters]);
@@ -43,7 +46,7 @@ export function InitializeOverviewSummary({
           },
         }
       );
-      console.log(response);
+      // console.log(response);
       return response as SituationalAnalysis;
     },
     {

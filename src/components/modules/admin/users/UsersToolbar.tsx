@@ -14,9 +14,6 @@ import { FiFilter } from "react-icons/fi";
 import { useUsersStore } from "@/store/users";
 import { buttonStyles } from "@/lib/styles";
 import { AdminToolbar } from "../layout/AdminToolbar";
-import useSWR from "swr";
-import type { Department } from "@/services/departments/types";
-import type { Role } from "@/services/roles/types";
 
 interface FilterState {
   department: string;
@@ -30,20 +27,14 @@ export function UsersToolbar() {
     resetFilters,
     addUser,
     isFiltersLoading,
+    departments,
+    roles,
   } = useUsersStore();
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
     department: "all",
     role: "all",
   });
-
-  // Get filter options from SWR cache
-  const { data: filterOptions } = useSWR<{
-    departments: Department[];
-    roles: Role[];
-  }>("filterOptions");
-  const departments = filterOptions?.departments || [];
-  const roles = filterOptions?.roles || [];
 
   const handleApplyFilters = () => {
     const filters: Record<string, string> = {};
@@ -110,7 +101,7 @@ export function UsersToolbar() {
             >
               <>
                 <SelectItem key="all">All Departments</SelectItem>
-                {departments.map((dept) => (
+                {departments?.map((dept) => (
                   <SelectItem key={dept.id}>{dept.name}</SelectItem>
                 ))}
               </>
@@ -129,7 +120,7 @@ export function UsersToolbar() {
             >
               <>
                 <SelectItem key="all">All Roles</SelectItem>
-                {roles.map((role) => (
+                {roles?.map((role) => (
                   <SelectItem key={role.id}>{role.name}</SelectItem>
                 ))}
               </>

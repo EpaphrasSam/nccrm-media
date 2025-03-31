@@ -73,6 +73,7 @@ export interface AnalysisResponse {
 export interface OverviewSummaryFilters {
   from?: number;
   to?: number;
+  reports?: string; // Comma-separated string of report IDs
 }
 
 export interface OverviewSummaryResponse {
@@ -100,4 +101,9 @@ export interface StatisticsResponse {
 export interface StatisticsFilters {
   from?: string;
   to?: string;
+}
+
+// Add new type for grouped reports
+export interface GroupedReports {
+  [year: string]: SituationalReport[];
 }

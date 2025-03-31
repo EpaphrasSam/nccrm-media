@@ -44,6 +44,7 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   // Fetch thematic areas using SWR
   const { data: thematicAreasResponse, error: thematicAreasError } =
@@ -79,8 +80,33 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     defaultValues: getDefaultValues(),
   });
 
+  // Handle loading states
   useEffect(() => {
-    if (!isNew && currentMainIndicator) {
+    if (isNew) {
+      // For new forms, no loading needed
+      setLocalLoading(false);
+    } else if (!isFormLoading && currentMainIndicator) {
+      // For edit mode, add delay only on initial load
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, currentMainIndicator, isFormLoading]);
+
+  // Handle form reset
+  useEffect(() => {
+    if (isNew) {
+      // Clear the store and reset form when in new mode
+      useMainIndicatorsStore.setState({ currentMainIndicator: undefined });
+      reset({
+        name: "",
+        description: "",
+        thematic_area_id: "",
+        status: true,
+      });
+    } else if (currentMainIndicator) {
+      // Only reset with current data in edit mode
       reset(getDefaultValues());
     }
   }, [isNew, currentMainIndicator, reset, getDefaultValues]);
@@ -121,7 +147,7 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     }
   };
 
-  if (isFormLoading || !thematicAreas) {
+  if (isFormLoading || localLoading || !thematicAreas) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">

@@ -6,17 +6,19 @@ import { DepartmentForm } from "@/components/modules/admin/departments/Departmen
 
 export default function NewDepartmentPage() {
   return (
-    <AdminPageLayout
-      header={
-        <AdminPageHeader
-          title="Add New Department"
-          description="Create a new department in the system."
-        />
-      }
-    >
-      <div className="max-w-2xl">
-        <DepartmentForm isNew />
-      </div>
-    </AdminPageLayout>
+    <>
+      <AdminPageLayout
+        header={
+          <AdminPageHeader
+            title="Add New Department"
+            description="Create a new department in the system."
+          />
+        }
+      >
+        <div className="max-w-2xl">
+          <DepartmentForm isNew />
+        </div>
+      </AdminPageLayout>
+    </>
   );
 }
