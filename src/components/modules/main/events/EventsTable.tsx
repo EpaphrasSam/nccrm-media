@@ -90,8 +90,6 @@ export function EventsTable() {
     validateEvent(eventId, { status: "rejected" });
   };
 
-  console.log(events);
-
   return (
     <div className="space-y-4">
       <Table aria-label="Events table" classNames={tableStyles}>

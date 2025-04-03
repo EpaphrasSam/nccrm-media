@@ -6,6 +6,8 @@ import { userService } from "@/services/users/api";
 import { subIndicatorService } from "@/services/sub-indicators/api";
 import { regionService } from "@/services/regions/api";
 import useSWR from "swr";
+import { useEffect } from "react";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeEventProps {
   id: string;
@@ -28,7 +30,7 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
   };
 
   // Fetch event data and reference data
-  const { isLoading } = useSWR(
+  const { isLoading, mutate } = useSWR(
     `event/${id}`,
     async () => {
       try {
@@ -127,6 +129,16 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
     },
     swrConfig
   );
+
+  // Subscribe to store sync to refresh data after updates
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutate();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [mutate]);
 
   return null;
 }

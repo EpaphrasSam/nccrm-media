@@ -9,6 +9,7 @@ import type {
 import { regionService } from "@/services/regions/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 interface RegionsState {
   // Data
@@ -79,6 +80,7 @@ export const useRegionsStore = create<RegionsState>((set) => ({
           throw new Error(error);
         },
       });
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -93,6 +95,7 @@ export const useRegionsStore = create<RegionsState>((set) => ({
         },
       });
       set({ currentRegion: undefined });
+      storeSync.trigger();
       navigationService.replace("/admin/regions");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -111,6 +114,7 @@ export const useRegionsStore = create<RegionsState>((set) => ({
         },
       });
       set({ currentRegion: undefined });
+      storeSync.trigger();
       navigationService.replace("/admin/regions");
     } catch {
       // Error has been handled by handleError, we just need to stop execution

@@ -6,6 +6,7 @@ import { useRegionsStore } from "@/store/regions";
 import { regionService } from "@/services/regions/api";
 import type { RegionQueryParams } from "@/services/regions/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeRegionsProps {
   initialFilters: Partial<RegionQueryParams>;
@@ -41,7 +42,7 @@ export function InitializeRegions({ initialFilters }: InitializeRegionsProps) {
   };
 
   // Fetch regions data - will refetch when filters change
-  const { isLoading: isRegionsLoading } = useSWR(
+  const { isLoading: isRegionsLoading, mutate } = useSWR(
     ["regions", filters],
     async () => {
       try {
@@ -56,7 +57,6 @@ export function InitializeRegions({ initialFilters }: InitializeRegionsProps) {
 
         return data;
       } finally {
-        // Only update loading state after initial load
         if (isRegionsLoading) {
           setTableLoading(false);
         }
@@ -68,7 +68,18 @@ export function InitializeRegions({ initialFilters }: InitializeRegionsProps) {
     }
   );
 
-  // Update loading states based on SWR's initial loading state
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutate();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutate]);
+
+  // Update loading state based on SWR's initial loading state
   useEffect(() => {
     if (isRegionsLoading) {
       setTableLoading(true);

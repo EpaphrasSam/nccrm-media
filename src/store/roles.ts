@@ -9,6 +9,7 @@ import type {
 import { roleService } from "@/services/roles/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 interface RolesState {
   // Data
@@ -79,6 +80,7 @@ export const useRolesStore = create<RolesState>((set) => ({
           throw new Error(error);
         },
       });
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -94,6 +96,7 @@ export const useRolesStore = create<RolesState>((set) => ({
       });
       // Only execute these if no error was thrown
       set({ currentRole: undefined });
+      storeSync.trigger();
       navigationService.replace("/admin/roles");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -110,6 +113,7 @@ export const useRolesStore = create<RolesState>((set) => ({
       });
       // Only execute these if no error was thrown
       set({ currentRole: undefined });
+      storeSync.trigger();
       navigationService.replace("/admin/roles");
     } catch {
       // Error has been handled by handleError, we just need to stop execution

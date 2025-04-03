@@ -11,6 +11,8 @@ import {
   Select,
   SelectItem,
   Skeleton,
+  Autocomplete,
+  AutocompleteItem,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
@@ -55,6 +57,33 @@ export interface EventFormData {
   location_details?: string;
   sub_indicator_id: string;
   follow_ups: string[];
+}
+
+// Add these interfaces before the EventForm component
+interface SubIndicatorItem {
+  id: string;
+  name: string;
+  type: "sub";
+  textValue: string;
+  selectable: true;
+}
+
+interface MainIndicatorGroup {
+  id: string;
+  name: string;
+  type: "main";
+  textValue: string;
+  selectable: false;
+  subIndicators: SubIndicatorItem[];
+}
+
+interface ThematicAreaGroup {
+  id: string;
+  name: string;
+  type: "thematic";
+  textValue: string;
+  selectable: false;
+  mainIndicators: Record<string, MainIndicatorGroup>;
 }
 
 export function EventForm({ isNew = false }: EventFormProps) {
@@ -307,28 +336,150 @@ export function EventForm({ isNew = false }: EventFormProps) {
         <Controller
           name="sub_indicator_id"
           control={control}
-          render={({ field }) => (
-            <Select
-              selectedKeys={field.value ? [field.value] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
-              }}
-              label="Sub Indicator"
-              labelPlacement="outside"
-              placeholder="Select the sub indicator"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.sub_indicator_id}
-              errorMessage={errors.sub_indicator_id?.message}
-            >
-              {subIndicators?.map((indicator) => (
-                <SelectItem key={indicator.id} textValue={indicator.name}>
-                  {indicator.name}
-                </SelectItem>
-              ))}
-            </Select>
-          )}
+          render={({ field }) => {
+            // Group items hierarchically but keep flat structure
+            const groupedItems = subIndicators?.reduce((acc, subIndicator) => {
+              const thematicArea = subIndicator.main_indicator?.thematic_area;
+              const mainIndicator = subIndicator.main_indicator;
+
+              if (!thematicArea || !mainIndicator) return acc;
+
+              // Initialize thematic area if not exists
+              if (!acc[thematicArea.id]) {
+                acc[thematicArea.id] = {
+                  id: thematicArea.id,
+                  name: thematicArea.name,
+                  type: "thematic",
+                  textValue: thematicArea.name,
+                  selectable: false,
+                  mainIndicators: {},
+                };
+              }
+
+              // Initialize main indicator if not exists
+              if (!acc[thematicArea.id].mainIndicators[mainIndicator.id]) {
+                acc[thematicArea.id].mainIndicators[mainIndicator.id] = {
+                  id: mainIndicator.id,
+                  name: mainIndicator.name,
+                  type: "main",
+                  textValue: mainIndicator.name,
+                  selectable: false,
+                  subIndicators: [],
+                };
+              }
+
+              // Add sub indicator with simplified textValue
+              acc[thematicArea.id].mainIndicators[
+                mainIndicator.id
+              ].subIndicators.push({
+                id: subIndicator.id,
+                name: subIndicator.name,
+                type: "sub",
+                textValue: subIndicator.name, // Only use sub-indicator name for search
+                selectable: true,
+              });
+
+              return acc;
+            }, {} as Record<string, ThematicAreaGroup>);
+
+            // Flatten the structure
+            const items = Object.values(groupedItems || {}).flatMap(
+              (thematicArea: ThematicAreaGroup) => [
+                thematicArea,
+                ...Object.values(thematicArea.mainIndicators).flatMap(
+                  (mainIndicator: MainIndicatorGroup) => [
+                    mainIndicator,
+                    ...mainIndicator.subIndicators,
+                  ]
+                ),
+              ]
+            );
+
+            return (
+              <Autocomplete
+                selectedKey={field.value ? field.value : undefined}
+                onSelectionChange={(key) => {
+                  if (key) {
+                    field.onChange(key.toString());
+                    // Only show sub-indicator name when selected
+                    const selectedItem = items.find((item) => item.id === key);
+                    if (selectedItem?.type === "sub") {
+                      const input = document.querySelector(
+                        `input[name="${field.name}"]`
+                      ) as HTMLInputElement;
+                      if (input) input.value = selectedItem.name;
+                    }
+                  }
+                }}
+                defaultInputValue={
+                  field.value
+                    ? (() => {
+                        const selectedItem = items.find(
+                          (item) => item.id === field.value
+                        );
+                        return selectedItem?.type === "sub"
+                          ? selectedItem.name
+                          : "";
+                      })()
+                    : ""
+                }
+                items={items}
+                label="Sub Indicator"
+                labelPlacement="outside"
+                placeholder="Search for a sub indicator"
+                variant="bordered"
+                classNames={{
+                  // ...inputStyles,
+                  listbox: "overflow-visible", // Enable overflow for sticky positioning
+                }}
+                inputProps={{
+                  classNames: {
+                    label: "text-base font-medium pb-2",
+                    inputWrapper: "py-6 rounded-xlg",
+                    base: "border-brand-gray-light",
+                  },
+                }}
+                isInvalid={!!errors.sub_indicator_id}
+                errorMessage={errors.sub_indicator_id?.message}
+                disabledKeys={items
+                  .filter((item) => !item.selectable)
+                  .map((item) => item.id)}
+              >
+                {(item) => (
+                  <AutocompleteItem
+                    key={item.id}
+                    textValue={item.textValue}
+                    className={cn(
+                      "transition-colors",
+                      item.type === "thematic" &&
+                        "flex w-full sticky top-0 z-20 py-2 px-2 bg-default-100 shadow-small rounded-small",
+                      item.type === "main" &&
+                        "flex w-full sticky top-10 z-10 py-1.5 px-2 bg-gray-50/80 border-b",
+                      item.type === "sub" &&
+                        "py-2 px-2 hover:bg-gray-100 cursor-pointer",
+                      !item.selectable && "pointer-events-none"
+                    )}
+                  >
+                    {item.type === "thematic" ? (
+                      <div className="flex items-center w-full">
+                        <span className="font-semibold text-sm text-gray-900">
+                          {item.name}
+                        </span>
+                      </div>
+                    ) : item.type === "main" ? (
+                      <div className="flex items-center w-full">
+                        <span className="font-medium text-sm ml-1 text-gray-800">
+                          {item.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm pl-2">{item.name}</span>
+                    )}
+                  </AutocompleteItem>
+                )}
+              </Autocomplete>
+            );
+          }}
         />
 
         {!isNew && (

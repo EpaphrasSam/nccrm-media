@@ -6,6 +6,7 @@ import { useDepartmentsStore } from "@/store/departments";
 import { departmentService } from "@/services/departments/api";
 import type { DepartmentQueryParams } from "@/services/departments/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeDepartmentsProps {
   initialFilters: Partial<DepartmentQueryParams>;
@@ -43,7 +44,7 @@ export function InitializeDepartments({
   };
 
   // Fetch departments data - will refetch when filters change
-  const { isLoading: isDepartmentsLoading } = useSWR(
+  const { isLoading: isDepartmentsLoading, mutate } = useSWR(
     ["departments", filters],
     async () => {
       try {
@@ -69,6 +70,17 @@ export function InitializeDepartments({
       keepPreviousData: true,
     }
   );
+
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutate();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutate]);
 
   // Update loading states based on SWR's initial loading state
   useEffect(() => {

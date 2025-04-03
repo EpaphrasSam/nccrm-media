@@ -8,6 +8,7 @@ import { departmentService } from "@/services/departments/api";
 import { roleService } from "@/services/roles/api";
 import type { UserQueryParams } from "@/services/users/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeUsersProps {
   initialFilters: Partial<UserQueryParams>;
@@ -44,7 +45,7 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
   };
 
   // Fetch users data - will refetch when filters change
-  const { isLoading: isUsersLoading } = useSWR(
+  const { isLoading: isUsersLoading, mutate: mutateUsers } = useSWR(
     ["users", filters],
     async () => {
       try {
@@ -59,7 +60,6 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
 
         return data;
       } finally {
-        // Only update loading state after initial load
         if (isUsersLoading) {
           setTableLoading(false);
         }
@@ -72,7 +72,7 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
   );
 
   // Fetch filter options (departments and roles)
-  const { isLoading: isFilterOptionsLoading } = useSWR(
+  const { isLoading: isFilterOptionsLoading, mutate: mutateFilters } = useSWR(
     "filterOptions",
     async () => {
       try {
@@ -91,7 +91,6 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
             ? rolesResponse.data.roles
             : rolesResponse.roles;
 
-        // Set departments and roles in the store
         useUsersStore.setState({
           departments,
           roles,
@@ -102,7 +101,6 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
           roles,
         };
       } finally {
-        // Only update loading state after initial load
         if (isFilterOptionsLoading) {
           setFiltersLoading(false);
         }
@@ -110,6 +108,18 @@ export function InitializeUsers({ initialFilters }: InitializeUsersProps) {
     },
     swrConfig
   );
+
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutateUsers();
+      mutateFilters();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutateUsers, mutateFilters]);
 
   // Update loading states based on SWR's initial loading state
   useEffect(() => {

@@ -6,6 +6,7 @@ import { useMainIndicatorsStore } from "@/store/main-indicators";
 import { mainIndicatorService } from "@/services/main-indicators/api";
 import type { MainIndicatorQueryParams } from "@/services/main-indicators/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeMainIndicatorsProps {
   initialFilters: Partial<MainIndicatorQueryParams>;
@@ -43,7 +44,7 @@ export function InitializeMainIndicators({
   };
 
   // Fetch main indicators data - will refetch when filters change
-  const { isLoading: isMainIndicatorsLoading } = useSWR(
+  const { isLoading: isMainIndicatorsLoading, mutate } = useSWR(
     ["mainIndicators", filters],
     async () => {
       try {
@@ -58,7 +59,6 @@ export function InitializeMainIndicators({
 
         return data;
       } finally {
-        // Only update loading state after initial load
         if (isMainIndicatorsLoading) {
           setTableLoading(false);
         }
@@ -70,7 +70,18 @@ export function InitializeMainIndicators({
     }
   );
 
-  // Update loading states based on SWR's initial loading state
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutate();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutate]);
+
+  // Update loading state based on SWR's initial loading state
   useEffect(() => {
     if (isMainIndicatorsLoading) {
       setTableLoading(true);

@@ -10,6 +10,7 @@ import type {
 import { userService } from "@/services/users/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 interface UsersState {
   // Data
@@ -102,6 +103,7 @@ export const useUsersStore = create<UsersState>((set) => ({
         users: state.users.filter((u) => u.id !== userId),
         totalUsers: state.totalUsers - 1,
       }));
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -131,6 +133,7 @@ export const useUsersStore = create<UsersState>((set) => ({
         },
       });
       set({ currentUser: undefined });
+      storeSync.trigger();
       navigationService.refresh();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -146,6 +149,7 @@ export const useUsersStore = create<UsersState>((set) => ({
         },
       });
       set({ currentUser: undefined });
+      storeSync.trigger();
       navigationService.refresh();
     } catch {
       // Error has been handled by handleError, we just need to stop execution

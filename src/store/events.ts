@@ -12,6 +12,7 @@ import type { SubIndicator } from "@/services/sub-indicators/types";
 import { eventService } from "@/services/events/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 // Form step types
 export type EventFormStep =
@@ -227,6 +228,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         events: state.events.filter((r) => r.id !== eventId),
         totalEvents: state.totalEvents - 1,
       }));
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -258,9 +260,9 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         },
       });
       set({ currentStep: "event" });
+      storeSync.trigger();
       navigationService.refresh();
     } catch {
-      // Error has been handled by handleError, we just need to stop execution
       return;
     }
   },
@@ -273,6 +275,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         },
       });
       set({ currentEvent: null });
+      storeSync.trigger();
       navigationService.replace("/events");
     } catch {
       // Error has been handled by handleError, we just need to stop execution

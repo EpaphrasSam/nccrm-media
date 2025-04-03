@@ -6,6 +6,7 @@ import { useSubIndicatorsStore } from "@/store/sub-indicators";
 import { subIndicatorService } from "@/services/sub-indicators/api";
 import type { SubIndicatorQueryParams } from "@/services/sub-indicators/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeSubIndicatorsProps {
   initialFilters: Partial<SubIndicatorQueryParams>;
@@ -43,7 +44,7 @@ export function InitializeSubIndicators({
   };
 
   // Fetch sub indicators data - will refetch when filters change
-  const { isLoading: isSubIndicatorsLoading } = useSWR(
+  const { isLoading: isSubIndicatorsLoading, mutate } = useSWR(
     ["subIndicators", filters],
     async () => {
       try {
@@ -58,7 +59,6 @@ export function InitializeSubIndicators({
 
         return data;
       } finally {
-        // Only update loading state after initial load
         if (isSubIndicatorsLoading) {
           setTableLoading(false);
         }
@@ -70,7 +70,18 @@ export function InitializeSubIndicators({
     }
   );
 
-  // Update loading states based on SWR's initial loading state
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutate();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutate]);
+
+  // Update loading state based on SWR's initial loading state
   useEffect(() => {
     if (isSubIndicatorsLoading) {
       setTableLoading(true);

@@ -8,6 +8,7 @@ import { subIndicatorService } from "@/services/sub-indicators/api";
 import { regionService } from "@/services/regions/api";
 import type { EventQueryParams } from "@/services/events/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeEventsProps {
   initialFilters: Partial<EventQueryParams>;
@@ -44,7 +45,7 @@ export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
   };
 
   // Fetch filter options (sub indicators and regions)
-  const { isLoading: isFilterOptionsLoading } = useSWR(
+  const { isLoading: isFilterOptionsLoading, mutate: mutateFilters } = useSWR(
     "filterOptions",
     async () => {
       try {
@@ -74,7 +75,7 @@ export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
   );
 
   // Fetch events data - will refetch when filters change
-  const { isLoading: isEventsLoading } = useSWR(
+  const { isLoading: isEventsLoading, mutate: mutateEvents } = useSWR(
     ["events", filters],
     async () => {
       try {
@@ -100,6 +101,17 @@ export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
       keepPreviousData: true,
     }
   );
+
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutateEvents();
+      mutateFilters();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [mutateEvents, mutateFilters]);
 
   // Update loading states based on SWR's initial loading state
   useEffect(() => {

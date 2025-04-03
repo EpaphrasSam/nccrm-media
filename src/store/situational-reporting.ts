@@ -12,6 +12,7 @@ import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
 import type { MainIndicator } from "@/services/main-indicators/types";
 import type { ThematicArea } from "@/services/thematic-areas/types";
+import { storeSync } from "@/lib/store-sync";
 
 interface SituationalReportingState {
   // Reports Data
@@ -154,6 +155,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
           reports: state.reports.filter((r) => r.id !== reportId),
           totalReports: state.totalReports - 1,
         }));
+        storeSync.trigger();
       } catch {
         // Error has been handled by handleError, we just need to stop execution
         return;
@@ -167,6 +169,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
             throw new Error(error);
           },
         });
+        storeSync.trigger();
         navigationService.replace("/situational-reporting");
       } catch {
         // Error has been handled by handleError, we just need to stop execution
@@ -181,6 +184,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
             throw new Error(error);
           },
         });
+        storeSync.trigger();
         navigationService.replace("/situational-reporting");
       } catch {
         // Error has been handled by handleError, we just need to stop execution
@@ -254,6 +258,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
               set({ currentAnalysis: analysis || undefined });
             }
           });
+        storeSync.trigger();
       } catch {
         // Error has been handled by handleError, we just need to stop execution
         return;
@@ -286,6 +291,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
               set({ currentAnalysis: analysis || undefined });
             }
           });
+        storeSync.trigger();
       } catch {
         // Error has been handled by handleError, we just need to stop execution
         return;

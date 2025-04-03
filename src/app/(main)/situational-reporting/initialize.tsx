@@ -6,6 +6,7 @@ import { useSituationalReportingStore } from "@/store/situational-reporting";
 import { situationalReportingService } from "@/services/situational-reporting/api";
 import type { SituationalReportQueryParams } from "@/services/situational-reporting/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeSituationalReportingProps {
   initialFilters: Partial<SituationalReportQueryParams>;
@@ -45,7 +46,7 @@ export function InitializeSituationalReporting({
   };
 
   // Fetch reports data - will refetch when filters change
-  const { isLoading: isReportsLoading } = useSWR(
+  const { isLoading: isReportsLoading, mutate: mutateReports } = useSWR(
     ["reports", filters],
     async () => {
       try {
@@ -71,6 +72,17 @@ export function InitializeSituationalReporting({
       keepPreviousData: true,
     }
   );
+
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutateReports();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutateReports]);
 
   // Update loading states based on SWR's initial loading state
   useEffect(() => {

@@ -9,6 +9,7 @@ import type {
 import { subIndicatorService } from "@/services/sub-indicators/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 interface SubIndicatorsState {
   // Data
@@ -82,6 +83,7 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
           throw new Error(error);
         },
       });
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -98,6 +100,7 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
       set({
         currentSubIndicator: undefined,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/sub-indicators");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -115,6 +118,7 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
       set({
         totalSubIndicators: 0,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/sub-indicators");
     } catch {
       // Error has been handled by handleError, we just need to stop execution

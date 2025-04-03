@@ -9,6 +9,7 @@ import type {
 import { departmentService } from "@/services/departments/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 interface DepartmentsState {
   // Data
@@ -82,6 +83,7 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
           throw new Error(error);
         },
       });
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -98,6 +100,7 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
       set({
         currentDepartment: undefined,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/departments");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -117,6 +120,7 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
         departments: [],
         totalDepartments: 0,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/departments");
     } catch {
       // Error has been handled by handleError, we just need to stop execution

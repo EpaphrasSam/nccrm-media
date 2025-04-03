@@ -9,6 +9,7 @@ import type {
 import { mainIndicatorService } from "@/services/main-indicators/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 interface MainIndicatorsState {
   // Data
@@ -86,6 +87,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
           throw new Error(error);
         },
       });
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -102,6 +104,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
       set({
         currentMainIndicator: undefined,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/main-indicators");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -119,6 +122,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
       set({
         currentMainIndicator: undefined,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/main-indicators");
     } catch {
       // Error has been handled by handleError, we just need to stop execution

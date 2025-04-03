@@ -6,6 +6,7 @@ import { useThematicAreasStore } from "@/store/thematic-areas";
 import { thematicAreaService } from "@/services/thematic-areas/api";
 import type { ThematicAreaQueryParams } from "@/services/thematic-areas/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeThematicAreasProps {
   initialFilters: Partial<ThematicAreaQueryParams>;
@@ -43,7 +44,7 @@ export function InitializeThematicAreas({
   };
 
   // Fetch thematic areas data - will refetch when filters change
-  const { isLoading: isThematicAreasLoading } = useSWR(
+  const { isLoading: isThematicAreasLoading, mutate } = useSWR(
     ["thematicAreas", filters],
     async () => {
       try {
@@ -58,7 +59,6 @@ export function InitializeThematicAreas({
 
         return data;
       } finally {
-        // Only update loading state after initial load
         if (isThematicAreasLoading) {
           setTableLoading(false);
         }
@@ -70,7 +70,18 @@ export function InitializeThematicAreas({
     }
   );
 
-  // Update loading states based on SWR's initial loading state
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutate();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutate]);
+
+  // Update loading state based on SWR's initial loading state
   useEffect(() => {
     if (isThematicAreasLoading) {
       setTableLoading(true);

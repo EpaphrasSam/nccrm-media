@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import useSWR from "swr";
 import { useRolesStore } from "@/store/roles";
 import { roleService } from "@/services/roles/api";
-import type { RoleQueryParams, RoleListResponse } from "@/services/roles/types";
-import type { ApiResponse } from "@/utils/api-wrapper";
+import type { RoleQueryParams } from "@/services/roles/types";
 import { urlSync } from "@/utils/url-sync";
+import { storeSync } from "@/lib/store-sync";
 
 interface InitializeRolesProps {
   initialFilters: Partial<RoleQueryParams>;
@@ -42,24 +42,21 @@ export function InitializeRoles({ initialFilters }: InitializeRolesProps) {
   };
 
   // Fetch roles data - will refetch when filters change
-  const { isLoading: isRolesLoading } = useSWR(
+  const { isLoading: isRolesLoading, mutate } = useSWR(
     ["roles", filters],
     async () => {
       try {
-        const response = (await roleService.fetchAll(
-          filters,
-          true
-        )) as ApiResponse<RoleListResponse>;
-        if (response.data) {
-          useRolesStore.setState({
-            roles: response.data.roles,
-            totalRoles: response.data.totalRoles,
-            totalPages: response.data.totalPages,
-          });
-        }
-        return response.data;
+        const response = await roleService.fetchAll(filters);
+        const data = "data" in response ? response.data : response;
+
+        useRolesStore.setState({
+          roles: data.roles,
+          totalRoles: data.totalRoles,
+          totalPages: data.totalPages,
+        });
+
+        return data;
       } finally {
-        // Only update loading state after initial load
         if (isRolesLoading) {
           setTableLoading(false);
         }
@@ -71,7 +68,18 @@ export function InitializeRoles({ initialFilters }: InitializeRolesProps) {
     }
   );
 
-  // Update loading states based on SWR's initial loading state
+  // Subscribe to store sync
+  useEffect(() => {
+    const unsubscribe = storeSync.subscribe(() => {
+      mutate();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [mutate]);
+
+  // Update loading state based on SWR's initial loading state
   useEffect(() => {
     if (isRolesLoading) {
       setTableLoading(true);

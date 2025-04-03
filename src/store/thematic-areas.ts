@@ -9,6 +9,7 @@ import type {
 import { thematicAreaService } from "@/services/thematic-areas/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
+import { storeSync } from "@/lib/store-sync";
 
 interface ThematicAreasState {
   // Data
@@ -82,12 +83,7 @@ export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
           throw new Error(error);
         },
       });
-      set((state) => ({
-        thematicAreas: state.thematicAreas.filter(
-          (t) => t.id !== thematicAreaId
-        ),
-        totalThematicAreas: state.totalThematicAreas - 1,
-      }));
+      storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;
@@ -106,6 +102,7 @@ export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
         thematicAreas: [],
         totalThematicAreas: 0,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/thematic-areas");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -125,6 +122,7 @@ export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
         thematicAreas: [],
         totalThematicAreas: 0,
       });
+      storeSync.trigger();
       navigationService.replace("/admin/thematic-areas");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
