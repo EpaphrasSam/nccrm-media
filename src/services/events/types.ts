@@ -9,7 +9,8 @@ export interface Event {
   details?: string;
   status: EventStatus;
   event_date?: string;
-  region_id: string;
+  region: string;
+  district: string;
   location_details?: string;
   sub_indicator_id: string;
   perpetrator?: string;
@@ -47,10 +48,6 @@ export interface Event {
     id: string;
     name: string;
   };
-  region: {
-    id: string;
-    name: string;
-  };
   sub_indicator: {
     main_indicator: {
       thematic_area: {
@@ -78,7 +75,8 @@ export interface EventDetailResponse {
 export interface EventCreateInput {
   reporter_id: string; // Will be from logged-in user
   report_date: string;
-  region_id: string;
+  region: string;
+  district: string;
   sub_indicator_id: string;
   details?: string;
   event_date?: string;
@@ -114,8 +112,9 @@ export interface EventCreateInput {
 
 // Update Event Input
 export interface EventUpdateInput {
-  region_id: string; // Required in update
-  sub_indicator_id: string; // Required in update
+  region: string;
+  district: string;
+  sub_indicator_id: string;
   details?: string;
   event_date?: string;
   location_details?: string;
@@ -154,7 +153,6 @@ export interface EventUpdateInput {
 export interface EventQueryParams {
   page: number;
   limit: number;
-  region?: string;
   status?: EventStatus;
   thematic_area?: string;
   search?: string;

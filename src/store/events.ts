@@ -7,7 +7,6 @@ import type {
   EventValidateInput,
 } from "@/services/events/types";
 import type { UserListItem } from "@/services/users/types";
-import type { Region } from "@/services/regions/types";
 import type { SubIndicator } from "@/services/sub-indicators/types";
 import { eventService } from "@/services/events/api";
 import { urlSync } from "@/utils/url-sync";
@@ -28,10 +27,13 @@ export interface EventFormData {
   report_date: string;
   details: string;
   event_date: string;
-  region_id: string;
+  region: string;
+  district: string;
   location_details: string;
   sub_indicator_id: string;
   follow_ups: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface PerpetratorFormData {
@@ -91,10 +93,8 @@ interface EventsState {
 
   // Reference Data
   reporters: UserListItem[];
-  regions: Region[];
   subIndicators: SubIndicator[];
   setReporters: (reporters: UserListItem[]) => void;
-  setRegions: (regions: Region[]) => void;
   setSubIndicators: (indicators: SubIndicator[]) => void;
 
   // Data
@@ -156,10 +156,8 @@ export const useEventsStore = create<EventsState>((set, get) => ({
 
   // Initial Reference Data
   reporters: [],
-  regions: [],
   subIndicators: [],
   setReporters: (reporters) => set({ reporters }),
-  setRegions: (regions) => set({ regions }),
   setSubIndicators: (indicators) => set({ subIndicators: indicators }),
 
   // Initial Data
@@ -305,7 +303,8 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         "Event Date": event.event_date
           ? new Date(event.event_date).toLocaleDateString()
           : "",
-        Region: event.region.name,
+        Region: event.region,
+        District: event.district,
         "Location Details": event.location_details || "",
         "Thematic Area": event.sub_indicator.main_indicator.thematic_area.name,
         // Perpetrator Information

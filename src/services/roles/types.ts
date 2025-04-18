@@ -14,7 +14,6 @@ export interface RoleFunctions extends BaseFunctions {
 export interface RolePermissions {
   role: BaseFunctions;
   department: BaseFunctions;
-  region: BaseFunctions;
   thematic_area: BaseFunctions;
   main_indicator: BaseFunctions;
   sub_indicator: BaseFunctions;

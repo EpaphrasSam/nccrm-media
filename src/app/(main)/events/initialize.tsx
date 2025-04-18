@@ -5,7 +5,6 @@ import useSWR from "swr";
 import { useEventsStore } from "@/store/events";
 import { eventService } from "@/services/events/api";
 import { subIndicatorService } from "@/services/sub-indicators/api";
-import { regionService } from "@/services/regions/api";
 import type { EventQueryParams } from "@/services/events/types";
 import { urlSync } from "@/utils/url-sync";
 import { storeSync } from "@/lib/store-sync";
@@ -44,28 +43,22 @@ export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
     shouldRetryOnError: false, // Disable automatic retries
   };
 
-  // Fetch filter options (sub indicators and regions)
+  // Fetch filter options (sub indicators only)
   const { isLoading: isFilterOptionsLoading, mutate: mutateFilters } = useSWR(
     "filterOptions",
     async () => {
       try {
-        const [subIndicatorsResponse, regionsResponse] = await Promise.all([
-          subIndicatorService.fetchAll(undefined),
-          regionService.fetchAll(undefined),
-        ]);
+        const subIndicatorsResponse = await subIndicatorService.fetchAll(
+          undefined
+        );
 
         return {
           subIndicators:
             "data" in subIndicatorsResponse
               ? subIndicatorsResponse.data.subIndicators
               : subIndicatorsResponse.subIndicators,
-          regions:
-            "data" in regionsResponse
-              ? regionsResponse.data.regions
-              : regionsResponse.regions,
         };
       } finally {
-        // Only update loading state after initial load
         if (isFilterOptionsLoading) {
           setFiltersLoading(false);
         }
@@ -90,7 +83,6 @@ export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
 
         return data;
       } finally {
-        // Only update loading state after initial load
         if (isEventsLoading) {
           setTableLoading(false);
         }

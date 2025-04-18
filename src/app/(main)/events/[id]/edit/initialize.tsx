@@ -4,7 +4,6 @@ import { useEventsStore } from "@/store/events";
 import { eventService } from "@/services/events/api";
 import { userService } from "@/services/users/api";
 import { subIndicatorService } from "@/services/sub-indicators/api";
-import { regionService } from "@/services/regions/api";
 import useSWR from "swr";
 import { useEffect } from "react";
 import { storeSync } from "@/lib/store-sync";
@@ -34,17 +33,12 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
     `event/${id}`,
     async () => {
       try {
-        const [
-          eventResponse,
-          usersResponse,
-          subIndicatorsResponse,
-          regionsResponse,
-        ] = await Promise.all([
-          eventService.fetchById(id, userId),
-          userService.fetchAll(),
-          subIndicatorService.fetchAll(),
-          regionService.fetchAll(),
-        ]);
+        const [eventResponse, usersResponse, subIndicatorsResponse] =
+          await Promise.all([
+            eventService.fetchById(id, userId),
+            userService.fetchAll(),
+            subIndicatorService.fetchAll(),
+          ]);
 
         // Extract data from responses
         const event =
@@ -59,24 +53,20 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
           subIndicatorsResponse && "data" in subIndicatorsResponse
             ? subIndicatorsResponse.data.subIndicators
             : subIndicatorsResponse.subIndicators;
-        const regions =
-          regionsResponse && "data" in regionsResponse
-            ? regionsResponse.data.regions
-            : regionsResponse.regions;
 
         // Set all data in store
         useEventsStore.setState({
           currentEvent: event,
           reporters: users,
           subIndicators,
-          regions,
           formData: {
             event: {
               reporter_id: event.reporter_id,
               report_date: event.report_date,
               details: event.details || "",
               event_date: event.event_date || "",
-              region_id: event.region_id,
+              region: event.region,
+              district: event.district,
               location_details: event.location_details || "",
               sub_indicator_id: event.sub_indicator_id,
               follow_ups: Array.isArray(event.follow_ups)

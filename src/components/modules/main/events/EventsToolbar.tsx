@@ -17,11 +17,9 @@ import { AdminToolbar } from "../../admin/layout/AdminToolbar";
 import { PiMicrosoftExcelLogoThin } from "react-icons/pi";
 import useSWR from "swr";
 import type { SubIndicator } from "@/services/sub-indicators/types";
-import type { Region } from "@/services/regions/types";
 
 interface FilterState {
   thematic_area: string;
-  region: string;
 }
 
 export function EventsToolbar() {
@@ -37,16 +35,13 @@ export function EventsToolbar() {
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
     thematic_area: filters.thematic_area || "all",
-    region: filters.region || "all",
   });
 
   // Get filter options from SWR cache
   const { data: filterOptions } = useSWR<{
     subIndicators: SubIndicator[];
-    regions: Region[];
   }>("filterOptions");
   const subIndicators = filterOptions?.subIndicators || [];
-  const regions = filterOptions?.regions || [];
 
   const handleSearch = (query: string) => {
     setFilters({ ...filters, search: query, page: 1 });
@@ -59,7 +54,6 @@ export function EventsToolbar() {
         tempFilters.thematic_area === "all"
           ? undefined
           : tempFilters.thematic_area,
-      region: tempFilters.region === "all" ? undefined : tempFilters.region,
       page: 1,
     });
   };
@@ -68,7 +62,6 @@ export function EventsToolbar() {
     resetFilters();
     setTempFilters({
       thematic_area: "all",
-      region: "all",
     });
   };
 
@@ -118,24 +111,6 @@ export function EventsToolbar() {
                   <SelectItem key="all">All Thematic Areas</SelectItem>
                   {subIndicators.map((indicator) => (
                     <SelectItem key={indicator.id}>{indicator.name}</SelectItem>
-                  ))}
-                </>
-              </Select>
-
-              <Select
-                label="Region"
-                placeholder="Select region"
-                variant="bordered"
-                selectedKeys={[tempFilters.region]}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0]?.toString() || "all";
-                  setTempFilters({ ...tempFilters, region: value });
-                }}
-              >
-                <>
-                  <SelectItem key="all">All Regions</SelectItem>
-                  {regions.map((region) => (
-                    <SelectItem key={region.id}>{region.name}</SelectItem>
                   ))}
                 </>
               </Select>

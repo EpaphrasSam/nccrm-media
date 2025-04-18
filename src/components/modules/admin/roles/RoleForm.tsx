@@ -31,7 +31,6 @@ const roleFunctionsSchema = baseFunctionsSchema.extend({
 const rolePermissionsSchema = z.object({
   role: baseFunctionsSchema,
   department: baseFunctionsSchema,
-  region: baseFunctionsSchema,
   thematic_area: baseFunctionsSchema,
   main_indicator: baseFunctionsSchema,
   sub_indicator: baseFunctionsSchema,
@@ -90,7 +89,6 @@ const ROLE_FUNCTIONS: RoleFunctions = {
 const DEFAULT_PERMISSIONS: RolePermissions = {
   role: BASE_FUNCTIONS,
   department: BASE_FUNCTIONS,
-  region: BASE_FUNCTIONS,
   thematic_area: BASE_FUNCTIONS,
   main_indicator: BASE_FUNCTIONS,
   sub_indicator: BASE_FUNCTIONS,

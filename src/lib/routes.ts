@@ -6,7 +6,6 @@ import {
   FiLogOut,
   FiUserCheck,
   FiGrid,
-  FiMap,
   FiFolder,
   FiBarChart2,
   FiTrendingUp,
@@ -65,12 +64,6 @@ export const routes: RouteConfig = [
         label: "Manage Departments",
         path: "/admin/departments",
         icon: FiGrid,
-        requiredRole: "admin",
-      },
-      {
-        label: "Manage Regions",
-        path: "/admin/regions",
-        icon: FiMap,
         requiredRole: "admin",
       },
       {

@@ -25,7 +25,6 @@ export const eventService = {
         params: {
           page: params.page || 1,
           limit: params.limit || 10,
-          ...(params.region && { region: params.region }),
           ...(params.status && { status: params.status }),
           ...(params.thematic_area && { thematic_area: params.thematic_area }),
           ...(params.search && { search: params.search }),

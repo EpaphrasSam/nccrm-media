@@ -1,96 +1,81 @@
-import { fetchClient } from "@/utils/fetch-client";
+import { regionData } from "./data";
 import { clientApiCall, serverApiCall } from "@/utils/api-wrapper";
-import type {
-  Region,
-  RegionListResponse,
-  RegionDetailResponse,
-  RegionCreateInput,
-  RegionUpdateInput,
-  RegionQueryParams,
-} from "./types";
+
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+export interface District {
+  id: string;
+  name: string;
+}
+
+export interface Region {
+  id: string;
+  name: string;
+  districts: District[];
+}
+
+export interface RegionResponse {
+  region: string;
+  district: string;
+  coordinates: Coordinates;
+}
 
 type ApiOptions = {
   handleError?: (error: string) => void;
 };
 
+// Simulate fetching region/district based on coordinates
 export const regionService = {
-  fetchAll(
-    params?: Partial<RegionQueryParams>,
+  fetchByCoordinates(
+    coordinates: Coordinates,
     isServer = false,
     options?: ApiOptions
   ) {
-    const promise = fetchClient
-      .get<RegionListResponse>("/admin/all-regions", {
-        params: {
-          page: params?.page || 1,
-          limit: params?.limit || 20,
-          ...(params?.search && { search: params.search }),
-        },
-      })
-      .then((res) => res.data);
+    // Simulate an API call
+    const promise = new Promise<RegionResponse>((resolve) => {
+      // Get a random region and district for demo purposes
+      const randomRegionIndex = Math.floor(Math.random() * regionData.length);
+      const randomRegion = regionData[randomRegionIndex];
+
+      const randomDistrictIndex = Math.floor(
+        Math.random() * randomRegion.districts.length
+      );
+      const randomDistrict = randomRegion.districts[randomDistrictIndex];
+
+      resolve({
+        region: randomRegion.name,
+        district: randomDistrict.name,
+        coordinates,
+      });
+    });
 
     return isServer
-      ? serverApiCall(promise, {
-          message: "",
-          regions: [],
-          totalRegions: 0,
-          totalPages: 0,
-        })
+      ? serverApiCall(promise, { region: "", district: "", coordinates })
       : clientApiCall(
           promise,
-          {
-            message: "",
-            regions: [],
-            totalRegions: 0,
-            totalPages: 0,
-          },
+          { region: "", district: "", coordinates },
           false,
           options
         );
   },
 
-  fetchById(id: string, isServer = false, options?: ApiOptions) {
-    const promise = fetchClient
-      .get<RegionDetailResponse>(`/admin/region/${id}`)
-      .then((res) => res.data.region);
+  // Fetch all regions and districts data
+  fetchAll(isServer = false, options?: ApiOptions) {
+    // Simulate an API call
+    const promise = new Promise<{ regions: Region[] }>((resolve) => {
+      // Simulate API latency
+      setTimeout(() => {
+        resolve({
+          regions: regionData,
+        });
+      }, 300);
+    });
 
     return isServer
-      ? serverApiCall(promise, {} as Region)
-      : clientApiCall(promise, {} as Region, false, options);
-  },
-
-  create(data: RegionCreateInput, isServer = false, options?: ApiOptions) {
-    const promise = fetchClient
-      .post<{ message: string }>("/admin/add-region", data)
-      .then((res) => res.data);
-
-    return isServer
-      ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" }, true, options);
-  },
-
-  update(
-    id: string,
-    data: RegionUpdateInput,
-    isServer = false,
-    options?: ApiOptions
-  ) {
-    const promise = fetchClient
-      .put<{ message: string }>(`/admin/edit-region/${id}`, data)
-      .then((res) => res.data);
-
-    return isServer
-      ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" }, true, options);
-  },
-
-  delete(id: string, isServer = false, options?: ApiOptions) {
-    const promise = fetchClient
-      .delete<{ message: string }>(`/admin/delete-region/${id}`)
-      .then((res) => res.data);
-
-    return isServer
-      ? serverApiCall(promise, { message: "" })
-      : clientApiCall(promise, { message: "" }, true, options);
+      ? serverApiCall(promise, { regions: [] })
+      : clientApiCall(promise, { regions: [] }, false, options);
   },
 };

@@ -8,17 +8,34 @@ import {
   Input,
   Button,
   Textarea,
-  Select,
-  SelectItem,
   Skeleton,
   Autocomplete,
   AutocompleteItem,
+  Checkbox,
+  Card,
+  CardBody,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { FaChevronRight, FaPlus, FaTrash } from "react-icons/fa";
+import {
+  FaChevronRight,
+  FaMapMarkerAlt,
+  FaPlus,
+  FaSync,
+  FaTrash,
+} from "react-icons/fa";
+import useSWR from "swr";
+import { regionService, Coordinates } from "@/services/regions/api";
+import dynamic from "next/dynamic";
+
+// Dynamically import the map component with no SSR
+// This is necessary because Leaflet requires window/document
+const LocationMap = dynamic(() => import("@/components/common/LocationMap"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse" />,
+});
 
 // Helper functions for date formatting
 const formatDateForInput = (dateString: string | null | undefined) => {
@@ -36,10 +53,13 @@ const eventSchema = z.object({
   report_date: z.string().min(1, "Report date is required"),
   details: z.string().optional(),
   event_date: z.string().optional(),
-  region_id: z.string().min(1, "Region is required"),
+  region: z.string().min(1, "Region is required"),
+  district: z.string().min(1, "District is required"),
   location_details: z.string().optional(),
   sub_indicator_id: z.string().min(1, "Sub indicator is required"),
   follow_ups: z.array(z.string()).default([]),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -53,10 +73,13 @@ export interface EventFormData {
   report_date: string;
   details?: string;
   event_date?: string;
-  region_id: string;
+  region: string;
+  district: string;
   location_details?: string;
   sub_indicator_id: string;
   follow_ups: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 // Add these interfaces before the EventForm component
@@ -93,13 +116,149 @@ export function EventForm({ isNew = false }: EventFormProps) {
     currentEvent,
     formData,
     setCurrentStep,
-    regions,
     subIndicators,
     isFormLoading,
     setFormLoading,
   } = useEventsStore();
 
   const [localLoading, setLocalLoading] = useState(!formData.event);
+
+  // Location state
+  const [useCurrentLocation, setUseCurrentLocation] = useState(isNew);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(
+    formData.event?.latitude && formData.event?.longitude
+      ? {
+          latitude: formData.event.latitude,
+          longitude: formData.event.longitude,
+        }
+      : null
+  );
+  const [updateLocationMode, setUpdateLocationMode] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+
+  // SWR fetch for location data based on coordinates
+  const { data: locationData, isLoading: isLoadingLocation } = useSWR(
+    coordinates ? ["location", coordinates] : null,
+    async () => {
+      if (!coordinates) return null;
+      const response = await regionService.fetchByCoordinates(coordinates);
+      return "data" in response ? response.data : response;
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  // Get current location using browser geolocation
+  const getCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsGettingLocation(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newCoordinates = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        setCoordinates(newCoordinates);
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        setLocationError(`Error getting location: ${error.message}`);
+        setIsGettingLocation(false);
+        // Automatically enable map when geolocation fails
+        setShowMap(true);
+      },
+      { enableHighAccuracy: true, maximumAge: 60000 }
+    );
+  }, []);
+
+  // Handle checkbox change for current location
+  const handleLocationToggle = (isChecked: boolean) => {
+    setUseCurrentLocation(isChecked);
+    setShowMap(!isChecked);
+
+    if (isChecked) {
+      getCurrentLocation();
+    } else {
+      // In edit mode without update mode, restore original coordinates
+      if (
+        !isNew &&
+        !updateLocationMode &&
+        formData.event?.latitude &&
+        formData.event?.longitude
+      ) {
+        setCoordinates({
+          latitude: formData.event.latitude,
+          longitude: formData.event.longitude,
+        });
+      }
+    }
+  };
+
+  // Handle map location selection
+  const handleMapLocationSelect = (lat: number, lng: number) => {
+    setCoordinates({
+      latitude: lat,
+      longitude: lng,
+    });
+  };
+
+  // Function to start location update mode in edit
+  const startLocationUpdate = () => {
+    setUpdateLocationMode(true);
+    // Default to using current location when updating
+    setUseCurrentLocation(true);
+    setShowMap(false);
+    getCurrentLocation();
+  };
+
+  // Cancel location update in edit mode
+  const cancelLocationUpdate = () => {
+    setUpdateLocationMode(false);
+    setShowMap(false);
+    // Restore original coordinates
+    if (formData.event?.latitude && formData.event?.longitude) {
+      setCoordinates({
+        latitude: formData.event.latitude,
+        longitude: formData.event.longitude,
+      });
+    } else {
+      setCoordinates(null);
+    }
+  };
+
+  // Update form fields when location data is received
+  useEffect(() => {
+    if (locationData) {
+      // Update the form values for region and district
+      setValue("region", locationData.region);
+      setValue("district", locationData.district);
+
+      // Also update the latitude and longitude
+      if (coordinates) {
+        setValue("latitude", coordinates.latitude);
+        setValue("longitude", coordinates.longitude);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationData, coordinates]);
+
+  // Trigger geolocation on initial load for new events
+  useEffect(() => {
+    if (isNew && useCurrentLocation) {
+      getCurrentLocation();
+    }
+  }, [isNew, useCurrentLocation, getCurrentLocation]);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -109,10 +268,13 @@ export function EventForm({ isNew = false }: EventFormProps) {
       ),
       details: formData.event?.details || "",
       event_date: formatDateForInput(formData.event?.event_date) || "",
-      region_id: formData.event?.region_id || "",
+      region: formData.event?.region || "",
+      district: formData.event?.district || "",
       location_details: formData.event?.location_details || "",
       sub_indicator_id: formData.event?.sub_indicator_id || "",
       follow_ups: currentEvent?.follow_ups || [],
+      latitude: formData.event?.latitude,
+      longitude: formData.event?.longitude,
     }),
     [formData.event, currentEvent, session?.user?.id]
   );
@@ -123,6 +285,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
     reset,
     register,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -289,49 +452,183 @@ export function EventForm({ isNew = false }: EventFormProps) {
           )}
         />
 
-        <Controller
-          name="region_id"
-          control={control}
-          render={({ field }) => (
-            <Select
-              selectedKeys={field.value ? [field.value] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
-              }}
-              label="Region"
-              labelPlacement="outside"
-              placeholder="Select the region"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.region_id}
-              errorMessage={errors.region_id?.message}
-            >
-              {regions?.map((region) => (
-                <SelectItem key={region.id} textValue={region.name}>
-                  {region.name}
-                </SelectItem>
-              ))}
-            </Select>
-          )}
-        />
+        {/* Location Section */}
+        <Card>
+          <CardBody className="gap-4">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Location Information</h3>
+                {!isNew && !updateLocationMode && (
+                  <Button
+                    type="button"
+                    color="primary"
+                    variant="light"
+                    startContent={<FaMapMarkerAlt />}
+                    onPress={startLocationUpdate}
+                  >
+                    Update Location
+                  </Button>
+                )}
+                {!isNew && updateLocationMode && (
+                  <Button
+                    type="button"
+                    color="danger"
+                    variant="light"
+                    onPress={cancelLocationUpdate}
+                  >
+                    Cancel Update
+                  </Button>
+                )}
+              </div>
 
-        <Controller
-          name="location_details"
-          control={control}
-          render={({ field }) => (
-            <Textarea
-              {...field}
-              label="Location Details"
-              labelPlacement="outside"
-              placeholder="Enter the location details"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.location_details}
-              errorMessage={errors.location_details?.message}
-            />
-          )}
-        />
+              {(isNew || updateLocationMode) && (
+                <div className="mb-4">
+                  <Checkbox
+                    isSelected={useCurrentLocation}
+                    onValueChange={handleLocationToggle}
+                    color="danger"
+                    className="mb-2"
+                    size="sm"
+                  >
+                    Use my current location
+                  </Checkbox>
+
+                  {useCurrentLocation && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="flat"
+                        color="primary"
+                        startContent={<FaSync />}
+                        isLoading={isGettingLocation}
+                        onPress={getCurrentLocation}
+                      >
+                        Refresh location
+                      </Button>
+                      {coordinates && (
+                        <span className="text-sm text-gray-500">
+                          {coordinates.latitude.toFixed(4)},{" "}
+                          {coordinates.longitude.toFixed(4)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {!useCurrentLocation && (
+                    <div className="mt-2">
+                      {showMap && (
+                        <div className="mb-4">
+                          <LocationMap
+                            initialPosition={
+                              coordinates
+                                ? {
+                                    lat: coordinates.latitude,
+                                    lng: coordinates.longitude,
+                                  }
+                                : undefined
+                            }
+                            onLocationSelect={handleMapLocationSelect}
+                          />
+                          {coordinates && (
+                            <p className="mt-2 text-sm text-gray-500">
+                              {coordinates.latitude.toFixed(6)},{" "}
+                              {coordinates.longitude.toFixed(6)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {locationError && (
+                    <p className="text-sm text-danger mt-1">{locationError}</p>
+                  )}
+                </div>
+              )}
+
+              <Controller
+                name="region"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    label="Region"
+                    labelPlacement="outside"
+                    placeholder={
+                      isLoadingLocation ? "Loading region..." : "Region"
+                    }
+                    variant="bordered"
+                    className="mb-2"
+                    classNames={inputStyles}
+                    isInvalid={!!errors.region}
+                    errorMessage={errors.region?.message}
+                    isDisabled={
+                      isLoadingLocation || isNew || updateLocationMode
+                    }
+                    isReadOnly={isNew || updateLocationMode}
+                  />
+                )}
+              />
+
+              <Controller
+                name="district"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    label="District"
+                    labelPlacement="outside"
+                    placeholder={
+                      isLoadingLocation ? "Loading district..." : "District"
+                    }
+                    variant="bordered"
+                    classNames={inputStyles}
+                    isInvalid={!!errors.district}
+                    errorMessage={errors.district?.message}
+                    isDisabled={
+                      isLoadingLocation || isNew || updateLocationMode
+                    }
+                    isReadOnly={isNew || updateLocationMode}
+                  />
+                )}
+              />
+
+              <Controller
+                name="location_details"
+                control={control}
+                render={({ field }) => (
+                  <Textarea
+                    {...field}
+                    label="Location Details"
+                    labelPlacement="outside"
+                    placeholder="Enter additional location details"
+                    variant="bordered"
+                    classNames={inputStyles}
+                    isInvalid={!!errors.location_details}
+                    errorMessage={errors.location_details?.message}
+                  />
+                )}
+              />
+
+              {/* Hidden fields for coordinates */}
+              <input
+                type="hidden"
+                {...register("latitude", {
+                  setValueAs: (value) =>
+                    value === "" ? undefined : parseFloat(value),
+                })}
+              />
+              <input
+                type="hidden"
+                {...register("longitude", {
+                  setValueAs: (value) =>
+                    value === "" ? undefined : parseFloat(value),
+                })}
+              />
+            </div>
+          </CardBody>
+        </Card>
 
         <Controller
           name="sub_indicator_id"

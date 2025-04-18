@@ -11,6 +11,7 @@ import {
   Select,
   SelectItem,
   cn,
+  addToast,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
@@ -94,8 +95,13 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     try {
       setContextForm(data);
 
-      if (!formData.event?.region_id) {
-        throw new Error("Region ID is required");
+      if (!formData.event) {
+        addToast({
+          title: "Error",
+          description: "Event is required",
+          color: "danger",
+        });
+        return;
       }
 
       const completeFormData = {
@@ -103,7 +109,8 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
         report_date: formData.event.report_date || new Date().toISOString(),
         details: formData.event.details || "",
         event_date: formData.event.event_date || new Date().toISOString(),
-        region_id: formData.event.region_id,
+        region: formData.event.region,
+        district: formData.event.district,
         location_details: formData.event.location_details || "",
         sub_indicator_id: formData.event.sub_indicator_id || "",
         follow_ups: formData.event.follow_ups || [],
