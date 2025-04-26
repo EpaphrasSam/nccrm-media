@@ -7,7 +7,7 @@ import * as z from "zod";
 import { Input, Button, Skeleton } from "@heroui/react";
 import { Logo } from "@/components/common/misc/Logo";
 import { inputStyles } from "@/lib/styles";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth/api";
 
 const otpSchema = z.object({
@@ -31,51 +31,36 @@ const passwordSchema = z
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
-const RESET_EMAIL_EXPIRY_MINUTES = 10;
-
 export function ResetPasswordForm() {
   const [step, setStep] = useState<1 | 2>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const emailFromQuery = searchParams.get("email");
-    if (emailFromQuery) {
-      setEmail(emailFromQuery);
-      const expiry = Date.now() + RESET_EMAIL_EXPIRY_MINUTES * 60 * 1000;
-      localStorage.setItem(
-        "resetEmail",
-        JSON.stringify({ email: emailFromQuery, expiry })
-      );
-      setLoading(false);
-    } else {
-      const stored = localStorage.getItem("resetEmail");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored) as {
-            email: string;
-            expiry: number;
-          };
-          if (!parsed.email || !parsed.expiry || Date.now() > parsed.expiry) {
-            localStorage.removeItem("resetEmail");
-            router.replace("/forgot-password");
-          } else {
-            setEmail(parsed.email);
-            setLoading(false);
-          }
-        } catch {
+    const stored = localStorage.getItem("resetEmail");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as {
+          email: string;
+          expiry: number;
+        };
+        if (!parsed.email || !parsed.expiry || Date.now() > parsed.expiry) {
           localStorage.removeItem("resetEmail");
           router.replace("/forgot-password");
+        } else {
+          setEmail(parsed.email);
+          setLoading(false);
         }
-      } else {
+      } catch {
+        localStorage.removeItem("resetEmail");
         router.replace("/forgot-password");
       }
+    } else {
+      router.replace("/forgot-password");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [router]);
 
   // Step 1: OTP form
   const {
