@@ -20,8 +20,6 @@ interface UsePermissionsReturn {
 export function usePermissions(): UsePermissionsReturn {
   const { data: session, status } = useSession();
 
-  console.log(session);
-
   const isLoading = status === "loading";
   const isAuthenticated = status === "authenticated";
   const permissions = session?.user?.role?.functions;

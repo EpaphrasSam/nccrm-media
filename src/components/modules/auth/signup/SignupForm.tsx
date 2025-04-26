@@ -61,11 +61,19 @@ export function SignupForm() {
       password: data.password,
     };
 
-    const result = await authService.signup(signupData);
-    if (result) {
-      router.push("/login");
+    try {
+      const result = await authService.signup(signupData, {
+        handleError: (error: string) => {
+          console.error("Signup Form Error:", error);
+          throw new Error(error);
+        },
+      });
+      if (result) {
+        router.push("/login");
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const togglePasswordVisibility = () => {

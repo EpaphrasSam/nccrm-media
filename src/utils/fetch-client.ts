@@ -8,9 +8,6 @@ const authUrl =
   process.env.NEXT_PUBLIC_AUTH_URL ||
   "http://localhost:3000";
 
-console.log("BASE_URL", BASE_URL);
-console.log("authUrl", authUrl);
-
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;
   returnErrorStatus?: boolean;
@@ -175,13 +172,6 @@ async function customFetch<T>(
         await signOut();
       }
 
-      console.error("Fetch error:", {
-        url,
-        status: error.status,
-        message: error.message,
-        data: error.data,
-      });
-
       if (options.returnErrorStatus) {
         throw error;
       }
@@ -210,13 +200,6 @@ async function customFetch<T>(
         status: error.status,
       };
     }
-
-    console.error("Fetch error:", {
-      url,
-      status: error.status,
-      message: error.message,
-      data: error.data,
-    });
 
     if (options.returnErrorStatus) {
       // Ensure we preserve the full error structure

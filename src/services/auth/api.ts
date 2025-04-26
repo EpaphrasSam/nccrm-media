@@ -11,9 +11,10 @@ import type {
 } from "./types";
 import { Department } from "../departments/types";
 import { AUTH_ERROR_MESSAGES, type AuthErrorCode } from "./errors";
+import type { ApiOptions } from "@/services/users/api";
 
 export const authService = {
-  login(credentials: LoginCredentials) {
+  login(credentials: LoginCredentials, options?: ApiOptions) {
     const promise = signIn("credentials", {
       ...credentials,
       redirect: false,
@@ -24,47 +25,46 @@ export const authService = {
       }
       return result;
     });
-    return clientApiCall(promise, null, false);
+    return clientApiCall(promise, null, false, options);
   },
 
-  logout() {
+  logout(options?: ApiOptions) {
     const promise = signOut().then(() => null);
-    return clientApiCall(promise, null, false);
+    return clientApiCall(promise, null, false, options);
   },
 
-  signup(signupData: SignupData) {
-    console.log(signupData);
+  signup(signupData: SignupData, options?: ApiOptions) {
     const promise = fetchClient
       .post<AuthResponse>("/auth/signup", signupData)
       .then((res) => res.data);
-    return clientApiCall(promise, {} as AuthResponse);
+    return clientApiCall(promise, {} as AuthResponse, true, options);
   },
 
-  forgotPassword(data: ForgotPasswordData) {
-    const promise = fetchClient
-      .post("/auth/forgot-password", data)
-      .then((res) => res.data);
-    return clientApiCall(promise, {});
-  },
-
-  resetPassword(data: ResetPasswordData) {
+  forgotPassword(data: ForgotPasswordData, options?: ApiOptions) {
     const promise = fetchClient
       .post("/auth/reset-password", data)
       .then((res) => res.data);
-    return clientApiCall(promise, {});
+    return clientApiCall(promise, {}, true, options);
   },
 
-  changePassword(data: ChangePasswordData) {
+  resetPassword(data: ResetPasswordData, options?: ApiOptions) {
+    const promise = fetchClient
+      .post("/auth/update-password", data)
+      .then((res) => res.data);
+    return clientApiCall(promise, {}, true, options);
+  },
+
+  changePassword(data: ChangePasswordData, options?: ApiOptions) {
     const promise = fetchClient
       .post("/auth/change-password", data)
       .then((res) => res.data);
-    return clientApiCall(promise, {});
+    return clientApiCall(promise, {}, true, options);
   },
 
-  getDepartment() {
+  getDepartment(options?: ApiOptions) {
     const promise = fetchClient
       .get<Department[]>("/get-departments")
       .then((res) => res.data);
-    return clientApiCall(promise, [], false);
+    return clientApiCall(promise, [], false, options);
   },
 };

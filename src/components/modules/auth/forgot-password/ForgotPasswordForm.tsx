@@ -7,12 +7,17 @@ import * as z from "zod";
 import { Input, Button } from "@heroui/react";
 import { Logo } from "@/components/common/misc/Logo";
 import { inputStyles } from "@/lib/styles";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { authService } from "@/services/auth/api";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+
+const RESET_EMAIL_EXPIRY_MINUTES = 10;
 
 export function ForgotPasswordForm() {
   const {
@@ -22,9 +27,34 @@ export function ForgotPasswordForm() {
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const onSubmit = (data: ForgotPasswordFormData) => {
-    console.log(data);
+  const onSubmit = async (data: ForgotPasswordFormData) => {
+    setIsLoading(true);
+    try {
+      const result = await authService.forgotPassword(
+        { email: data.email },
+        {
+          handleError: (error: string) => {
+            console.error("Forgot Password Form Error:", error);
+            throw new Error(error);
+          },
+        }
+      );
+      if (result) {
+        const expiry = Date.now() + RESET_EMAIL_EXPIRY_MINUTES * 60 * 1000;
+        localStorage.setItem(
+          "resetEmail",
+          JSON.stringify({ email: data.email, expiry })
+        );
+        setTimeout(() => {
+          router.push("/reset-password");
+        }, 1500);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,6 +93,8 @@ export function ForgotPasswordForm() {
             type="submit"
             radius="sm"
             className="w-full lg:w-4/5 h-12 bg-brand-red-dark text-white"
+            isLoading={isLoading}
+            disabled={isLoading}
           >
             Reset Password
           </Button>

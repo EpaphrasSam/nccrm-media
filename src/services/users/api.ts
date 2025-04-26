@@ -10,7 +10,8 @@ import type {
 import { fetchClient } from "@/utils/fetch-client";
 import type { AuthResponse } from "@/services/auth/types";
 
-type ApiOptions = {
+// Export ApiOptions type
+export type ApiOptions = {
   handleError?: (error: string) => void;
 };
 
@@ -92,7 +93,6 @@ export const userService = {
           }
         }
       });
-      console.log("Users Data", userData);
       promise = fetchClient
         .put<{ message: string }>(`/admin/edit-user/${id}`, formData, {
           headers: {

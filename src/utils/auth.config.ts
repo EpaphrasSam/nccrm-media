@@ -27,7 +27,7 @@ interface LoginResponse {
   token: string;
 }
 
-const authRoutes = ["/login", "/signup", "/forgot-password"];
+const authRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
 const publicRoutes = ["/", "/settings", "/unauthorized"];
 
 type PermissionModule = keyof RolePermissions;
