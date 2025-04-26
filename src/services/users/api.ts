@@ -137,9 +137,9 @@ export const userService = {
       : clientApiCall(promise, { message: "" }, true, options); // Keep success message
   },
 
-  async fetchCurrentUser() {
-    return fetchClient
-      .get<{ user: AuthResponse }>("/api/auth/me")
+  async fetchCurrentUser(id: string) {
+    const data = await fetchClient
+      .get<{ user: AuthResponse }>(`/get-user/${id}`)
       .then((res) => res.data.user)
       .catch((error) => {
         console.error(
@@ -148,5 +148,6 @@ export const userService = {
         );
         return null;
       });
+    return data;
   },
 };

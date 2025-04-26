@@ -174,6 +174,11 @@ export const authConfig = {
       const userPermissions = auth?.user?.role?.functions;
       const pathname = nextUrl.pathname;
 
+      // Log out if user status is inactive
+      if (auth?.user?.status === "inactive") {
+        return false;
+      }
+
       const isAuthRoute = authRoutes.some((route) =>
         pathname.startsWith(route)
       );

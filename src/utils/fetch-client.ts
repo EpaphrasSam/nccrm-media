@@ -3,7 +3,7 @@ export const BASE_URL =
   process.env.API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:3035";
-const authUrl =
+export const authUrl =
   process.env.AUTH_URL ||
   process.env.NEXT_PUBLIC_AUTH_URL ||
   "http://localhost:3000";
