@@ -18,6 +18,7 @@ import { useSituationalReportingStore } from "@/store/situational-reporting";
 import type { AnalysisCreateInput } from "@/services/situational-reporting/types";
 import { inputStyles } from "@/lib/styles";
 import { useParams } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const analysisSchema = z.object({
   currentStatus: z.enum([
@@ -106,6 +107,9 @@ export function AnalysisForm() {
     getExistingAnalysis,
     updateAnalysis,
   } = useSituationalReportingStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
+  const canEditAnalysis = hasPermission("situational_analysis", "edit");
 
   const filteredIndicators = mainIndicators.filter(
     (indicator) => indicator.thematic_area_id === currentThematicArea
@@ -196,6 +200,7 @@ export function AnalysisForm() {
   }, [reset]);
 
   const onSubmit = async (data: FormData) => {
+    if (!canEditAnalysis) return;
     if (!currentMainIndicator || !reportId) {
       console.error("Missing required IDs");
       return;
@@ -220,13 +225,17 @@ export function AnalysisForm() {
     }
   };
 
-  const isLoading = isFormLoading || isAnalysisLoading;
-  const isFormDisabled = !currentMainIndicator || isLoading;
+  const isLoading = isFormLoading || isAnalysisLoading || permissionsLoading;
+  const isFormDisabled =
+    isLoading ||
+    permissionsLoading ||
+    !canEditAnalysis ||
+    !currentMainIndicator;
 
   return (
     <div className="w-full lg:w-2/3 p-4 space-y-8">
-      {isFormLoading ? (
-        // Show skeletons for everything when form is loading
+      {isFormLoading || permissionsLoading ? (
+        // Show skeletons for everything when form or permissions are loading
         <div className="space-y-8">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-32 w-full" />
@@ -247,7 +256,12 @@ export function AnalysisForm() {
                 setCurrentMainIndicator(id);
                 await getExistingAnalysis(id, reportId as string);
               }}
-              isDisabled={!currentThematicArea || isAnalysisLoading}
+              isDisabled={
+                !currentThematicArea ||
+                isAnalysisLoading ||
+                permissionsLoading ||
+                !canEditAnalysis
+              }
               disallowEmptySelection
               className="w-full"
               classNames={inputStyles}

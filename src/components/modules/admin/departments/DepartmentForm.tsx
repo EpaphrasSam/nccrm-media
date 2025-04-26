@@ -8,6 +8,7 @@ import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useDepartmentsStore } from "@/store/departments";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const departmentSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -27,8 +28,10 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
     updateDepartment,
     deleteDepartment,
     currentDepartment,
-    isFormLoading,
+    isFormLoading: storeLoading,
   } = useDepartmentsStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -58,14 +61,14 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
     if (isNew) {
       // For new forms, no loading needed
       setLocalLoading(false);
-    } else if (!isFormLoading && currentDepartment) {
+    } else if (!storeLoading && currentDepartment) {
       // For edit mode, add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isNew, currentDepartment, isFormLoading]);
+  }, [isNew, currentDepartment, storeLoading]);
 
   // Handle form reset
   useEffect(() => {
@@ -83,7 +86,14 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
     }
   }, [isNew, currentDepartment, reset, getDefaultValues]);
 
+  // --- Permissions Check ---
+  const canSubmit = isNew
+    ? hasPermission("department", "add")
+    : hasPermission("department", "edit");
+  const canDelete = !isNew && hasPermission("department", "delete");
+
   const onSubmit = async (data: DepartmentFormValues) => {
+    if (!canSubmit) return;
     try {
       if (isNew) {
         await createDepartment({
@@ -104,7 +114,7 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!currentDepartment) return;
+    if (!currentDepartment || !canDelete) return;
 
     try {
       setIsDeleting(true);
@@ -117,7 +127,9 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
     }
   };
 
-  if (isFormLoading || localLoading) {
+  const isOverallLoading = storeLoading || permissionsLoading || localLoading;
+
+  if (isOverallLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -198,16 +210,18 @@ export function DepartmentForm({ isNew = false }: DepartmentFormProps) {
           type="submit"
           color="primary"
           isLoading={isSubmitting}
+          isDisabled={!canSubmit || isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           {isNew ? "Create Department" : "Save Changes"}
         </Button>
-        {!isNew && (
+        {canDelete && (
           <Button
             type="button"
             color="primary"
             onPress={() => setShowDeleteModal(true)}
             className={`${buttonStyles} bg-brand-red-dark px-8`}
+            isDisabled={isDeleting}
           >
             Delete Department
           </Button>

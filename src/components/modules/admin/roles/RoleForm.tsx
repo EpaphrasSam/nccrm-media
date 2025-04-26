@@ -13,6 +13,7 @@ import type {
   RoleFunctions,
   RolePermissions,
 } from "@/services/roles/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const PERMISSION_FUNCTIONS = ["view", "add", "edit", "delete"] as const;
 type PermissionFunction = (typeof PERMISSION_FUNCTIONS)[number];
@@ -99,8 +100,15 @@ const DEFAULT_PERMISSIONS: RolePermissions = {
 };
 
 export function RoleForm({ isNew = false }: RoleFormProps) {
-  const { createRole, updateRole, deleteRole, currentRole, isFormLoading } =
-    useRolesStore();
+  const {
+    createRole,
+    updateRole,
+    deleteRole,
+    currentRole,
+    isFormLoading: storeLoading,
+  } = useRolesStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -130,14 +138,14 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     if (isNew) {
       // For new forms, no loading needed
       setLocalLoading(false);
-    } else if (!isFormLoading && currentRole) {
+    } else if (!storeLoading && currentRole) {
       // For edit mode, add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isNew, currentRole, isFormLoading]);
+  }, [isNew, currentRole, storeLoading]);
 
   // Handle form reset
   useEffect(() => {
@@ -155,7 +163,14 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     }
   }, [isNew, currentRole, reset, getDefaultValues]);
 
+  // --- Permissions Check ---
+  const canSubmit = isNew
+    ? hasPermission("role", "add")
+    : hasPermission("role", "edit");
+  const canDelete = !isNew && hasPermission("role", "delete");
+
   const onSubmit = async (data: RoleFormValues) => {
+    if (!canSubmit) return; // Prevent submission if lacking permission
     try {
       if (isNew) {
         await createRole(data);
@@ -172,7 +187,7 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!currentRole) return;
+    if (!currentRole || !canDelete) return; // Prevent deletion if lacking permission
 
     try {
       setIsDeleting(true);
@@ -185,7 +200,9 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     }
   };
 
-  if (isFormLoading || localLoading) {
+  const isOverallLoading = storeLoading || permissionsLoading || localLoading;
+
+  if (isOverallLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -293,16 +310,18 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
           type="submit"
           color="primary"
           isLoading={isSubmitting}
+          isDisabled={!canSubmit || isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           {isNew ? "Create Role" : "Save Changes"}
         </Button>
-        {!isNew && (
+        {canDelete && (
           <Button
             type="button"
             color="primary"
             onPress={() => setShowDeleteModal(true)}
             className={`${buttonStyles} bg-brand-red-dark px-8`}
+            isDisabled={isDeleting}
           >
             Delete Role
           </Button>

@@ -8,6 +8,7 @@ import type {
   UserQueryParams,
 } from "./types";
 import { fetchClient } from "@/utils/fetch-client";
+import type { AuthResponse } from "@/services/auth/types";
 
 type ApiOptions = {
   handleError?: (error: string) => void;
@@ -134,5 +135,18 @@ export const userService = {
     return isServer
       ? serverApiCall(promise, { message: "" })
       : clientApiCall(promise, { message: "" }, true, options); // Keep success message
+  },
+
+  async fetchCurrentUser() {
+    return fetchClient
+      .get<{ user: AuthResponse }>("/api/auth/me")
+      .then((res) => res.data.user)
+      .catch((error) => {
+        console.error(
+          "Failed to fetch current user for session update:",
+          error
+        );
+        return null;
+      });
   },
 };

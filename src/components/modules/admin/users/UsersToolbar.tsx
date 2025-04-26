@@ -156,6 +156,7 @@ export function UsersToolbar() {
       addButtonLabel="Add User"
       onAdd={addUser}
       filterComponent={FilterComponent}
+      addPermissionModule="user"
     />
   );
 }

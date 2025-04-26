@@ -1,30 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableHeader,
-  TableColumn,
   TableBody,
+  TableColumn,
   TableRow,
   TableCell,
-  Button,
   Skeleton,
+  Button,
 } from "@heroui/react";
-import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
+import { FaRegEdit } from "react-icons/fa";
 import { useRolesStore } from "@/store/roles";
-import { Pagination } from "@/components/common/navigation/Pagination";
-import { tableStyles, buttonStyles } from "@/lib/styles";
+import { tableStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
-import { useState } from "react";
+import { Pagination } from "@/components/common/navigation/Pagination";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { RoleListItem } from "@/services/roles/types";
 
 const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
-  { key: "name", label: "Role" },
+  { key: "name", label: "Name" },
   { key: "description", label: "Description" },
-  { key: "created_at", label: "Date Created" },
   { key: "actions", label: "Actions" },
 ] as const;
 
@@ -38,6 +38,8 @@ export function RolesTable() {
     setFilters,
     totalPages,
   } = useRolesStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
@@ -65,6 +67,9 @@ export function RolesTable() {
     }
   };
 
+  const canEditRole = hasPermission("role", "edit");
+  const canDeleteRole = hasPermission("role", "delete");
+
   return (
     <div className="space-y-4">
       <Table aria-label="Roles table" classNames={tableStyles}>
@@ -75,7 +80,7 @@ export function RolesTable() {
         </TableHeader>
 
         <TableBody emptyContent="No roles found">
-          {isTableLoading ? (
+          {isTableLoading || permissionsLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -87,10 +92,8 @@ export function RolesTable() {
                       <Skeleton className="h-5 w-96" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-28" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-start gap-1">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-9 w-9 rounded-lg" />
                         <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
                     </TableCell>
@@ -101,38 +104,42 @@ export function RolesTable() {
           ) : (
             roles.map((role: RoleListItem) => (
               <TableRow key={role.id}>
-                <TableCell className="font-medium">{role.name}</TableCell>
-                <TableCell className="min-w-[300px] max-w-[400px] whitespace-normal">
-                  {role.description}
+                <TableCell>
+                  <p className="font-semibold text-brand-black-dark">
+                    {role.name}
+                  </p>
                 </TableCell>
                 <TableCell>
-                  {new Date(role.created_at).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {role.description}
+                  </p>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-start gap-2">
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => editRole(role)}
-                      className={buttonStyles}
-                    >
-                      <FaRegEdit size={18} color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      color="danger"
-                      size="sm"
-                      onPress={() => handleDeleteClick(role.id)}
-                      className={buttonStyles}
-                    >
-                      <FiTrash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center">
+                    {canEditRole && (
+                      <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => editRole(role)}
+                        className="text-brand-green-dark"
+                        size="sm"
+                        aria-label="Edit role"
+                      >
+                        <FaRegEdit className="w-4 h-4" color="blue" />
+                      </Button>
+                    )}
+                    {canDeleteRole && (
+                      <Button
+                        isIconOnly
+                        color="danger"
+                        variant="light"
+                        onPress={() => handleDeleteClick(role.id)}
+                        size="sm"
+                        aria-label="Delete role"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

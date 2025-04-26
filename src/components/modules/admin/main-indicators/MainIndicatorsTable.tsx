@@ -14,13 +14,14 @@ import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
 import { useMainIndicatorsStore } from "@/store/main-indicators";
 import { Pagination } from "@/components/common/navigation/Pagination";
-import { tableStyles, buttonStyles } from "@/lib/styles";
+import { tableStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import { useState } from "react";
 import type {
   MainIndicatorStatus,
   MainIndicatorListItem,
 } from "@/services/main-indicators/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -53,6 +54,8 @@ export function MainIndicatorsTable() {
     totalPages,
   } = useMainIndicatorsStore();
 
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedMainIndicatorId, setSelectedMainIndicatorId] = useState<
     string | null
@@ -81,6 +84,9 @@ export function MainIndicatorsTable() {
     setFilters({ ...filters, page });
   };
 
+  const canEdit = hasPermission("main_indicator", "edit");
+  const canDelete = hasPermission("main_indicator", "delete");
+
   return (
     <div className="space-y-4">
       <Table aria-label="Main Indicators table" classNames={tableStyles}>
@@ -91,7 +97,7 @@ export function MainIndicatorsTable() {
         </TableHeader>
 
         <TableBody emptyContent="No main indicators found">
-          {isTableLoading ? (
+          {isTableLoading || permissionsLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -144,26 +150,31 @@ export function MainIndicatorsTable() {
                   <StatusText status={mainIndicator.status} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-start gap-2">
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => editMainIndicator(mainIndicator)}
-                      className={buttonStyles}
-                    >
-                      <FaRegEdit size={18} color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      color="danger"
-                      size="sm"
-                      onPress={() => handleDeleteClick(mainIndicator.id)}
-                      className={buttonStyles}
-                    >
-                      <FiTrash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center">
+                    {canEdit && (
+                      <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => editMainIndicator(mainIndicator)}
+                        className="text-brand-green-dark"
+                        size="sm"
+                        aria-label="Edit main indicator"
+                      >
+                        <FaRegEdit className="w-4 h-4" color="blue" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button
+                        isIconOnly
+                        color="danger"
+                        variant="light"
+                        onPress={() => handleDeleteClick(mainIndicator.id)}
+                        size="sm"
+                        aria-label="Delete main indicator"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

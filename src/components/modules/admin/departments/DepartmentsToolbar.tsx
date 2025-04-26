@@ -16,6 +16,7 @@ export function DepartmentsToolbar() {
       onSearch={handleSearch}
       addButtonLabel="Add Department"
       onAdd={addDepartment}
+      addPermissionModule="department"
     />
   );
 }

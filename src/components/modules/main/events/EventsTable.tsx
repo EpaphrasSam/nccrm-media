@@ -23,6 +23,8 @@ import { tableStyles } from "@/lib/styles";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import { getStatusColor } from "@/lib/constants";
+import { usePermissions } from "@/hooks/usePermissions";
+import type { Event } from "@/services/events/types";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -56,6 +58,8 @@ export function EventsTable() {
     totalPages,
   } = useEventsStore();
 
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -82,13 +86,17 @@ export function EventsTable() {
     }
   };
 
-  const handleApprove = (eventId: string) => {
-    validateEvent(eventId, { status: "approved" });
+  const handleApprove = (id: string) => {
+    validateEvent(id, { status: "approved" });
   };
 
-  const handleReject = (eventId: string) => {
-    validateEvent(eventId, { status: "rejected" });
+  const handleReject = (id: string) => {
+    validateEvent(id, { status: "rejected" });
   };
+
+  const canEdit = hasPermission("event", "edit");
+  const canDelete = hasPermission("event", "delete");
+  const canApprove = hasPermission("event", "approve");
 
   return (
     <div className="space-y-4">
@@ -100,7 +108,7 @@ export function EventsTable() {
         </TableHeader>
 
         <TableBody emptyContent="No events found">
-          {isTableLoading ? (
+          {isTableLoading || permissionsLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -138,8 +146,8 @@ export function EventsTable() {
               )}
             </>
           ) : (
-            events.map((event) => (
-              <TableRow key={event.id}>
+            events.map((event: Event) => (
+              <TableRow key={event?.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <HeroUser name={event.reporter?.name || "Unknown"} />
@@ -169,29 +177,38 @@ export function EventsTable() {
                   <StatusText status={event.status} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      onPress={() => editEvent(event)}
-                      className="text-brand-green-dark"
-                      size="sm"
-                    >
-                      <FaRegEdit className="w-4 h-4" color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      color="danger"
-                      variant="light"
-                      onPress={() => handleDeleteClick(event.id)}
-                      size="sm"
-                    >
-                      <FiTrash2 className="w-4 h-4" />
-                    </Button>
-                    {event.status === "pending" && (
+                  <div className="flex items-center">
+                    {canEdit && (
+                      <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => editEvent(event)}
+                        className="text-brand-green-dark"
+                        size="sm"
+                        aria-label="Edit event"
+                      >
+                        <FaRegEdit className="w-4 h-4" color="blue" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button
+                        onPress={() => handleDeleteClick(event.id)}
+                        color="danger"
+                        variant="light"
+                        size="sm"
+                        aria-label="Delete event"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canApprove && event?.status === "pending" && (
                       <Dropdown>
                         <DropdownTrigger>
-                          <Button isIconOnly variant="light">
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            aria-label="More event actions"
+                          >
                             <FiMoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownTrigger>

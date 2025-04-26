@@ -1,10 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import type {
-  AuthResponse,
-  LoginCredentials,
-  RoleFunctions,
-} from "@/services/auth/types";
+import type { AuthResponse, LoginCredentials } from "@/services/auth/types";
+import { RolePermissions, BaseFunctions } from "@/services/roles/types";
 import { AuthErrorClasses } from "@/services/auth/errors";
 import { fetchClient } from "@/utils/fetch-client";
 
@@ -16,7 +13,7 @@ interface LoginResponse {
     role: {
       id: string;
       name: string;
-      functions: RoleFunctions;
+      functions: RolePermissions;
     } | null;
     department: string | null;
     gender: string | null;
@@ -31,6 +28,90 @@ interface LoginResponse {
 }
 
 const authRoutes = ["/login", "/signup", "/forgot-password"];
+const publicRoutes = ["/", "/settings", "/unauthorized"];
+
+type PermissionModule = keyof RolePermissions;
+type PermissionAction = keyof BaseFunctions;
+
+const moduleMap: Record<string, PermissionModule | undefined> = {
+  users: "user",
+  roles: "role",
+  departments: "department",
+  "thematic-areas": "thematic_area",
+  "main-indicators": "main_indicator",
+  "sub-indicators": "sub_indicator",
+  events: "event",
+};
+
+function checkPermission(
+  permissions: RolePermissions | null | undefined,
+  module: PermissionModule,
+  action: PermissionAction
+): boolean {
+  return !!permissions?.[module]?.[action];
+}
+
+function hasAccessForPath(
+  pathname: string,
+  permissions: RolePermissions | null | undefined
+): boolean {
+  const segments = pathname.split("/").filter(Boolean);
+
+  if (publicRoutes.includes(pathname)) {
+    return true;
+  }
+
+  if (pathname.startsWith("/situational-reporting")) {
+    const subPath = pathname.substring("/situational-reporting".length);
+    if (subPath === "" || /^\/[^\/]+$/.test(subPath)) {
+      return checkPermission(permissions, "situational_report", "view");
+    } else if (subPath === "/new") {
+      return checkPermission(permissions, "situational_report", "add");
+    } else if (subPath.endsWith("/edit")) {
+      return checkPermission(permissions, "situational_report", "edit");
+    } else if (subPath.endsWith("/analysis")) {
+      return checkPermission(permissions, "situational_analysis", "view");
+    } else if (subPath === "/overview-summary") {
+      return (
+        checkPermission(permissions, "situational_report", "view") &&
+        checkPermission(permissions, "situational_analysis", "view")
+      );
+    }
+
+    return checkPermission(permissions, "situational_report", "view");
+  }
+
+  let moduleSegmentIndex = 0;
+  if (segments[0] === "admin") {
+    if (segments.length < 2) return true;
+    moduleSegmentIndex = 1;
+  }
+
+  const moduleSegment = segments[moduleSegmentIndex];
+  const permissionModule = moduleMap[moduleSegment];
+
+  if (!permissionModule) {
+    return false;
+  }
+
+  let requiredAction: PermissionAction = "view";
+  const lastSegment = segments[segments.length - 1];
+  const hasIdSegment = segments.length > moduleSegmentIndex + 1;
+
+  if (lastSegment === "new") {
+    requiredAction = "add";
+  } else if (
+    lastSegment === "edit" &&
+    hasIdSegment &&
+    segments[moduleSegmentIndex + 1] !== "new"
+  ) {
+    requiredAction = "edit";
+  } else {
+    requiredAction = "view";
+  }
+
+  return checkPermission(permissions, permissionModule, requiredAction);
+}
 
 async function loginWithCredentials(
   credentials: LoginCredentials
@@ -47,12 +128,12 @@ async function loginWithCredentials(
     if (user.status === "pending_verification") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const error: any = new Error("Account not verified");
-      error.response = { status: 403 }; // Will map to UNVERIFIED_ACCOUNT
+      error.response = { status: 403 };
       throw error;
     } else if (user.status === "rejected") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const error: any = new Error("Account rejected");
-      error.response = { status: 405 }; // Will map to REJECTED_ACCOUNT
+      error.response = { status: 405 };
       throw error;
     }
 
@@ -90,28 +171,37 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      // const isAdmin = auth?.user?.role?.name === "superadmin";
-      const isAdmin = true;
+      const userPermissions = auth?.user?.role?.functions;
+      const pathname = nextUrl.pathname;
+
       const isAuthRoute = authRoutes.some((route) =>
-        nextUrl.pathname.startsWith(route)
+        pathname.startsWith(route)
       );
-      const isAdminRoute = nextUrl.pathname.startsWith("/admin");
 
+      // Handle auth routes
       if (isAuthRoute) {
-        if (isLoggedIn) {
-          return Response.redirect(new URL("/", nextUrl));
-        }
-        return true;
+        return isLoggedIn ? Response.redirect(new URL("/", nextUrl)) : true;
       }
 
-      if (isAdminRoute) {
-        if (!isLoggedIn || !isAdmin) {
-          return Response.redirect(new URL("/", nextUrl));
-        }
-        return true;
+      // Require login for all other routes
+      if (!isLoggedIn) {
+        const loginUrl = new URL("/login", nextUrl);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return Response.redirect(loginUrl);
       }
 
-      if (!isLoggedIn) return false;
+      // Check permissions for the requested path
+      if (hasAccessForPath(pathname, userPermissions)) {
+        return true; // Access granted
+      }
+
+      // If no access, redirect to the dedicated unauthorized page
+      // Check if already on unauthorized page to prevent self-redirect loop
+      if (pathname !== "/unauthorized") {
+        return Response.redirect(new URL("/unauthorized", nextUrl));
+      }
+
+      // If already on /unauthorized, allow access (avoids potential loop if /unauthorized wasn't public)
       return true;
     },
     async jwt({ token, user, trigger, session }) {
@@ -122,6 +212,7 @@ export const authConfig = {
       if (user) {
         return { ...token, ...user };
       }
+
       return token;
     },
     async session({ session, token }) {

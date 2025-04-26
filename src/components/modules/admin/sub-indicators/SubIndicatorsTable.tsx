@@ -21,6 +21,7 @@ import type {
   SubIndicatorStatus,
   SubIndicatorListItem,
 } from "@/services/sub-indicators/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -54,6 +55,8 @@ export function SubIndicatorsTable() {
     totalPages,
   } = useSubIndicatorsStore();
 
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedSubIndicatorId, setSelectedSubIndicatorId] = useState<
     string | null
@@ -82,6 +85,9 @@ export function SubIndicatorsTable() {
     setFilters({ ...filters, page });
   };
 
+  const canEdit = hasPermission("sub_indicator", "edit");
+  const canDelete = hasPermission("sub_indicator", "delete");
+
   return (
     <div className="space-y-4">
       <Table aria-label="Sub Indicators table" classNames={tableStyles}>
@@ -92,7 +98,7 @@ export function SubIndicatorsTable() {
         </TableHeader>
 
         <TableBody emptyContent="No sub indicators found">
-          {isTableLoading ? (
+          {isTableLoading || permissionsLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -152,25 +158,29 @@ export function SubIndicatorsTable() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-start gap-2">
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => editSubIndicator(subIndicator)}
-                      className={buttonStyles}
-                    >
-                      <FaRegEdit size={18} color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      color="danger"
-                      size="sm"
-                      onPress={() => handleDeleteClick(subIndicator.id)}
-                      className={buttonStyles}
-                    >
-                      <FiTrash2 className="h-4 w-4" />
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        isIconOnly
+                        variant="light"
+                        size="sm"
+                        onPress={() => editSubIndicator(subIndicator)}
+                        className={buttonStyles}
+                      >
+                        <FaRegEdit size={18} color="blue" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button
+                        isIconOnly
+                        variant="light"
+                        color="danger"
+                        size="sm"
+                        onPress={() => handleDeleteClick(subIndicator.id)}
+                        className={buttonStyles}
+                      >
+                        <FiTrash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

@@ -1,21 +1,23 @@
-type Permission = {
-  add: boolean;
-  edit: boolean;
-  view: boolean;
-  delete: boolean;
-  approve?: boolean;
-};
+import type { RolePermissions } from "../roles/types";
 
-export interface RoleFunctions {
-  role: Permission;
-  user: Permission & { approve: boolean };
-  event: Permission & { approve: boolean };
-  region: Permission;
-  department: Permission;
-  sub_indicator: Permission;
-  thematic_area: Permission;
-  main_indicator: Permission;
-}
+// type Permission = { // Removed unused type
+//   add: boolean;
+//   edit: boolean;
+//   view: boolean;
+//   delete: boolean;
+//   approve?: boolean;
+// };
+
+// export interface RoleFunctions { // Removed this interface
+//   role: Permission;
+//   user: Permission & { approve: boolean };
+//   event: Permission & { approve: boolean };
+//   region: Permission;
+//   department: Permission;
+//   sub_indicator: Permission;
+//   thematic_area: Permission;
+//   main_indicator: Permission;
+// }
 
 export interface LoginCredentials {
   email: string;
@@ -37,7 +39,7 @@ export interface AuthResponse {
   role: {
     id: string;
     name: string;
-    functions: RoleFunctions;
+    functions: RolePermissions;
   } | null;
   token: string;
   department: string | null;

@@ -23,6 +23,7 @@ import { departmentService } from "@/services/departments/api";
 import { roleService } from "@/services/roles/api";
 import type { DepartmentListResponse } from "@/services/departments/types";
 import type { RoleListResponse } from "@/services/roles/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const userCreateSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -39,7 +40,8 @@ type UserCreateFormData = z.infer<typeof userCreateSchema>;
 
 export function UserCreateForm() {
   const router = useRouter();
-  const { createUser, isFormLoading } = useUsersStore();
+  const { createUser, isFormLoading: storeLoading } = useUsersStore();
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,7 +89,10 @@ export function UserCreateForm() {
     setValue("password", generatePassword());
   };
 
+  const canAddUser = hasPermission("user", "add");
+
   const onSubmit = async (data: UserCreateFormData) => {
+    if (!canAddUser) return;
     try {
       setIsSubmitting(true);
       await createUser(data);
@@ -98,7 +103,13 @@ export function UserCreateForm() {
     }
   };
 
-  if ((isFormLoading && !isSubmitting) || !departments || !roles) {
+  const isOverallLoading =
+    (storeLoading && !isSubmitting) ||
+    permissionsLoading ||
+    !departments ||
+    !roles;
+
+  if (isOverallLoading) {
     return (
       <div className="space-y-12 max-w-5xl mx-auto">
         {/* Personal Information Section Loading */}
@@ -389,6 +400,7 @@ export function UserCreateForm() {
           type="submit"
           color="primary"
           isLoading={isSubmitting}
+          isDisabled={!canAddUser || isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           Create User
@@ -398,6 +410,7 @@ export function UserCreateForm() {
           variant="bordered"
           onPress={() => router.back()}
           className={buttonStyles}
+          isDisabled={isSubmitting}
         >
           Cancel
         </Button>

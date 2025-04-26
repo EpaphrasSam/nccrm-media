@@ -16,6 +16,7 @@ export function ThematicAreasToolbar() {
       onSearch={handleSearch}
       addButtonLabel="Add Thematic Area"
       onAdd={addThematicArea}
+      addPermissionModule="thematic_area"
     />
   );
 }

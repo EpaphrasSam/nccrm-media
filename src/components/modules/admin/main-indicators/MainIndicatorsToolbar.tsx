@@ -16,6 +16,7 @@ export function MainIndicatorsToolbar() {
       onSearch={handleSearch}
       addButtonLabel="Add Main Indicator"
       onAdd={addMainIndicator}
+      addPermissionModule="main_indicator"
     />
   );
 }

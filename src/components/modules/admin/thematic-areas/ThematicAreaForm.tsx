@@ -8,6 +8,7 @@ import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useThematicAreasStore } from "@/store/thematic-areas";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const thematicAreaSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -27,8 +28,10 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     updateThematicArea,
     deleteThematicArea,
     currentThematicArea,
-    isFormLoading,
+    isFormLoading: storeLoading,
   } = useThematicAreasStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -49,7 +52,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ThematicAreaFormValues>({
     resolver: zodResolver(thematicAreaSchema),
     defaultValues: getDefaultValues(),
@@ -60,14 +63,14 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     if (isNew) {
       // For new forms, no loading needed
       setLocalLoading(false);
-    } else if (!isFormLoading && currentThematicArea) {
+    } else if (!storeLoading && currentThematicArea) {
       // For edit mode, add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isNew, currentThematicArea, isFormLoading]);
+  }, [isNew, currentThematicArea, storeLoading]);
 
   // Handle form reset
   useEffect(() => {
@@ -85,7 +88,14 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     }
   }, [isNew, currentThematicArea, reset, getDefaultValues]);
 
+  // --- Permissions Check ---
+  const canSubmit = isNew
+    ? hasPermission("thematic_area", "add")
+    : hasPermission("thematic_area", "edit");
+  const canDelete = !isNew && hasPermission("thematic_area", "delete");
+
   const onSubmit = async (data: ThematicAreaFormValues) => {
+    if (!canSubmit) return;
     try {
       setIsDeleting(true);
       if (isNew) {
@@ -109,7 +119,7 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!currentThematicArea) return;
+    if (!currentThematicArea || !canDelete) return;
 
     try {
       setIsDeleting(true);
@@ -122,7 +132,9 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
     }
   };
 
-  if (isFormLoading || localLoading) {
+  const isOverallLoading = storeLoading || permissionsLoading || localLoading;
+
+  if (isOverallLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -202,17 +214,19 @@ export function ThematicAreaForm({ isNew = false }: ThematicAreaFormProps) {
         <Button
           type="submit"
           color="primary"
-          isLoading={isDeleting}
+          isLoading={isSubmitting}
+          isDisabled={!canSubmit || isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           {isNew ? "Create Thematic Area" : "Save Changes"}
         </Button>
-        {!isNew && (
+        {canDelete && (
           <Button
             type="button"
             color="primary"
             onPress={() => setShowDeleteModal(true)}
             className={`${buttonStyles} bg-brand-red-dark px-8`}
+            isDisabled={isDeleting}
           >
             Delete Thematic Area
           </Button>

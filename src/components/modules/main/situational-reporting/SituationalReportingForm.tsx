@@ -15,6 +15,7 @@ import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useSituationalReportingStore } from "@/store/situational-reporting";
 import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // Generate years from 2000 to current year
 const currentYear = new Date().getFullYear();
@@ -44,12 +45,13 @@ export function SituationalReportingForm({
     updateReport,
     deleteReport,
     currentReport,
-    isFormLoading,
+    isFormLoading: storeLoading,
   } = useSituationalReportingStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getDefaultValues = useCallback(
     () => ({
@@ -64,7 +66,7 @@ export function SituationalReportingForm({
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<SituationalReportingFormValues>({
     resolver: zodResolver(situationalReportingSchema),
     defaultValues: getDefaultValues(),
@@ -76,9 +78,14 @@ export function SituationalReportingForm({
     }
   }, [isNew, currentReport, reset, getDefaultValues]);
 
+  const canSubmit = isNew
+    ? hasPermission("situational_report", "add")
+    : hasPermission("situational_report", "edit");
+  const canDelete = !isNew && hasPermission("situational_report", "delete");
+
   const onSubmit = async (data: SituationalReportingFormValues) => {
+    if (!canSubmit) return;
     try {
-      setIsSubmitting(true);
       if (isNew) {
         await createReport({
           name: data.name,
@@ -94,13 +101,11 @@ export function SituationalReportingForm({
       }
     } catch (error) {
       console.error("Failed to save situational report:", error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!currentReport) return;
+    if (!currentReport || !canDelete) return;
 
     try {
       setIsDeleting(true);
@@ -113,8 +118,9 @@ export function SituationalReportingForm({
     }
   };
 
-  // Show skeleton only during initial form load
-  if (isFormLoading && !isSubmitting && !isDeleting) {
+  const isOverallLoading = storeLoading || permissionsLoading;
+
+  if (isOverallLoading && !isSubmitting && !isDeleting) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -203,15 +209,17 @@ export function SituationalReportingForm({
           type="submit"
           color="primary"
           isLoading={isSubmitting}
+          isDisabled={!canSubmit || isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           {isNew ? "Create Report" : "Save Changes"}
         </Button>
-        {!isNew && (
+        {canDelete && (
           <Button
             type="button"
             color="primary"
             onPress={() => setShowDeleteModal(true)}
+            isDisabled={isDeleting}
             className={`${buttonStyles} bg-brand-red-dark px-8`}
           >
             Delete Report

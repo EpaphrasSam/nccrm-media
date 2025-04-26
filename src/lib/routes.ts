@@ -12,17 +12,21 @@ import {
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import { TbReportAnalytics } from "react-icons/tb";
+import type { RolePermissions } from "@/services/roles/types";
+
+type PermissionModule = keyof RolePermissions;
+
 export interface Route {
   label: string;
   path?: string;
   icon: IconType;
-  requiredRole?: "admin" | "user";
+  permissionModule?: PermissionModule;
   action?: () => void;
 }
 
 export interface RouteGroup {
   label: string;
-  requiredRole?: "admin" | "user";
+  permissionModule?: PermissionModule;
   routes: Route[];
 }
 
@@ -38,51 +42,52 @@ export const routes: RouteConfig = [
     label: "Events",
     path: "/events",
     icon: FiFileText,
+    permissionModule: "event",
   },
   {
     label: "Situational Reporting",
     path: "/situational-reporting",
     icon: TbReportAnalytics,
+    permissionModule: "situational_report",
   },
   {
     label: "Admin",
-    requiredRole: "admin",
     routes: [
       {
         label: "Manage Users",
         path: "/admin/users",
         icon: FiUsers,
-        requiredRole: "admin",
+        permissionModule: "user",
       },
       {
         label: "Manage Roles",
         path: "/admin/roles",
         icon: FiUserCheck,
-        requiredRole: "admin",
+        permissionModule: "role",
       },
       {
         label: "Manage Departments",
         path: "/admin/departments",
         icon: FiGrid,
-        requiredRole: "admin",
+        permissionModule: "department",
       },
       {
         label: "Manage Thematic Areas",
         path: "/admin/thematic-areas",
         icon: FiFolder,
-        requiredRole: "admin",
+        permissionModule: "thematic_area",
       },
       {
         label: "Manage Main Indicators",
         path: "/admin/main-indicators",
         icon: FiBarChart2,
-        requiredRole: "admin",
+        permissionModule: "main_indicator",
       },
       {
         label: "Manage Sub-indicators",
         path: "/admin/sub-indicators",
         icon: FiTrendingUp,
-        requiredRole: "admin",
+        permissionModule: "sub_indicator",
       },
     ],
   },

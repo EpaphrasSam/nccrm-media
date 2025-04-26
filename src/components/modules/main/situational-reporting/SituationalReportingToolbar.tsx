@@ -116,6 +116,7 @@ export function SituationalReportingToolbar() {
       onSearch={handleSearch}
       addButtonLabel="Add Situational Report"
       onAdd={addReport}
+      addPermissionModule="situational_report"
       filterComponent={FilterComponent}
     />
   );

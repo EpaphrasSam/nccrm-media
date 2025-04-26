@@ -13,10 +13,11 @@ import {
 } from "@heroui/react";
 import { FiTrash2 } from "react-icons/fi";
 import { useThematicAreasStore } from "@/store/thematic-areas";
-import { buttonStyles, tableStyles } from "@/lib/styles";
+import { tableStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import { FaRegEdit } from "react-icons/fa";
 import { Pagination } from "@/components/common/navigation/Pagination";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -47,6 +48,8 @@ export function ThematicAreasTable() {
     totalPages,
   } = useThematicAreasStore();
 
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedThematicAreaId, setSelectedThematicAreaId] = useState<
     string | null
@@ -75,6 +78,9 @@ export function ThematicAreasTable() {
     }
   };
 
+  const canEdit = hasPermission("thematic_area", "edit");
+  const canDelete = hasPermission("thematic_area", "delete");
+
   return (
     <div className="space-y-4">
       <Table aria-label="Thematic areas table" classNames={tableStyles}>
@@ -84,7 +90,7 @@ export function ThematicAreasTable() {
           ))}
         </TableHeader>
         <TableBody emptyContent="No thematic areas found">
-          {isTableLoading ? (
+          {isTableLoading || permissionsLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -102,7 +108,7 @@ export function ThematicAreasTable() {
                       <Skeleton className="h-5 w-20" />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2">
                         <Skeleton className="h-9 w-9 rounded-lg" />
                         <Skeleton className="h-9 w-9 rounded-lg" />
                       </div>
@@ -130,23 +136,30 @@ export function ThematicAreasTable() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center">
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      onPress={() => editThematicArea(thematicArea)}
-                      className={buttonStyles}
-                    >
-                      <FaRegEdit size={18} color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      color="danger"
-                      onPress={() => handleDeleteClick(thematicArea.id)}
-                      className={buttonStyles}
-                    >
-                      <FiTrash2 size={18} />
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => editThematicArea(thematicArea)}
+                        className="text-brand-green-dark"
+                        size="sm"
+                        aria-label="Edit thematic area"
+                      >
+                        <FaRegEdit className="w-4 h-4" color="blue" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button
+                        isIconOnly
+                        color="danger"
+                        variant="light"
+                        onPress={() => handleDeleteClick(thematicArea.id)}
+                        size="sm"
+                        aria-label="Delete thematic area"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

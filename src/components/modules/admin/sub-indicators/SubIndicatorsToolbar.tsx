@@ -12,10 +12,11 @@ export function SubIndicatorsToolbar() {
 
   return (
     <AdminToolbar
-      searchPlaceholder="Search sub indicators..."
+      searchPlaceholder="Search sub-indicators..."
       onSearch={handleSearch}
-      addButtonLabel="Add Sub Indicator"
+      addButtonLabel="Add Sub-indicator"
       onAdd={addSubIndicator}
+      addPermissionModule="sub_indicator"
     />
   );
 }

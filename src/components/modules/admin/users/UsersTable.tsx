@@ -30,6 +30,7 @@ import { tableStyles, buttonStyles } from "@/lib/styles";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import { getStatusColor, USER_STATUSES } from "@/lib/constants";
 import { Pagination } from "@/components/common/navigation/Pagination";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOADING_SKELETON_COUNT = 5;
 
@@ -115,6 +116,8 @@ export function UsersTable() {
     roles,
   } = useUsersStore();
 
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -186,6 +189,11 @@ export function UsersTable() {
     setSelectedRole("");
   };
 
+  // Determine permissions once
+  const canEditUser = hasPermission("user", "edit");
+  const canDeleteUser = hasPermission("user", "delete");
+  const canApproveUser = hasPermission("user", "approve");
+
   return (
     <div className="space-y-4">
       <Table aria-label="Users table" classNames={tableStyles}>
@@ -196,7 +204,7 @@ export function UsersTable() {
         </TableHeader>
 
         <TableBody emptyContent="No users found">
-          {isTableLoading ? (
+          {isTableLoading || permissionsLoading ? (
             <>
               {Array.from({ length: LOADING_SKELETON_COUNT }).map(
                 (_, index) => (
@@ -265,51 +273,62 @@ export function UsersTable() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center">
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      onPress={() => editUser(user)}
-                      className="text-brand-green-dark"
-                      size="sm"
-                    >
-                      <FaRegEdit className="w-4 h-4 " color="blue" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      color="danger"
-                      variant="light"
-                      onPress={() => handleDeleteClick(user?.id)}
-                      size="sm"
-                    >
-                      <FiTrash2 className="w-4 h-4" />
-                    </Button>
-                    {user?.status === USER_STATUSES.PENDING_VERIFICATION && (
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Button isIconOnly variant="light">
-                            <FiMoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label="User actions">
-                          <DropdownItem
-                            key="approve"
-                            startContent={<FiCheck className="w-4 h-4" />}
-                            onPress={() => handleApprove(user?.id)}
-                            className="text-success"
-                          >
-                            Approve
-                          </DropdownItem>
-                          <DropdownItem
-                            key="reject"
-                            startContent={<FiX className="w-4 h-4" />}
-                            onPress={() => handleReject(user?.id)}
-                            className="text-danger"
-                          >
-                            Reject
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
+                    {canEditUser && (
+                      <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => editUser(user)}
+                        className="text-brand-green-dark"
+                        size="sm"
+                        aria-label="Edit user"
+                      >
+                        <FaRegEdit className="w-4 h-4 " color="blue" />
+                      </Button>
                     )}
+                    {canDeleteUser && (
+                      <Button
+                        isIconOnly
+                        color="danger"
+                        variant="light"
+                        onPress={() => handleDeleteClick(user?.id)}
+                        size="sm"
+                        aria-label="Delete user"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canApproveUser &&
+                      user?.status === USER_STATUSES.PENDING_VERIFICATION && (
+                        <Dropdown>
+                          <DropdownTrigger>
+                            <Button
+                              isIconOnly
+                              variant="light"
+                              aria-label="More user actions"
+                            >
+                              <FiMoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownTrigger>
+                          <DropdownMenu aria-label="User actions">
+                            <DropdownItem
+                              key="approve"
+                              startContent={<FiCheck className="w-4 h-4" />}
+                              onPress={() => handleApprove(user?.id)}
+                              className="text-success"
+                            >
+                              Approve
+                            </DropdownItem>
+                            <DropdownItem
+                              key="reject"
+                              startContent={<FiX className="w-4 h-4" />}
+                              onPress={() => handleReject(user?.id)}
+                              className="text-danger"
+                            >
+                              Reject
+                            </DropdownItem>
+                          </DropdownMenu>
+                        </Dropdown>
+                      )}
                   </div>
                 </TableCell>
               </TableRow>

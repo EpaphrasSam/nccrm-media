@@ -159,6 +159,7 @@ export function EventsToolbar() {
       onSearch={handleSearch}
       addButtonLabel="Add Event"
       onAdd={addEvent}
+      addPermissionModule="event"
       filterComponent={FilterComponent}
     />
   );

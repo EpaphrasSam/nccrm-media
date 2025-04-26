@@ -19,6 +19,7 @@ import { useEffect, useCallback } from "react";
 import { FaChevronLeft } from "react-icons/fa";
 import { Gender } from "@/services/events/types";
 import { FileUpload } from "./FileUpload";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const contextSchema = z.object({
   info_credibility: z.string().optional(),
@@ -42,13 +43,15 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
   const {
     setContextForm,
     currentEvent,
-    isFormLoading,
+    isFormLoading: storeLoading,
     setFormLoading,
     formData,
     setCurrentStep,
     createEvent,
     updateEvent,
   } = useEventsStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const getDefaultValues = useCallback(
     () => ({
@@ -79,19 +82,24 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
-    } else if (!isFormLoading && currentEvent) {
+    } else if (!storeLoading && currentEvent) {
       reset(getDefaultValues());
     }
   }, [
     isNew,
     currentEvent,
-    isFormLoading,
+    storeLoading,
     reset,
     getDefaultValues,
     setFormLoading,
   ]);
 
+  const canSubmit = isNew
+    ? hasPermission("event", "add")
+    : hasPermission("event", "edit");
+
   const onSubmit = async (data: ContextFormValues) => {
+    if (!canSubmit) return;
     try {
       setContextForm(data);
 
@@ -149,7 +157,9 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     }
   };
 
-  if (isFormLoading) {
+  const isOverallLoading = storeLoading || permissionsLoading;
+
+  if (isOverallLoading) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-14rem)]">
         <div className="space-y-6">
@@ -377,6 +387,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
             startContent={<FaChevronLeft />}
             className={cn(buttonStyles, "bg-brand-red-dark px-10 text-white")}
             onClick={() => setCurrentStep("outcome")}
+            isDisabled={isSubmitting}
           >
             Previous
           </Button>
@@ -385,6 +396,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
             color="primary"
             className={`${buttonStyles} bg-brand-green-dark px-12`}
             isLoading={isSubmitting}
+            isDisabled={!canSubmit || isSubmitting}
           >
             Save
           </Button>

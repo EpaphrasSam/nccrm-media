@@ -1,13 +1,13 @@
 "use client";
 
-import { useRolesStore } from "@/store/roles";
 import { AdminToolbar } from "../layout/AdminToolbar";
+import { useRolesStore } from "@/store/roles";
 
 export function RolesToolbar() {
   const { setFilters, addRole } = useRolesStore();
 
   const handleSearch = (query: string) => {
-    setFilters({ search: query, page: 1 }); // Reset to first page on search
+    setFilters({ search: query, page: 1 });
   };
 
   return (
@@ -16,6 +16,7 @@ export function RolesToolbar() {
       onSearch={handleSearch}
       addButtonLabel="Add Role"
       onAdd={addRole}
+      addPermissionModule="role"
     />
   );
 }

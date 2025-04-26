@@ -25,7 +25,7 @@ import { departmentService } from "@/services/departments/api";
 import { roleService } from "@/services/roles/api";
 import type { DepartmentListResponse } from "@/services/departments/types";
 import type { RoleListResponse } from "@/services/roles/types";
-import { useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // Section schemas
 const profileSchema = z.object({
@@ -50,15 +50,22 @@ type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
 type AccountInfoFormData = z.infer<typeof accountInfoSchema>;
 
 export function UserEditForm() {
-  const router = useRouter();
-  const { currentUser, updateUser, isFormLoading } = useUsersStore();
+  const {
+    currentUser,
+    updateUser,
+    isFormLoading: storeLoading,
+  } = useUsersStore();
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const [localLoading, setLocalLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<string | undefined>(
     currentUser?.image
   );
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
+  const [isSubmittingPersonalInfo, setIsSubmittingPersonalInfo] =
+    useState(false);
+  const [isSubmittingAccountInfo, setIsSubmittingAccountInfo] = useState(false);
 
   // Fetch departments and roles using SWR
   const { data: departmentsResponse, error: departmentsError } =
@@ -114,7 +121,7 @@ export function UserEditForm() {
 
   // Reset forms when currentUser changes
   useEffect(() => {
-    if (!isFormLoading && currentUser) {
+    if (!storeLoading && currentUser) {
       profileForm.reset({
         name: currentUser.name || "",
         email: currentUser.email || "",
@@ -137,7 +144,7 @@ export function UserEditForm() {
     }
   }, [
     currentUser,
-    isFormLoading,
+    storeLoading,
     profileForm,
     personalInfoForm,
     accountInfoForm,
@@ -166,11 +173,13 @@ export function UserEditForm() {
     }
   };
 
-  const onSubmit = async (data: ProfileFormData) => {
-    if (!currentUser) return;
+  // --- Permissions Check ---
+  const canEditUser = hasPermission("user", "edit");
 
+  const onSubmitProfile = async (data: ProfileFormData) => {
+    if (!currentUser || !canEditUser) return;
     try {
-      setIsSubmitting(true);
+      setIsSubmittingProfile(true);
       const updateData = { ...data };
       if (profileImage && profileImage !== currentUser.image) {
         // Only include image if it has changed
@@ -181,42 +190,49 @@ export function UserEditForm() {
       }
       await updateUser(currentUser.id, updateData);
     } catch (error) {
-      console.error("Failed to update user:", error);
+      console.error("Failed to update profile:", error);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingProfile(false);
     }
   };
 
   const handlePersonalInfoSubmit = async (data: PersonalInfoFormData) => {
-    if (!currentUser) return;
+    if (!currentUser || !canEditUser) return;
     try {
-      setIsSubmitting(true);
+      setIsSubmittingPersonalInfo(true);
       await updateUser(currentUser.id, data);
     } catch (error) {
       console.error("Failed to update personal info:", error);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingPersonalInfo(false);
     }
   };
 
   const handleAccountInfoSubmit = async (data: AccountInfoFormData) => {
-    if (!currentUser) return;
+    if (!currentUser || !canEditUser) return;
     try {
-      setIsSubmitting(true);
+      setIsSubmittingAccountInfo(true);
       await updateUser(currentUser.id, data);
     } catch (error) {
       console.error("Failed to update account info:", error);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingAccountInfo(false);
     }
   };
 
-  if (
-    (isFormLoading && !isSubmitting) ||
-    localLoading ||
+  const isOverallLoading =
+    (storeLoading &&
+      !(
+        isSubmittingProfile ||
+        isSubmittingPersonalInfo ||
+        isSubmittingAccountInfo
+      )) ||
+    permissionsLoading ||
     !departments ||
-    !roles
-  ) {
+    !roles ||
+    localLoading;
+
+  if (isOverallLoading) {
     return (
       <div className="space-y-8 max-w-5xl">
         {/* Profile Section Loading */}
@@ -275,7 +291,7 @@ export function UserEditForm() {
       <section className="space-y-10">
         <h2 className="text-xl font-semibold">Profile Information</h2>
         <form
-          onSubmit={profileForm.handleSubmit(onSubmit)}
+          onSubmit={profileForm.handleSubmit(onSubmitProfile)}
           className="space-y-6"
         >
           <div className="flex items-start gap-6">
@@ -375,7 +391,8 @@ export function UserEditForm() {
             <Button
               type="submit"
               color="primary"
-              isLoading={isSubmitting}
+              isLoading={isSubmittingProfile}
+              isDisabled={!canEditUser || isSubmittingProfile}
               className={`${buttonStyles} bg-brand-green-dark px-8`}
             >
               Save
@@ -443,7 +460,8 @@ export function UserEditForm() {
             <Button
               type="submit"
               color="primary"
-              isLoading={isSubmitting}
+              isLoading={isSubmittingPersonalInfo}
+              isDisabled={!canEditUser || isSubmittingPersonalInfo}
               className={`${buttonStyles} bg-brand-green-dark px-8`}
             >
               Save
@@ -569,7 +587,8 @@ export function UserEditForm() {
             <Button
               type="submit"
               color="primary"
-              isLoading={isSubmitting}
+              isLoading={isSubmittingAccountInfo}
+              isDisabled={!canEditUser || isSubmittingAccountInfo}
               className={`${buttonStyles} bg-brand-green-dark px-8`}
             >
               Save
@@ -577,25 +596,6 @@ export function UserEditForm() {
           </div>
         </form>
       </section>
-
-      <div className="flex justify-center gap-3">
-        <Button
-          type="submit"
-          color="primary"
-          isLoading={isSubmitting}
-          className={`${buttonStyles} bg-brand-green-dark px-6`}
-        >
-          Save Changes
-        </Button>
-        <Button
-          type="button"
-          variant="bordered"
-          onPress={() => router.back()}
-          className={buttonStyles}
-        >
-          Cancel
-        </Button>
-      </div>
     </div>
   );
 }

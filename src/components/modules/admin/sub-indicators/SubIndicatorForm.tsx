@@ -21,6 +21,7 @@ import type {
   MainIndicatorListItem,
   MainIndicatorListResponse,
 } from "@/services/main-indicators/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const subIndicatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -41,8 +42,10 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     updateSubIndicator,
     deleteSubIndicator,
     currentSubIndicator,
-    isFormLoading,
+    isFormLoading: storeLoading,
   } = useSubIndicatorsStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -87,14 +90,14 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     if (isNew) {
       // For new forms, no loading needed
       setLocalLoading(false);
-    } else if (!isFormLoading && currentSubIndicator) {
+    } else if (!storeLoading && currentSubIndicator) {
       // For edit mode, add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isNew, currentSubIndicator, isFormLoading]);
+  }, [isNew, currentSubIndicator, storeLoading]);
 
   // Handle form reset
   useEffect(() => {
@@ -112,7 +115,14 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     }
   }, [isNew, currentSubIndicator, reset, getDefaultValues]);
 
+  // --- Permissions Check ---
+  const canSubmit = isNew
+    ? hasPermission("sub_indicator", "add")
+    : hasPermission("sub_indicator", "edit");
+  const canDelete = !isNew && hasPermission("sub_indicator", "delete");
+
   const onSubmit = async (data: SubIndicatorFormValues) => {
+    if (!canSubmit) return;
     try {
       if (isNew) {
         await createSubIndicator({
@@ -135,7 +145,7 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!currentSubIndicator) return;
+    if (!currentSubIndicator || !canDelete) return;
 
     try {
       setIsDeleting(true);
@@ -148,7 +158,11 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
     }
   };
 
-  if (isFormLoading || localLoading || !mainIndicators) {
+  const isDataLoading = !mainIndicatorsResponse && !mainIndicatorsError;
+  const isOverallLoading =
+    storeLoading || permissionsLoading || localLoading || isDataLoading;
+
+  if (isOverallLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -269,16 +283,18 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
           type="submit"
           color="primary"
           isLoading={isSubmitting}
+          isDisabled={!canSubmit || isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           {isNew ? "Create Sub Indicator" : "Save Changes"}
         </Button>
-        {!isNew && (
+        {canDelete && (
           <Button
             type="button"
             color="primary"
             onPress={() => setShowDeleteModal(true)}
             className={`${buttonStyles} bg-brand-red-dark px-8`}
+            isDisabled={isDeleting}
           >
             Delete Sub Indicator
           </Button>

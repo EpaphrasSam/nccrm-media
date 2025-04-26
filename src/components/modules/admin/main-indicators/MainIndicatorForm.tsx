@@ -19,6 +19,7 @@ import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfir
 import useSWR from "swr";
 import { thematicAreaService } from "@/services/thematic-areas/api";
 import type { ThematicAreaListResponse } from "@/services/thematic-areas/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const mainIndicatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -39,8 +40,10 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     updateMainIndicator,
     deleteMainIndicator,
     currentMainIndicator,
-    isFormLoading,
+    isFormLoading: storeLoading,
   } = useMainIndicatorsStore();
+
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -85,14 +88,14 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     if (isNew) {
       // For new forms, no loading needed
       setLocalLoading(false);
-    } else if (!isFormLoading && currentMainIndicator) {
+    } else if (!storeLoading && currentMainIndicator) {
       // For edit mode, add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isNew, currentMainIndicator, isFormLoading]);
+  }, [isNew, currentMainIndicator, storeLoading]);
 
   // Handle form reset
   useEffect(() => {
@@ -111,7 +114,14 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     }
   }, [isNew, currentMainIndicator, reset, getDefaultValues]);
 
+  // --- Permissions Check ---
+  const canSubmit = isNew
+    ? hasPermission("main_indicator", "add")
+    : hasPermission("main_indicator", "edit");
+  const canDelete = !isNew && hasPermission("main_indicator", "delete");
+
   const onSubmit = async (data: MainIndicatorFormValues) => {
+    if (!canSubmit) return;
     try {
       if (isNew) {
         await createMainIndicator({
@@ -134,7 +144,7 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!currentMainIndicator) return;
+    if (!currentMainIndicator || !canDelete) return;
 
     try {
       setIsDeleting(true);
@@ -147,7 +157,11 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
     }
   };
 
-  if (isFormLoading || localLoading || !thematicAreas) {
+  const isDataLoading = !thematicAreasResponse && !thematicAreasError;
+  const isOverallLoading =
+    storeLoading || permissionsLoading || localLoading || isDataLoading;
+
+  if (isOverallLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -263,16 +277,18 @@ export function MainIndicatorForm({ isNew = false }: MainIndicatorFormProps) {
           type="submit"
           color="primary"
           isLoading={isSubmitting}
+          isDisabled={!canSubmit || isSubmitting}
           className={`${buttonStyles} bg-brand-green-dark px-6`}
         >
           {isNew ? "Create Main Indicator" : "Save Changes"}
         </Button>
-        {!isNew && (
+        {canDelete && (
           <Button
             type="button"
             color="primary"
             onPress={() => setShowDeleteModal(true)}
             className={`${buttonStyles} bg-brand-red-dark px-8`}
+            isDisabled={isDeleting}
           >
             Delete Main Indicator
           </Button>
