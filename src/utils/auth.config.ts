@@ -130,9 +130,9 @@ async function loginWithCredentials(
       const error: any = new Error("Account not verified");
       error.response = { status: 403 };
       throw error;
-    } else if (user.status === "rejected") {
+    } else if (user.status === "deactivated") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const error: any = new Error("Account rejected");
+      const error: any = new Error("Account deactivated");
       error.response = { status: 405 };
       throw error;
     }
@@ -174,8 +174,8 @@ export const authConfig = {
       const userPermissions = auth?.user?.role?.functions;
       const pathname = nextUrl.pathname;
 
-      // Log out if user status is inactive
-      if (auth?.user?.status === "inactive") {
+      // Log out if user status is deactivated
+      if (auth?.user?.status === "deactivated") {
         return false;
       }
 
@@ -248,7 +248,6 @@ export const authConfig = {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           const statusCode = error.response?.status || 500;
-          console.log("StatusCode", error);
           const ErrorClass =
             AuthErrorClasses[statusCode] || AuthErrorClasses["500"];
           throw new ErrorClass();

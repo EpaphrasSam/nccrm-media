@@ -69,7 +69,7 @@ export interface UserUpdateInput
 }
 
 export interface UserValidateInput {
-  status: "approved" | "rejected";
+  status: "approved" | "rejected" | "active" | "deactivated";
 }
 
 // Query Parameters

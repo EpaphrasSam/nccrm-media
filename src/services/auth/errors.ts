@@ -14,9 +14,9 @@ export const AUTH_ERRORS = {
     code: "403",
     message: "Account not approved, please contact your administrator",
   },
-  REJECTED_ACCOUNT: {
+  DEACTIVATED_ACCOUNT: {
     code: "405",
-    message: "Account has been rejected, please contact your administrator",
+    message: "Account has been deactivated, please contact your administrator",
   },
   TOO_MANY_ATTEMPTS: {
     code: "429",

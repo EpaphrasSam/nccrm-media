@@ -298,34 +298,69 @@ export function UsersTable() {
                       </Button>
                     )}
                     {canApproveUser &&
-                      user?.status === USER_STATUSES.PENDING_VERIFICATION && (
+                      (user?.status === USER_STATUSES.PENDING_VERIFICATION ||
+                        user?.status === USER_STATUSES.DEACTIVATED ||
+                        user?.status === USER_STATUSES.ACTIVE) && (
                         <Dropdown>
                           <DropdownTrigger>
                             <Button
                               isIconOnly
                               variant="light"
-                              aria-label="More user actions"
+                              aria-label="User actions"
                             >
                               <FiMoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownTrigger>
                           <DropdownMenu aria-label="User actions">
-                            <DropdownItem
-                              key="approve"
-                              startContent={<FiCheck className="w-4 h-4" />}
-                              onPress={() => handleApprove(user?.id)}
-                              className="text-success"
-                            >
-                              Approve
-                            </DropdownItem>
-                            <DropdownItem
-                              key="reject"
-                              startContent={<FiX className="w-4 h-4" />}
-                              onPress={() => handleReject(user?.id)}
-                              className="text-danger"
-                            >
-                              Reject
-                            </DropdownItem>
+                            {user?.status ===
+                            USER_STATUSES.PENDING_VERIFICATION ? (
+                              <>
+                                <DropdownItem
+                                  key="approve"
+                                  startContent={<FiCheck className="w-4 h-4" />}
+                                  onPress={() => handleApprove(user?.id)}
+                                  className="text-success"
+                                >
+                                  Approve
+                                </DropdownItem>
+                                <DropdownItem
+                                  key="reject"
+                                  startContent={<FiX className="w-4 h-4" />}
+                                  onPress={() => handleReject(user?.id)}
+                                  className="text-danger"
+                                >
+                                  Reject
+                                </DropdownItem>
+                              </>
+                            ) : null}
+                            {user?.status === USER_STATUSES.DEACTIVATED ? (
+                              <DropdownItem
+                                key="reactivate"
+                                startContent={<FiCheck className="w-4 h-4" />}
+                                onPress={() =>
+                                  validateUser(user?.id, {
+                                    status: USER_STATUSES.ACTIVE,
+                                  })
+                                }
+                                className="text-success"
+                              >
+                                Reactivate
+                              </DropdownItem>
+                            ) : null}
+                            {user?.status === USER_STATUSES.ACTIVE ? (
+                              <DropdownItem
+                                key="deactivate"
+                                startContent={<FiX className="w-4 h-4" />}
+                                onPress={() =>
+                                  validateUser(user?.id, {
+                                    status: USER_STATUSES.DEACTIVATED,
+                                  })
+                                }
+                                className="text-danger"
+                              >
+                                Deactivate
+                              </DropdownItem>
+                            ) : null}
                           </DropdownMenu>
                         </Dropdown>
                       )}
