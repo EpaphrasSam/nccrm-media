@@ -32,10 +32,8 @@ export interface EventFormData {
   location_details: string;
   sub_indicator_id: string;
   follow_ups: string[];
-  latitude?: number;
-  longitude?: number;
-  location?: string;
-  coordinates?: { lat: number; lon: number };
+  city: string;
+  coordinates: string;
 }
 
 export interface PerpetratorFormData {
@@ -307,6 +305,8 @@ export const useEventsStore = create<EventsState>((set, get) => ({
           : "",
         Region: event.region,
         District: event.district,
+        City: event.city,
+        Coordinates: event.coordinates,
         "Location Details": event.location_details || "",
         "Thematic Area": event.sub_indicator.main_indicator.thematic_area.name,
         // Perpetrator Information

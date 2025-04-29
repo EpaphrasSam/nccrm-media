@@ -9,8 +9,15 @@ export async function serverFetchUser() {
     method: "GET",
     headers: { Authorization: session?.user?.token || "" },
   });
-  if (!res.ok) return;
-  const data = await res.json();
 
+  if (res.status === 404) {
+    return null;
+  }
+
+  if (!res.ok) {
+    return undefined;
+  }
+
+  const data = await res.json();
   return data.user;
 }

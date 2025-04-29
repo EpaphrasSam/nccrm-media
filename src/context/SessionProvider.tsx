@@ -3,11 +3,11 @@
 import { createContext, useContext, useEffect } from "react";
 import type { Session } from "next-auth";
 import type { AuthResponse } from "@/services/auth/types";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 interface SessionContextProps {
   session: Session | null;
-  user: AuthResponse | null;
+  user: AuthResponse | null | undefined;
 }
 
 const SessionContext = createContext<SessionContextProps | undefined>(
@@ -21,13 +21,16 @@ export function SessionProvider({
 }: {
   children: React.ReactNode;
   session: Session | null;
-  user: AuthResponse | null;
+  user: AuthResponse | null | undefined;
 }) {
   const { update } = useSession();
 
   useEffect(() => {
     if (session?.user && user) {
       update({ user });
+    }
+    if (session?.user && user === null) {
+      signOut();
     }
   }, [session, user]);
 

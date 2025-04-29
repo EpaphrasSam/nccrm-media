@@ -106,9 +106,10 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
       if (!formData.event) {
         addToast({
           title: "Error",
-          description: "Event is required",
+          description: "Event data is missing.",
           color: "danger",
         });
+        setCurrentStep("event");
         return;
       }
 
@@ -117,7 +118,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
         report_date: formData.event.report_date || new Date().toISOString(),
         details: formData.event.details || "",
         event_date: formData.event.event_date || new Date().toISOString(),
-        location: formData.event.location,
+        city: formData.event.city,
         region: formData.event.region,
         district: formData.event.district,
         coordinates: formData.event.coordinates,

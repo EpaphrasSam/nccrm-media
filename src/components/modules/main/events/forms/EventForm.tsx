@@ -41,27 +41,14 @@ const eventSchema = z.object({
   location_details: z.string().optional(),
   sub_indicator_id: z.string().min(1, "Sub indicator is required"),
   follow_ups: z.array(z.string()).default([]),
-  location: z.string().optional(),
-  coordinates: z.object({ lat: z.number(), lon: z.number() }).optional(),
+  city: z.string().min(1, "City is required"),
+  coordinates: z.string().min(1, "Coordinates are required"),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
 
 interface EventFormProps {
   isNew?: boolean;
-}
-
-export interface EventFormData {
-  reporter_id: string;
-  report_date: string;
-  details?: string;
-  event_date?: string;
-  region: string;
-  district: string;
-  location_details?: string;
-  sub_indicator_id: string;
-  follow_ups: string[];
-  location: string;
 }
 
 // Add these interfaces before the EventForm component
@@ -168,7 +155,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
       location_details: formData.event?.location_details || "",
       sub_indicator_id: formData.event?.sub_indicator_id || "",
       follow_ups: currentEvent?.follow_ups || [],
-      location: formData.event?.location || "",
+      city: formData.event?.city || "",
       coordinates: formData.event?.coordinates || undefined,
     }),
     [formData.event, currentEvent, session?.user?.id]
@@ -195,7 +182,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
     name: "follow_ups" as never,
   });
 
-  const watchedLocation = watch("location");
+  const watchedCity = watch("city");
   const watchedDistrict = watch("district");
   const watchedRegion = watch("region");
 
@@ -254,14 +241,11 @@ export function EventForm({ isNew = false }: EventFormProps) {
     setSelectedLocation(item);
     console.log(item);
     const parts = item.display_name.split(",").map((s: string) => s.trim());
-    const [location, district, region] = parts;
-    setValue("location", location || "");
+    const [city, district, region] = parts;
+    setValue("city", city || "");
     setValue("district", district || "");
     setValue("region", region || "");
-    setValue("coordinates", {
-      lat: parseFloat(item.lat),
-      lon: parseFloat(item.lon),
-    });
+    setValue("coordinates", `(${item.lat}, ${item.lon})`);
   };
 
   if (isFormLoading || localLoading) {
@@ -408,10 +392,10 @@ export function EventForm({ isNew = false }: EventFormProps) {
           <div className="border-b-2 border-brand-gray-light" />
 
           <Input
-            label="Location"
+            label="City"
             labelPlacement="outside"
-            placeholder="Location"
-            value={watchedLocation || ""}
+            placeholder="City"
+            value={watchedCity || ""}
             isReadOnly
             variant="bordered"
             classNames={inputStyles}

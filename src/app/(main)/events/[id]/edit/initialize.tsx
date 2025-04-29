@@ -67,6 +67,8 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
               event_date: event.event_date || "",
               region: event.region,
               district: event.district,
+              city: event.city,
+              coordinates: event.coordinates,
               location_details: event.location_details || "",
               sub_indicator_id: event.sub_indicator_id,
               follow_ups: Array.isArray(event.follow_ups)
