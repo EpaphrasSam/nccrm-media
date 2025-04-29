@@ -22,6 +22,7 @@ import {
   ModalFooter,
   Select,
   SelectItem,
+  Spinner,
 } from "@heroui/react";
 import { FiCheck, FiX, FiUser, FiMoreVertical, FiTrash2 } from "react-icons/fi";
 import { FaRegEdit } from "react-icons/fa";
@@ -125,6 +126,10 @@ export function UsersTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<{
+    userId: string;
+    action: string;
+  } | null>(null);
 
   const handlePageChange = (page: number) => {
     setFilters({ page });
@@ -149,17 +154,37 @@ export function UsersTable() {
   };
 
   const handleApprove = async (userId: string) => {
-    try {
-      await validateUser(userId, { status: "approved" });
+    setLoadingAction({ userId, action: "approve" });
+    await validateUser(userId, { status: "approved" });
+    const user = users.find((u) => u.id === userId);
+    if (user && !user.role) {
       setSelectedUserId(userId);
       setAssignmentModalOpen(true);
-    } catch (error) {
-      console.error("Error approving user:", error);
     }
+    setLoadingAction(null);
   };
 
-  const handleReject = (userId: string) => {
-    validateUser(userId, { status: "rejected" });
+  const handleReject = async (userId: string) => {
+    setLoadingAction({ userId, action: "reject" });
+    await validateUser(userId, { status: "rejected" });
+    setLoadingAction(null);
+  };
+
+  const handleReactivate = async (userId: string) => {
+    setLoadingAction({ userId, action: "reactivate" });
+    await validateUser(userId, { status: USER_STATUSES.ACTIVE });
+    setLoadingAction(null);
+  };
+
+  const handleDeactivate = async (userId: string) => {
+    setLoadingAction({ userId, action: "deactivate" });
+    await validateUser(userId, { status: USER_STATUSES.DEACTIVATED });
+    setLoadingAction(null);
+  };
+
+  const handleAssignRole = (userId: string) => {
+    setSelectedUserId(userId);
+    setAssignmentModalOpen(true);
   };
 
   const handleAssignmentConfirm = async () => {
@@ -301,7 +326,7 @@ export function UsersTable() {
                       (user?.status === USER_STATUSES.PENDING_VERIFICATION ||
                         user?.status === USER_STATUSES.DEACTIVATED ||
                         user?.status === USER_STATUSES.ACTIVE) && (
-                        <Dropdown>
+                        <Dropdown closeOnSelect={false}>
                           <DropdownTrigger>
                             <Button
                               isIconOnly
@@ -317,16 +342,38 @@ export function UsersTable() {
                               <>
                                 <DropdownItem
                                   key="approve"
-                                  startContent={<FiCheck className="w-4 h-4" />}
+                                  startContent={
+                                    loadingAction?.userId === user?.id &&
+                                    loadingAction?.action === "approve" ? (
+                                      <Spinner size="sm" />
+                                    ) : (
+                                      <FiCheck className="w-4 h-4" />
+                                    )
+                                  }
                                   onPress={() => handleApprove(user?.id)}
+                                  isDisabled={
+                                    loadingAction?.userId === user?.id &&
+                                    loadingAction?.action === "approve"
+                                  }
                                   className="text-success"
                                 >
                                   Approve
                                 </DropdownItem>
                                 <DropdownItem
                                   key="reject"
-                                  startContent={<FiX className="w-4 h-4" />}
+                                  startContent={
+                                    loadingAction?.userId === user?.id &&
+                                    loadingAction?.action === "reject" ? (
+                                      <Spinner size="sm" />
+                                    ) : (
+                                      <FiX className="w-4 h-4" />
+                                    )
+                                  }
                                   onPress={() => handleReject(user?.id)}
+                                  isDisabled={
+                                    loadingAction?.userId === user?.id &&
+                                    loadingAction?.action === "reject"
+                                  }
                                   className="text-danger"
                                 >
                                   Reject
@@ -336,11 +383,18 @@ export function UsersTable() {
                             {user?.status === USER_STATUSES.DEACTIVATED ? (
                               <DropdownItem
                                 key="reactivate"
-                                startContent={<FiCheck className="w-4 h-4" />}
-                                onPress={() =>
-                                  validateUser(user?.id, {
-                                    status: USER_STATUSES.ACTIVE,
-                                  })
+                                startContent={
+                                  loadingAction?.userId === user?.id &&
+                                  loadingAction?.action === "reactivate" ? (
+                                    <Spinner size="sm" />
+                                  ) : (
+                                    <FiCheck className="w-4 h-4" />
+                                  )
+                                }
+                                onPress={() => handleReactivate(user?.id)}
+                                isDisabled={
+                                  loadingAction?.userId === user?.id &&
+                                  loadingAction?.action === "reactivate"
                                 }
                                 className="text-success"
                               >
@@ -350,15 +404,37 @@ export function UsersTable() {
                             {user?.status === USER_STATUSES.ACTIVE ? (
                               <DropdownItem
                                 key="deactivate"
-                                startContent={<FiX className="w-4 h-4" />}
-                                onPress={() =>
-                                  validateUser(user?.id, {
-                                    status: USER_STATUSES.DEACTIVATED,
-                                  })
+                                startContent={
+                                  loadingAction?.userId === user?.id &&
+                                  loadingAction?.action === "deactivate" ? (
+                                    <Spinner size="sm" />
+                                  ) : (
+                                    <FiX className="w-4 h-4" />
+                                  )
+                                }
+                                onPress={() => handleDeactivate(user?.id)}
+                                isDisabled={
+                                  loadingAction?.userId === user?.id &&
+                                  loadingAction?.action === "deactivate"
                                 }
                                 className="text-danger"
                               >
                                 Deactivate
+                              </DropdownItem>
+                            ) : null}
+                            {user?.status === USER_STATUSES.ACTIVE &&
+                            !user?.role ? (
+                              <DropdownItem
+                                key="assign-role"
+                                startContent={<FiCheck className="w-4 h-4" />}
+                                onPress={() => handleAssignRole(user?.id)}
+                                isDisabled={
+                                  loadingAction?.userId === user?.id &&
+                                  loadingAction?.action === "assign-role"
+                                }
+                                className="text-primary"
+                              >
+                                Assign Role
                               </DropdownItem>
                             ) : null}
                           </DropdownMenu>

@@ -14,6 +14,7 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  Spinner,
 } from "@heroui/react";
 import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2, FiMoreVertical, FiCheck, FiX } from "react-icons/fi";
@@ -63,6 +64,10 @@ export function EventsTable() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<{
+    eventId: string;
+    action: string;
+  } | null>(null);
 
   const handlePageChange = (page: number) => {
     setFilters({ page });
@@ -86,12 +91,16 @@ export function EventsTable() {
     }
   };
 
-  const handleApprove = (id: string) => {
-    validateEvent(id, { status: "approved" });
+  const handleApprove = async (id: string) => {
+    setLoadingAction({ eventId: id, action: "approve" });
+    await validateEvent(id, { status: "approved" });
+    setLoadingAction(null);
   };
 
-  const handleReject = (id: string) => {
-    validateEvent(id, { status: "rejected" });
+  const handleReject = async (id: string) => {
+    setLoadingAction({ eventId: id, action: "reject" });
+    await validateEvent(id, { status: "rejected" });
+    setLoadingAction(null);
   };
 
   const canEdit = hasPermission("event", "edit");
@@ -202,7 +211,7 @@ export function EventsTable() {
                       </Button>
                     )}
                     {canApprove && event?.status === "pending" && (
-                      <Dropdown>
+                      <Dropdown closeOnSelect={false}>
                         <DropdownTrigger>
                           <Button
                             isIconOnly
@@ -215,16 +224,38 @@ export function EventsTable() {
                         <DropdownMenu aria-label="Event actions">
                           <DropdownItem
                             key="approve"
-                            startContent={<FiCheck className="w-4 h-4" />}
+                            startContent={
+                              loadingAction?.eventId === event.id &&
+                              loadingAction?.action === "approve" ? (
+                                <Spinner size="sm" />
+                              ) : (
+                                <FiCheck className="w-4 h-4" />
+                              )
+                            }
                             onPress={() => handleApprove(event.id)}
+                            isDisabled={
+                              loadingAction?.eventId === event.id &&
+                              loadingAction?.action === "approve"
+                            }
                             className="text-success"
                           >
                             Approve
                           </DropdownItem>
                           <DropdownItem
                             key="reject"
-                            startContent={<FiX className="w-4 h-4" />}
+                            startContent={
+                              loadingAction?.eventId === event.id &&
+                              loadingAction?.action === "reject" ? (
+                                <Spinner size="sm" />
+                              ) : (
+                                <FiX className="w-4 h-4" />
+                              )
+                            }
                             onPress={() => handleReject(event.id)}
+                            isDisabled={
+                              loadingAction?.eventId === event.id &&
+                              loadingAction?.action === "reject"
+                            }
                             className="text-danger"
                           >
                             Reject

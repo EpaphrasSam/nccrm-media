@@ -11,31 +11,14 @@ import {
   Skeleton,
   Autocomplete,
   AutocompleteItem,
-  Checkbox,
-  Card,
-  CardBody,
+  addToast,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import {
-  FaChevronRight,
-  FaMapMarkerAlt,
-  FaPlus,
-  FaSync,
-  FaTrash,
-} from "react-icons/fa";
+import { FaChevronRight, FaPlus, FaTrash } from "react-icons/fa";
 import useSWR from "swr";
-import { regionService, Coordinates } from "@/services/regions/api";
-import dynamic from "next/dynamic";
-
-// Dynamically import the map component with no SSR
-// This is necessary because Leaflet requires window/document
-const LocationMap = dynamic(() => import("@/components/common/LocationMap"), {
-  ssr: false,
-  loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse" />,
-});
 
 // Helper functions for date formatting
 const formatDateForInput = (dateString: string | null | undefined) => {
@@ -58,8 +41,8 @@ const eventSchema = z.object({
   location_details: z.string().optional(),
   sub_indicator_id: z.string().min(1, "Sub indicator is required"),
   follow_ups: z.array(z.string()).default([]),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  location: z.string().optional(),
+  coordinates: z.object({ lat: z.number(), lon: z.number() }).optional(),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -78,8 +61,7 @@ export interface EventFormData {
   location_details?: string;
   sub_indicator_id: string;
   follow_ups: string[];
-  latitude?: number;
-  longitude?: number;
+  location: string;
 }
 
 // Add these interfaces before the EventForm component
@@ -109,6 +91,44 @@ interface ThematicAreaGroup {
   mainIndicators: Record<string, MainIndicatorGroup>;
 }
 
+// Define NominatimResult type
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
+// Update nominatimFetcher to handle errors and show toast
+const nominatimFetcher = async (query: string) => {
+  if (!query) return [];
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+        query
+      )}&format=json&addressdetails=1`,
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "NCCRM-Media/1.0",
+        },
+      }
+    );
+    if (!res.ok) {
+      throw new Error("Failed to fetch locations");
+    }
+    return res.json();
+  } catch (error: unknown) {
+    addToast({
+      title: "Location Error",
+      description:
+        error instanceof Error ? error.message : "Failed to fetch locations.",
+      color: "danger",
+    });
+    return [];
+  }
+};
+
 export function EventForm({ isNew = false }: EventFormProps) {
   const { data: session } = useSession();
   const {
@@ -124,141 +144,16 @@ export function EventForm({ isNew = false }: EventFormProps) {
   const [localLoading, setLocalLoading] = useState(!formData.event);
 
   // Location state
-  const [useCurrentLocation, setUseCurrentLocation] = useState(isNew);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [coordinates, setCoordinates] = useState<Coordinates | null>(
-    formData.event?.latitude && formData.event?.longitude
-      ? {
-          latitude: formData.event.latitude,
-          longitude: formData.event.longitude,
-        }
-      : null
-  );
-  const [updateLocationMode, setUpdateLocationMode] = useState(false);
-  const [showMap, setShowMap] = useState(false);
+  const [locationQuery, setLocationQuery] = useState("");
+  const [selectedLocation, setSelectedLocation] =
+    useState<NominatimResult | null>(null);
 
-  // SWR fetch for location data based on coordinates
-  const { data: locationData, isLoading: isLoadingLocation } = useSWR(
-    coordinates ? ["location", coordinates] : null,
-    async () => {
-      if (!coordinates) return null;
-      const response = await regionService.fetchByCoordinates(coordinates);
-      return "data" in response ? response.data : response;
-    },
-    {
-      revalidateOnFocus: false,
-      revalidateIfStale: false,
-      revalidateOnReconnect: false,
-    }
-  );
-
-  // Get current location using browser geolocation
-  const getCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      return;
-    }
-
-    setIsGettingLocation(true);
-    setLocationError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const newCoordinates = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-        setCoordinates(newCoordinates);
-        setIsGettingLocation(false);
-      },
-      (error) => {
-        setLocationError(`Error getting location: ${error.message}`);
-        setIsGettingLocation(false);
-        // Automatically enable map when geolocation fails
-        setShowMap(true);
-      },
-      { enableHighAccuracy: true, maximumAge: 60000 }
-    );
-  }, []);
-
-  // Handle checkbox change for current location
-  const handleLocationToggle = (isChecked: boolean) => {
-    setUseCurrentLocation(isChecked);
-    setShowMap(!isChecked);
-
-    if (isChecked) {
-      getCurrentLocation();
-    } else {
-      // In edit mode without update mode, restore original coordinates
-      if (
-        !isNew &&
-        !updateLocationMode &&
-        formData.event?.latitude &&
-        formData.event?.longitude
-      ) {
-        setCoordinates({
-          latitude: formData.event.latitude,
-          longitude: formData.event.longitude,
-        });
-      }
-    }
-  };
-
-  // Handle map location selection
-  const handleMapLocationSelect = (lat: number, lng: number) => {
-    setCoordinates({
-      latitude: lat,
-      longitude: lng,
-    });
-  };
-
-  // Function to start location update mode in edit
-  const startLocationUpdate = () => {
-    setUpdateLocationMode(true);
-    // Default to using current location when updating
-    setUseCurrentLocation(true);
-    setShowMap(false);
-    getCurrentLocation();
-  };
-
-  // Cancel location update in edit mode
-  const cancelLocationUpdate = () => {
-    setUpdateLocationMode(false);
-    setShowMap(false);
-    // Restore original coordinates
-    if (formData.event?.latitude && formData.event?.longitude) {
-      setCoordinates({
-        latitude: formData.event.latitude,
-        longitude: formData.event.longitude,
-      });
-    } else {
-      setCoordinates(null);
-    }
-  };
-
-  // Update form fields when location data is received
-  useEffect(() => {
-    if (locationData) {
-      // Update the form values for region and district
-      setValue("region", locationData.region);
-      setValue("district", locationData.district);
-
-      // Also update the latitude and longitude
-      if (coordinates) {
-        setValue("latitude", coordinates.latitude);
-        setValue("longitude", coordinates.longitude);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationData, coordinates]);
-
-  // Trigger geolocation on initial load for new events
-  useEffect(() => {
-    if (isNew && useCurrentLocation) {
-      getCurrentLocation();
-    }
-  }, [isNew, useCurrentLocation, getCurrentLocation]);
+  // SWR for Nominatim
+  const { data: locationResults, isValidating: isLocationLoading } = useSWR<
+    NominatimResult[]
+  >(locationQuery.length > 2 ? locationQuery : null, nominatimFetcher, {
+    dedupingInterval: 60000,
+  });
 
   const getDefaultValues = useCallback(
     () => ({
@@ -273,8 +168,8 @@ export function EventForm({ isNew = false }: EventFormProps) {
       location_details: formData.event?.location_details || "",
       sub_indicator_id: formData.event?.sub_indicator_id || "",
       follow_ups: currentEvent?.follow_ups || [],
-      latitude: formData.event?.latitude,
-      longitude: formData.event?.longitude,
+      location: formData.event?.location || "",
+      coordinates: formData.event?.coordinates || undefined,
     }),
     [formData.event, currentEvent, session?.user?.id]
   );
@@ -286,16 +181,23 @@ export function EventForm({ isNew = false }: EventFormProps) {
     register,
     setError,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
-    defaultValues: getDefaultValues(),
+    defaultValues: {
+      ...getDefaultValues(),
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "follow_ups" as never,
   });
+
+  const watchedLocation = watch("location");
+  const watchedDistrict = watch("district");
+  const watchedRegion = watch("region");
 
   // Handle loading states
   useEffect(() => {
@@ -345,6 +247,21 @@ export function EventForm({ isNew = false }: EventFormProps) {
     };
     setEventForm(formattedData);
     setCurrentStep("perpetrator");
+  };
+
+  // Handle location selection
+  const handleLocationSelect = (item: NominatimResult) => {
+    setSelectedLocation(item);
+    console.log(item);
+    const parts = item.display_name.split(",").map((s: string) => s.trim());
+    const [location, district, region] = parts;
+    setValue("location", location || "");
+    setValue("district", district || "");
+    setValue("region", region || "");
+    setValue("coordinates", {
+      lat: parseFloat(item.lat),
+      lon: parseFloat(item.lon),
+    });
   };
 
   if (isFormLoading || localLoading) {
@@ -452,183 +369,72 @@ export function EventForm({ isNew = false }: EventFormProps) {
           )}
         />
 
-        {/* Location Section */}
-        <Card>
-          <CardBody className="gap-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">Location Information</h3>
-                {!isNew && !updateLocationMode && (
-                  <Button
-                    type="button"
-                    color="primary"
-                    variant="light"
-                    startContent={<FaMapMarkerAlt />}
-                    onPress={startLocationUpdate}
-                  >
-                    Update Location
-                  </Button>
-                )}
-                {!isNew && updateLocationMode && (
-                  <Button
-                    type="button"
-                    color="danger"
-                    variant="light"
-                    onPress={cancelLocationUpdate}
-                  >
-                    Cancel Update
-                  </Button>
-                )}
-              </div>
-
-              {(isNew || updateLocationMode) && (
-                <div className="mb-4">
-                  <Checkbox
-                    isSelected={useCurrentLocation}
-                    onValueChange={handleLocationToggle}
-                    color="danger"
-                    className="mb-2"
-                    size="sm"
-                  >
-                    Use my current location
-                  </Checkbox>
-
-                  {useCurrentLocation && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="flat"
-                        color="primary"
-                        startContent={<FaSync />}
-                        isLoading={isGettingLocation}
-                        onPress={getCurrentLocation}
-                      >
-                        Refresh location
-                      </Button>
-                      {coordinates && (
-                        <span className="text-sm text-gray-500">
-                          {coordinates.latitude.toFixed(4)},{" "}
-                          {coordinates.longitude.toFixed(4)}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {!useCurrentLocation && (
-                    <div className="mt-2">
-                      {showMap && (
-                        <div className="mb-4">
-                          <LocationMap
-                            initialPosition={
-                              coordinates
-                                ? {
-                                    lat: coordinates.latitude,
-                                    lng: coordinates.longitude,
-                                  }
-                                : undefined
-                            }
-                            onLocationSelect={handleMapLocationSelect}
-                          />
-                          {coordinates && (
-                            <p className="mt-2 text-sm text-gray-500">
-                              {coordinates.latitude.toFixed(6)},{" "}
-                              {coordinates.longitude.toFixed(6)}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {locationError && (
-                    <p className="text-sm text-danger mt-1">{locationError}</p>
-                  )}
-                </div>
+        {/* Location Autocomplete Section */}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="block font-medium">Search Location</label>
+            <Autocomplete
+              inputValue={locationQuery}
+              onInputChange={setLocationQuery}
+              items={locationResults || []}
+              isLoading={isLocationLoading}
+              inputProps={{
+                classNames: {
+                  inputWrapper: "py-6 rounded-xlg",
+                },
+              }}
+              placeholder="Type a location (e.g. Takoradi)"
+              onSelectionChange={(key) => {
+                const item = (locationResults || []).find(
+                  (i) => String(i.place_id) === String(key)
+                );
+                if (item) handleLocationSelect(item);
+              }}
+              selectedKey={selectedLocation?.place_id}
+              labelPlacement="outside"
+              variant="bordered"
+            >
+              {(item: NominatimResult) => (
+                <AutocompleteItem
+                  key={item.place_id}
+                  textValue={item.display_name}
+                >
+                  {item.display_name}
+                </AutocompleteItem>
               )}
+            </Autocomplete>
+          </div>
 
-              <Controller
-                name="region"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    label="Region"
-                    labelPlacement="outside"
-                    placeholder={
-                      isLoadingLocation ? "Loading region..." : "Region"
-                    }
-                    variant="bordered"
-                    className="mb-2"
-                    classNames={inputStyles}
-                    isInvalid={!!errors.region}
-                    errorMessage={errors.region?.message}
-                    isDisabled={
-                      isLoadingLocation || isNew || updateLocationMode
-                    }
-                    isReadOnly={isNew || updateLocationMode}
-                  />
-                )}
-              />
+          <div className="border-b-2 border-brand-gray-light" />
 
-              <Controller
-                name="district"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    label="District"
-                    labelPlacement="outside"
-                    placeholder={
-                      isLoadingLocation ? "Loading district..." : "District"
-                    }
-                    variant="bordered"
-                    classNames={inputStyles}
-                    isInvalid={!!errors.district}
-                    errorMessage={errors.district?.message}
-                    isDisabled={
-                      isLoadingLocation || isNew || updateLocationMode
-                    }
-                    isReadOnly={isNew || updateLocationMode}
-                  />
-                )}
-              />
-
-              <Controller
-                name="location_details"
-                control={control}
-                render={({ field }) => (
-                  <Textarea
-                    {...field}
-                    label="Location Details"
-                    labelPlacement="outside"
-                    placeholder="Enter additional location details"
-                    variant="bordered"
-                    classNames={inputStyles}
-                    isInvalid={!!errors.location_details}
-                    errorMessage={errors.location_details?.message}
-                  />
-                )}
-              />
-
-              {/* Hidden fields for coordinates */}
-              <input
-                type="hidden"
-                {...register("latitude", {
-                  setValueAs: (value) =>
-                    value === "" ? undefined : parseFloat(value),
-                })}
-              />
-              <input
-                type="hidden"
-                {...register("longitude", {
-                  setValueAs: (value) =>
-                    value === "" ? undefined : parseFloat(value),
-                })}
-              />
-            </div>
-          </CardBody>
-        </Card>
+          <Input
+            label="Location"
+            labelPlacement="outside"
+            placeholder="Location"
+            value={watchedLocation || ""}
+            isReadOnly
+            variant="bordered"
+            classNames={inputStyles}
+          />
+          <Input
+            label="District"
+            labelPlacement="outside"
+            placeholder="District"
+            value={watchedDistrict || ""}
+            isReadOnly
+            variant="bordered"
+            classNames={inputStyles}
+          />
+          <Input
+            label="Region"
+            labelPlacement="outside"
+            placeholder="Region"
+            value={watchedRegion || ""}
+            isReadOnly
+            variant="bordered"
+            classNames={inputStyles}
+          />
+        </div>
 
         <Controller
           name="sub_indicator_id"

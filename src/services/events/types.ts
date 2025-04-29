@@ -77,6 +77,8 @@ export interface EventCreateInput {
   report_date: string;
   region: string;
   district: string;
+  location?: string;
+  coordinates?: { lat: number; lon: number };
   sub_indicator_id: string;
   details?: string;
   event_date?: string;
@@ -114,6 +116,8 @@ export interface EventCreateInput {
 export interface EventUpdateInput {
   region: string;
   district: string;
+  location?: string;
+  coordinates?: { lat: number; lon: number };
   sub_indicator_id: string;
   details?: string;
   event_date?: string;

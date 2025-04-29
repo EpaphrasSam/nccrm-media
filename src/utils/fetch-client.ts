@@ -31,7 +31,7 @@ async function signOut() {
     await fetch(signOutUrl, { method: "POST" });
 
     // The middleware will handle the redirect, but just in case
-    // window.location.href = "/login";
+    window.location.href = "/login";
   } catch (error) {
     console.error("Error during sign out:", error);
     // Fallback redirect
@@ -161,14 +161,7 @@ async function customFetch<T>(
 
       error.message = errorMessage;
 
-      // Check for JWT expiration in various possible response formats
-      const jwtExpiredMessage =
-        data?.error?.message === "jwt expired" ||
-        data?.message === "jwt expired" ||
-        errorMessage === "jwt expired";
-
-      // If it's jwt expired message, sign out the user
-      if (jwtExpiredMessage) {
+      if (response.status === 408) {
         await signOut();
       }
 

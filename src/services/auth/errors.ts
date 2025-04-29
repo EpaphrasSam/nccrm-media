@@ -11,11 +11,11 @@ export const AUTH_ERRORS = {
     message: "Invalid password",
   },
   UNVERIFIED_ACCOUNT: {
-    code: "403",
+    code: "405",
     message: "Account not approved, please contact your administrator",
   },
   DEACTIVATED_ACCOUNT: {
-    code: "405",
+    code: "403",
     message: "Account has been deactivated, please contact your administrator",
   },
   TOO_MANY_ATTEMPTS: {

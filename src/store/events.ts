@@ -34,6 +34,8 @@ export interface EventFormData {
   follow_ups: string[];
   latitude?: number;
   longitude?: number;
+  location?: string;
+  coordinates?: { lat: number; lon: number };
 }
 
 export interface PerpetratorFormData {
