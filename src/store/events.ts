@@ -309,6 +309,8 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         Coordinates: event.coordinates,
         "Location Details": event.location_details || "",
         "Thematic Area": event.sub_indicator.main_indicator.thematic_area.name,
+        "Main Indicator": event.sub_indicator.main_indicator.name,
+        "Sub Indicator": event.sub_indicator.name,
         // Perpetrator Information
         Perpetrator: event.perpetrator || "",
         "Perpetrator Gender": event.pep_gender || "",
