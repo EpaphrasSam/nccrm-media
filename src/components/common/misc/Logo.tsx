@@ -14,7 +14,7 @@ export function Logo({
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <Image
-        src="/logo.png"
+        src="/images/logo.png"
         alt="News Reporter Logo"
         width={25}
         height={25}
