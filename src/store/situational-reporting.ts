@@ -96,7 +96,7 @@ const DEFAULT_OVERVIEW_FILTERS: OverviewSummaryFilters = {
 };
 
 export const useSituationalReportingStore = create<SituationalReportingState>(
-  (set, get) => ({
+  (set) => ({
     // Initial Data
     reports: [],
     totalReports: 0,
@@ -319,56 +319,46 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
       try {
         set({ isExporting: true });
 
-        // Get current overview data from state
-        const { overviewData } = get();
+        // Fetch all situational reports (no pagination)
+        const response = (await situationalReportingService.getReports({
+          page: 1,
+          limit: 10000,
+        })) as import("@/services/situational-reporting/types").SituationalReportsDetails;
+        const reports = response.situationalReports;
 
-        // Return early if no data
-        if (Object.keys(overviewData).length === 0) {
+        if (!reports || reports.length === 0) {
           console.log("No data to export");
           return;
         }
 
-        // Get all unique thematic areas and years
-        const thematicAreas = new Set<string>();
-        const years = new Set<string>();
-
-        Object.entries(overviewData).forEach(([year, areas]) => {
-          years.add(year);
-          Object.keys(areas).forEach((area) => thematicAreas.add(area));
-        });
-
-        // Sort years descending and thematic areas alphabetically
-        const sortedYears = Array.from(years).sort(
-          (a, b) => parseInt(b) - parseInt(a)
-        );
-        const sortedAreas = Array.from(thematicAreas).sort();
-
-        // Create headers row
-        const headers = ["Year", ...sortedAreas];
-
-        // Create data rows
-        const rows = sortedYears.map((year) => {
-          const rowData = [year];
-          sortedAreas.forEach((area) => {
-            const value = overviewData[year]?.[area] ?? "";
-            rowData.push(value.toString());
-          });
-          return rowData;
-        });
-
-        // Convert to CSV
+        // Prepare CSV data
+        const headers = [
+          "ID",
+          "Name",
+          "Year",
+          "Status",
+          "Created At",
+          "Updated At",
+        ];
         const csvRows = [
-          // Add headers
           headers.map((header) => `"${header}"`).join(","),
-          // Add data rows
-          ...rows.map((row) => row.map((value) => `"${value}"`).join(",")),
+          ...reports.map((report) =>
+            [
+              report.id,
+              report.name,
+              report.year,
+              report.status,
+              new Date(report.created_at).toLocaleString(),
+              new Date(report.updated_at).toLocaleString(),
+            ]
+              .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+              .join(",")
+          ),
         ];
 
-        // Add BOM and create CSV string
-        const BOM = "\uFEFF"; // Add BOM for Excel to auto-expand columns
+        const BOM = "\uFEFF";
         const csvString = BOM + csvRows.join("\n");
 
-        // Create and download file
         const blob = new Blob([csvString], {
           type: "text/csv;charset=utf-8;",
         });
@@ -377,7 +367,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
         link.href = url;
         link.setAttribute(
           "download",
-          `overview_summary_${new Date().toISOString().split("T")[0]}.csv`
+          `situational_reports_${new Date().toISOString().split("T")[0]}.csv`
         );
         document.body.appendChild(link);
         link.click();

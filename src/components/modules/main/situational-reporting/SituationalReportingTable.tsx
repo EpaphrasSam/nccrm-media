@@ -84,7 +84,7 @@ export function SituationalReportingTable() {
   const canViewAnalysis = hasPermission("situational_analysis", "view");
 
   const handleViewAnalysis = (reportId: string) => {
-    router.push(`/situational-reporting/${reportId}/analysis`);
+    router.push(`/situational-reporting/analysis/${reportId}/`);
   };
 
   return (

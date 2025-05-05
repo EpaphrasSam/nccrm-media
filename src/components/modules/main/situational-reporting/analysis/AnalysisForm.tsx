@@ -55,7 +55,7 @@ type EscalationPotential = FormData["escalationPotential"];
 type ResponseAdequacy = FormData["responseAdequacy"];
 
 const atRiskGroups = [
-  "All/Ambiguous",
+  "All",
   "Elderly Man",
   "Elderly Woman",
   "Man",

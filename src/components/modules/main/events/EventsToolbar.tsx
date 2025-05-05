@@ -17,21 +17,15 @@ import { AdminToolbar } from "../../admin/layout/AdminToolbar";
 import { PiMicrosoftExcelLogoThin } from "react-icons/pi";
 import useSWR from "swr";
 import type { SubIndicator } from "@/services/sub-indicators/types";
+import { ExportPreviewModal } from "./ExportPreviewModal";
 
 interface FilterState {
   thematic_area: string;
 }
 
 export function EventsToolbar() {
-  const {
-    filters,
-    setFilters,
-    resetFilters,
-    addEvent,
-    exportToExcel,
-    isExporting,
-    isFiltersLoading,
-  } = useEventsStore();
+  const { filters, setFilters, resetFilters, addEvent, isFiltersLoading } =
+    useEventsStore();
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
     thematic_area: filters.thematic_area || "all",
@@ -42,6 +36,8 @@ export function EventsToolbar() {
     subIndicators: SubIndicator[];
   }>("filterOptions");
   const subIndicators = filterOptions?.subIndicators || [];
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const handleSearch = (query: string) => {
     setFilters({ ...filters, search: query, page: 1 });
@@ -139,28 +135,30 @@ export function EventsToolbar() {
 
       <Button
         color="primary"
-        onPress={exportToExcel}
+        onPress={() => setIsExportModalOpen(true)}
         startContent={<PiMicrosoftExcelLogoThin className="h-4 w-4" />}
         size="md"
         className={`${buttonStyles} bg-brand-green-dark min-w-[48px]`}
-        isLoading={isExporting}
-        isDisabled={isExporting}
       >
-        <span className="sm:inline hidden">
-          {isExporting ? "Exporting..." : "Export Excel"}
-        </span>
+        <span className="sm:inline hidden">Preview Export</span>
       </Button>
     </div>
   );
 
   return (
-    <AdminToolbar
-      searchPlaceholder="Search events..."
-      onSearch={handleSearch}
-      addButtonLabel="Add Event"
-      onAdd={addEvent}
-      addPermissionModule="event"
-      filterComponent={FilterComponent}
-    />
+    <>
+      <AdminToolbar
+        searchPlaceholder="Search events..."
+        onSearch={handleSearch}
+        addButtonLabel="Add Event"
+        onAdd={addEvent}
+        addPermissionModule="event"
+        filterComponent={FilterComponent}
+      />
+      <ExportPreviewModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
+    </>
   );
 }

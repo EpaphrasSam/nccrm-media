@@ -81,9 +81,15 @@ interface ThematicAreaGroup {
 // Define NominatimResult type
 interface NominatimResult {
   place_id: number;
+  name: string;
   display_name: string;
   lat: string;
   lon: string;
+  address: {
+    county: string;
+    state: string;
+    region: string;
+  };
 }
 
 // Update nominatimFetcher to handle errors and show toast
@@ -93,7 +99,7 @@ const nominatimFetcher = async (query: string) => {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
         query
-      )}&format=json&addressdetails=1`,
+      )}&format=json&addressdetails=1&countrycodes=gh`,
       {
         headers: {
           Accept: "application/json",
@@ -239,12 +245,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
   // Handle location selection
   const handleLocationSelect = (item: NominatimResult) => {
     setSelectedLocation(item);
-    console.log(item);
-    const parts = item.display_name.split(",").map((s: string) => s.trim());
-    const [city, district, region] = parts;
-    setValue("city", city || "");
-    setValue("district", district || "");
-    setValue("region", region || "");
+    setValue("city", item.name || "");
+    setValue("district", item.address?.county || "");
+    setValue("region", item.address?.state || item.address?.region || "");
     setValue("coordinates", `(${item.lat}, ${item.lon})`);
   };
 
@@ -367,7 +370,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
                   inputWrapper: "py-6 rounded-xlg",
                 },
               }}
-              placeholder="Type a location (e.g. Takoradi)"
+              placeholder="Type a location"
               onSelectionChange={(key) => {
                 const item = (locationResults || []).find(
                   (i) => String(i.place_id) === String(key)
