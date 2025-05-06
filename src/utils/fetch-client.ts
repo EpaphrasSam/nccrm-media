@@ -106,6 +106,8 @@ async function customFetch<T>(
     const { params, headers: customHeaders, body, ...rest } = options;
     const session = await getAuthSession();
 
+    console.log("Session", session);
+
     // Construct headers
     const headers = new Headers(customHeaders);
 
