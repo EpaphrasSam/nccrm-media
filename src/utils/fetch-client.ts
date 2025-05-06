@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const isServer = typeof window === "undefined";
 export const BASE_URL = isServer
-  ? process.env.SERVER_API_URL || "http://gateway/backend"
-  : process.env.NEXT_PUBLIC_API_URL || "/backend";
+  ? process.env.SERVER_API_URL || ""
+  : process.env.NEXT_PUBLIC_API_URL || "";
 export const authUrl =
-  process.env.AUTH_URL ||
-  process.env.NEXT_PUBLIC_AUTH_URL ||
-  "http://localhost:3000";
+  process.env.AUTH_URL || process.env.NEXT_PUBLIC_AUTH_URL || "";
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;
@@ -27,7 +25,7 @@ interface FetchError extends Error {
 
 async function signOut() {
   try {
-    const signOutUrl = new URL("/api/auth/signout", authUrl).toString();
+    const signOutUrl = "/api/auth/signout";
     await fetch(signOutUrl, { method: "POST" });
 
     // The middleware will handle the redirect, but just in case
@@ -74,7 +72,7 @@ function getDefaultErrorMessage(status: number): string {
 
 async function getAuthSession() {
   try {
-    const sessionUrl = new URL("/api/auth/session", authUrl).toString();
+    const sessionUrl = "/api/auth/session";
     const session = await fetch(sessionUrl).then((res) => res.json());
     return session;
   } catch (error) {
