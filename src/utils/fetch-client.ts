@@ -6,6 +6,9 @@ export const BASE_URL = isServer
 export const authUrl =
   process.env.AUTH_URL || process.env.NEXT_PUBLIC_AUTH_URL || "";
 
+console.log("BASE_URL", BASE_URL);
+console.log("authUrl", authUrl);
+
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;
   returnErrorStatus?: boolean;
