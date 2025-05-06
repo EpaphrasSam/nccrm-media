@@ -51,6 +51,7 @@ export async function clientApiCall<T>(
 
     return result;
   } catch (error: any) {
+    console.log("API ERROR", error);
     const message =
       error.response?.data?.error?.message ||
       error.message ||

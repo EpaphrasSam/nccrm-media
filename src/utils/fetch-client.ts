@@ -145,6 +145,7 @@ async function customFetch<T>(
     }
 
     if (!response.ok) {
+      console.log("RESPONSE NOT OK", response);
       const error = new Error() as FetchError;
       error.status = response.status;
       error.data = data;
@@ -180,6 +181,7 @@ async function customFetch<T>(
       ok: response.ok,
     };
   } catch (error: any) {
+    console.log("FETCH ERROR", error);
     // Handle network errors or other non-HTTP errors
     if (!error.status) {
       error.message =
