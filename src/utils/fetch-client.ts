@@ -1,32 +1,69 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const isServer = typeof window === "undefined";
 
-// --- Simplified URL Configuration ---
-let derivedBaseUrl: string;
-let derivedAuthUrl: string;
-
-if (isServer) {
-  // Server-side execution (can use runtime env vars from frontend.env via docker-compose)
-  derivedBaseUrl = process.env.SERVER_API_URL || ""; // e.g., http://gateway/backend
-  derivedAuthUrl = process.env.AUTH_URL || ""; // e.g., http://localhost:3000 (from container's view)
-} else {
-  // Client-side execution
-  derivedBaseUrl = "/backend"; // All API calls go through nginx proxy at /backend
-  derivedAuthUrl = window.location.origin; // The base URL of the frontend app itself
+interface RuntimeConfig {
+  BASE_URL: string;
+  AUTH_URL: string;
 }
 
-export const BASE_URL = derivedBaseUrl;
-export const authUrl = derivedAuthUrl; // Primarily for reference if needed, NextAuth routes are relative
-// --- End of Simplified URL Configuration ---
+let runtimeConfig: RuntimeConfig | null = null;
+let configLoadingPromise: Promise<void> | null = null;
 
-console.log("BASE_URL (derived):", BASE_URL);
-console.log("authUrl (derived):", authUrl);
+export async function loadRuntimeConfig(): Promise<void> {
+  if (typeof window === "undefined") {
+    runtimeConfig = {
+      BASE_URL: process.env.SERVER_API_URL || "",
+      AUTH_URL: process.env.AUTH_URL || "",
+    };
+    return;
+  }
+
+  if (runtimeConfig) {
+    return;
+  }
+  if (configLoadingPromise) {
+    return configLoadingPromise;
+  }
+
+  configLoadingPromise = (async () => {
+    try {
+      const response = await fetch("/api/config"); // Fetch from the new API route
+      if (!response.ok) {
+        console.error(
+          "Failed to fetch runtime config:",
+          response.status,
+          await response.text()
+        );
+        runtimeConfig = { BASE_URL: "", AUTH_URL: "" };
+      } else {
+        runtimeConfig = await response.json();
+        console.log("Runtime config loaded successfully:", runtimeConfig);
+      }
+    } catch (error) {
+      console.error("Error fetching runtime config:", error);
+      runtimeConfig = { BASE_URL: "", AUTH_URL: "" };
+    } finally {
+      configLoadingPromise = null;
+    }
+  })();
+  return configLoadingPromise;
+}
+
+export const getBaseUrl = (): string => {
+  if (typeof window === "undefined") return process.env.SERVER_API_URL || "";
+  return runtimeConfig?.BASE_URL || "";
+};
+
+export const getAuthUrl = (): string => {
+  if (typeof window === "undefined") return process.env.AUTH_URL || "";
+  return runtimeConfig?.AUTH_URL || "";
+};
+
+console.log("BASE_URL", getBaseUrl());
+console.log("authUrl", getAuthUrl());
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;
   returnErrorStatus?: boolean;
-  data?: any;
-  response?: { status: number };
 }
 
 interface FetchResponse<T = any> {
@@ -43,9 +80,8 @@ interface FetchError extends Error {
 
 async function signOut() {
   try {
-    const signOutUrlPath = "/api/auth/signout"; // Relative path
-    // Calls to NextAuth's own API routes should be relative to the app's origin
-    await fetch(signOutUrlPath, { method: "POST" });
+    const signOutUrl = "/api/auth/signout";
+    await fetch(signOutUrl, { method: "POST" });
 
     // The middleware will handle the redirect, but just in case
     window.location.href = "/login";
@@ -91,9 +127,8 @@ function getDefaultErrorMessage(status: number): string {
 
 async function getAuthSession() {
   try {
-    const sessionUrlPath = "/api/auth/session"; // Relative path
-    // Calls to NextAuth's own API routes should be relative to the app's origin
-    const session = await fetch(sessionUrlPath).then((res) => res.json());
+    const sessionUrl = "/api/auth/session";
+    const session = await fetch(sessionUrl).then((res) => res.json());
     return session;
   } catch (error) {
     console.error("Error fetching session:", error);
@@ -102,7 +137,7 @@ async function getAuthSession() {
 }
 
 function createUrl(url: string, params?: Record<string, any>): string {
-  const fullUrl = url.startsWith("http") ? url : `${BASE_URL}${url}`;
+  const fullUrl = url.startsWith("http") ? url : `${getBaseUrl()}${url}`;
   if (!params) return fullUrl;
 
   const searchParams = new URLSearchParams();
@@ -243,6 +278,3 @@ export const fetchClient = {
   delete: <T>(url: string, options: FetchOptions = {}) =>
     customFetch<T>(url, { ...options, method: "DELETE" }),
 };
-
-// Export getAuthSession and signOut if they are used directly from other modules
-export { getAuthSession, signOut };
