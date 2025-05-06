@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const BASE_URL =
-  process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:3035";
+const isServer = typeof window === "undefined";
+export const BASE_URL = isServer
+  ? process.env.SERVER_API_URL || "http://gateway/backend"
+  : process.env.NEXT_PUBLIC_API_URL || "/backend";
 export const authUrl =
   process.env.AUTH_URL ||
   process.env.NEXT_PUBLIC_AUTH_URL ||
