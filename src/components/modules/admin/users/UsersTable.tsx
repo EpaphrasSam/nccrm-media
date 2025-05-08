@@ -113,7 +113,6 @@ export function UsersTable() {
     totalPages,
     validateUser,
     updateUser,
-    departments,
     roles,
   } = useUsersStore();
 
@@ -123,7 +122,6 @@ export function UsersTable() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [loadingAction, setLoadingAction] = useState<{
@@ -142,7 +140,6 @@ export function UsersTable() {
 
   const handleDeleteConfirm = async () => {
     if (!selectedUserId) return;
-
     setIsDeleting(true);
     try {
       await deleteUser(selectedUserId);
@@ -153,15 +150,34 @@ export function UsersTable() {
     }
   };
 
-  const handleApprove = async (userId: string) => {
-    setLoadingAction({ userId, action: "approve" });
-    await validateUser(userId, { status: "approved" });
-    const user = users.find((u) => u.id === userId);
-    if (user && !user.role) {
-      setSelectedUserId(userId);
-      setAssignmentModalOpen(true);
+  // Approve: open modal, wait for role selection, then approve and assign role
+  const handleApprove = (userId: string) => {
+    setSelectedUserId(userId);
+    setAssignmentModalOpen(true);
+    setSelectedRole("");
+  };
+
+  // Assign role and approve user
+  const handleAssignmentConfirm = async () => {
+    if (!selectedUserId || !selectedRole) return;
+    setIsAssigning(true);
+    try {
+      await validateUser(selectedUserId, { status: "approved" });
+      await updateUser(selectedUserId, { role_id: selectedRole });
+      setAssignmentModalOpen(false);
+      setSelectedUserId(null);
+      setSelectedRole("");
+    } catch {
+      // Error already handled by clientApiCall (toast shown), just stop here
+    } finally {
+      setIsAssigning(false);
     }
-    setLoadingAction(null);
+  };
+
+  const handleAssignmentCancel = () => {
+    setAssignmentModalOpen(false);
+    setSelectedUserId(null);
+    setSelectedRole("");
   };
 
   const handleReject = async (userId: string) => {
@@ -185,32 +201,6 @@ export function UsersTable() {
   const handleAssignRole = (userId: string) => {
     setSelectedUserId(userId);
     setAssignmentModalOpen(true);
-  };
-
-  const handleAssignmentConfirm = async () => {
-    if (!selectedUserId || !selectedDepartment || !selectedRole) return;
-
-    setIsAssigning(true);
-    try {
-      await updateUser(selectedUserId, {
-        department_id: selectedDepartment,
-        role_id: selectedRole,
-      });
-      setAssignmentModalOpen(false);
-      setSelectedUserId(null);
-      setSelectedDepartment("");
-      setSelectedRole("");
-    } catch (error) {
-      console.error("Error assigning role and department:", error);
-    } finally {
-      setIsAssigning(false);
-    }
-  };
-
-  const handleAssignmentCancel = () => {
-    setAssignmentModalOpen(false);
-    setSelectedUserId(null);
-    setSelectedDepartment("");
     setSelectedRole("");
   };
 
@@ -476,26 +466,10 @@ export function UsersTable() {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Assign Role and Department
+                Assign Role
               </ModalHeader>
               <ModalBody>
                 <div className="flex flex-col gap-4">
-                  <Select
-                    label="Department"
-                    placeholder="Select a department"
-                    selectedKeys={
-                      selectedDepartment ? [selectedDepartment] : []
-                    }
-                    onSelectionChange={(keys) => {
-                      const value = Array.from(keys)[0]?.toString();
-                      if (value) setSelectedDepartment(value);
-                    }}
-                  >
-                    {departments?.map((dept: { id: string; name: string }) => (
-                      <SelectItem key={dept.id}>{dept.name}</SelectItem>
-                    ))}
-                  </Select>
-
                   <Select
                     label="Role"
                     placeholder="Select a role"
@@ -525,7 +499,7 @@ export function UsersTable() {
                   color="primary"
                   onPress={handleAssignmentConfirm}
                   isLoading={isAssigning}
-                  isDisabled={!selectedDepartment || !selectedRole}
+                  isDisabled={!selectedRole}
                   className={`${buttonStyles} bg-brand-red-dark text-white`}
                 >
                   Assign
