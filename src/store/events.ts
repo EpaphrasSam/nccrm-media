@@ -6,7 +6,6 @@ import type {
   EventUpdateInput,
   EventValidateInput,
 } from "@/services/events/types";
-import type { UserListItem } from "@/services/users/types";
 import type { SubIndicator } from "@/services/sub-indicators/types";
 import { eventService } from "@/services/events/api";
 import { urlSync } from "@/utils/url-sync";
@@ -92,9 +91,7 @@ interface EventsState {
   formData: FormDataState;
 
   // Reference Data
-  reporters: UserListItem[];
   subIndicators: SubIndicator[];
-  setReporters: (reporters: UserListItem[]) => void;
   setSubIndicators: (indicators: SubIndicator[]) => void;
 
   // Data
@@ -155,9 +152,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   formData: DEFAULT_FORM_STATE,
 
   // Initial Reference Data
-  reporters: [],
   subIndicators: [],
-  setReporters: (reporters) => set({ reporters }),
   setSubIndicators: (indicators) => set({ subIndicators: indicators }),
 
   // Initial Data

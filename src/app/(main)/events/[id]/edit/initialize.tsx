@@ -2,7 +2,6 @@
 
 import { useEventsStore } from "@/store/events";
 import { eventService } from "@/services/events/api";
-import { userService } from "@/services/users/api";
 import { subIndicatorService } from "@/services/sub-indicators/api";
 import useSWR from "swr";
 import { useEffect } from "react";
@@ -33,22 +32,16 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
     `event/${id}`,
     async () => {
       try {
-        const [eventResponse, usersResponse, subIndicatorsResponse] =
-          await Promise.all([
-            eventService.fetchById(id, userId),
-            userService.fetchAll(),
-            subIndicatorService.fetchAll(),
-          ]);
+        const [eventResponse, subIndicatorsResponse] = await Promise.all([
+          eventService.fetchById(id, userId),
+          subIndicatorService.fetchAll(),
+        ]);
 
         // Extract data from responses
         const event =
           eventResponse && "data" in eventResponse
             ? eventResponse.data
             : eventResponse;
-        const users =
-          usersResponse && "data" in usersResponse
-            ? usersResponse.data.users
-            : usersResponse.users;
         const subIndicators =
           subIndicatorsResponse && "data" in subIndicatorsResponse
             ? subIndicatorsResponse.data.subIndicators
@@ -57,7 +50,6 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
         // Set all data in store
         useEventsStore.setState({
           currentEvent: event,
-          reporters: users,
           subIndicators,
           formData: {
             event: {

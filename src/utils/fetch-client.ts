@@ -9,6 +9,7 @@ if (isServer) {
   derivedAuthUrl = process.env.AUTH_URL || "";
 } else {
   derivedBaseUrl = "/backend";
+  // derivedBaseUrl = "http://localhost:3035";
   derivedAuthUrl = window.location.origin;
 }
 

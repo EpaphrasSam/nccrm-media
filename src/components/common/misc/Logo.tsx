@@ -16,8 +16,8 @@ export function Logo({
       <Image
         src="/images/logo.png"
         alt="News Reporter Logo"
-        width={25}
-        height={25}
+        width={40}
+        height={40}
         className="object-contain"
       />
       <span
@@ -25,7 +25,7 @@ export function Logo({
           hideText ? "hidden" : hideTextOnMobile ? "md:block hidden" : "block"
         }`}
       >
-        News Reporter
+        NCCRM-Media
       </span>
     </div>
   );
