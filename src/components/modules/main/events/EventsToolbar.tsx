@@ -16,8 +16,8 @@ import { buttonStyles } from "@/lib/styles";
 import { AdminToolbar } from "../../admin/layout/AdminToolbar";
 import { PiMicrosoftExcelLogoThin } from "react-icons/pi";
 import useSWR from "swr";
-import type { SubIndicator } from "@/services/sub-indicators/types";
 import { ExportPreviewModal } from "./ExportPreviewModal";
+import { ThematicArea } from "@/services/thematic-areas/types";
 
 interface FilterState {
   thematic_area: string;
@@ -33,9 +33,9 @@ export function EventsToolbar() {
 
   // Get filter options from SWR cache
   const { data: filterOptions } = useSWR<{
-    subIndicators: SubIndicator[];
+    thematicAreas: ThematicArea[];
   }>("filterOptions");
-  const subIndicators = filterOptions?.subIndicators || [];
+  const thematicAreas = filterOptions?.thematicAreas || [];
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -105,8 +105,8 @@ export function EventsToolbar() {
               >
                 <>
                   <SelectItem key="all">All Thematic Areas</SelectItem>
-                  {subIndicators.map((indicator) => (
-                    <SelectItem key={indicator.id}>{indicator.name}</SelectItem>
+                  {thematicAreas.map((area) => (
+                    <SelectItem key={area.id}>{area.name}</SelectItem>
                   ))}
                 </>
               </Select>

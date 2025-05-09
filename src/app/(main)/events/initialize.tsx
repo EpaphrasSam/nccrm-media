@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import useSWR from "swr";
 import { useEventsStore } from "@/store/events";
 import { eventService } from "@/services/events/api";
-import { subIndicatorService } from "@/services/sub-indicators/api";
 import type { EventQueryParams } from "@/services/events/types";
 import { urlSync } from "@/utils/url-sync";
 import { storeSync } from "@/lib/store-sync";
+import { thematicAreaService } from "@/services/thematic-areas/api";
 
 interface InitializeEventsProps {
   initialFilters: Partial<EventQueryParams>;
@@ -48,15 +48,15 @@ export function InitializeEvents({ initialFilters }: InitializeEventsProps) {
     "filterOptions",
     async () => {
       try {
-        const subIndicatorsResponse = await subIndicatorService.fetchAll(
+        const thematicAreasResponse = await thematicAreaService.fetchAll(
           undefined
         );
 
         return {
-          subIndicators:
-            "data" in subIndicatorsResponse
-              ? subIndicatorsResponse.data.subIndicators
-              : subIndicatorsResponse.subIndicators,
+          thematicAreas:
+            "data" in thematicAreasResponse
+              ? thematicAreasResponse.data.thematicAreas
+              : thematicAreasResponse.thematicAreas,
         };
       } finally {
         if (isFilterOptionsLoading) {

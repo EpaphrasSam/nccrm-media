@@ -40,7 +40,7 @@ export default async function SituationalReportingPage({
       </Suspense>
       <AdminPageLayout
         header={
-          <div className="flex lg:flex-row flex-col justify-between items-center gap-4">
+          <div className="flex lg:flex-row flex-col justify-between min-lg:items-center gap-4">
             <AdminPageHeader
               title="Situational Reporting"
               description="Organize situational reporting within the system. Add, edit, or remove situational reportings."

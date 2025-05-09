@@ -128,10 +128,26 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
+    watch,
+    setValue,
   } = useForm<RoleFormValues>({
     resolver: zodResolver(roleSchema),
     defaultValues: getDefaultValues(),
   });
+
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name && name.startsWith("functions.situational_analysis")) {
+        const analysis = value.functions?.situational_analysis || {};
+        const anyAnalysisSelected = Object.values(analysis).some(Boolean);
+        if (anyAnalysisSelected) {
+          setValue("functions.situational_report.view", true);
+        }
+        // Do nothing if none are selected (never set to false)
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
 
   // Handle loading states
   useEffect(() => {

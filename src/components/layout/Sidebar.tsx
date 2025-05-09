@@ -69,7 +69,24 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
       .filter(Boolean) as (Route | RouteGroup)[]; // filter(Boolean) now correctly removes only nulls
   }, [permissionsLoading, isAuthenticated, hasPermission]);
 
-  const renderRoute = (route: Route) => {
+  const SkeletonIcon = () => <Skeleton className="h-5 w-5 rounded-md" />;
+  const skeletonMainRoutes = Array.from({ length: 5 }).map((_, i) => ({
+    path: `/skeleton-main-${i}`,
+    icon: SkeletonIcon,
+    label: "skeleton",
+  }));
+  const skeletonAdminRoutes = Array.from({ length: 5 }).map((_, i) => ({
+    path: `/skeleton-admin-${i}`,
+    icon: SkeletonIcon,
+    label: "skeleton",
+  }));
+  const skeletonBottomRoutes = Array.from({ length: 2 }).map((_, i) => ({
+    path: `/skeleton-bottom-${i}`,
+    icon: SkeletonIcon,
+    label: "skeleton",
+  }));
+  const SkeletonLabel = <Skeleton className="h-4 w-20 rounded-md" />;
+  const renderRouteWithSkeleton = (route: Route) => {
     if (route.action) {
       return (
         <button
@@ -82,13 +99,12 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
         >
           <route.icon />
           <span className={isDrawer ? "block" : "md:hidden lg:block"}>
-            {route.label}
+            {route.label === "skeleton" ? SkeletonLabel : route.label}
           </span>
           {isLoggingOut && <Spinner size="sm" color="danger" />}
         </button>
       );
     }
-
     return (
       <Link
         key={route.path}
@@ -101,7 +117,7 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
       >
         <route.icon />
         <span className={isDrawer ? "block" : "md:hidden lg:block"}>
-          {route.label}
+          {route.label === "skeleton" ? SkeletonLabel : route.label}
         </span>
       </Link>
     );
@@ -122,37 +138,30 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
         } ${className}`}
       >
         <div className="flex flex-col h-full px-4 py-6 space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={`skel-main-${i}`}
-              className="flex items-center gap-4 px-6 py-3.5"
-            >
-              <Skeleton className="h-5 w-5 rounded-md" />
-              <Skeleton className="h-4 w-32 rounded-md" />
+          {/* Main skeleton routes */}
+          <nav className="pt-6 space-y-2">
+            {skeletonMainRoutes.map(renderRouteWithSkeleton)}
+          </nav>
+          {/* Admin skeleton section */}
+          <div className="mt-8 flex-1 min-h-0">
+            <div className="h-full overflow-y-auto custom-scrollbar">
+              <div className="space-y-4">
+                <div
+                  className={`sticky top-0 bg-white px-6 text-sm-plus font-extrabold text-brand-gray border-b pb-2 ${
+                    isDrawer ? "block" : "md:hidden lg:block"
+                  }`}
+                >
+                  <Skeleton className="h-5 w-20" />
+                </div>
+                <div className="space-y-2">
+                  {skeletonAdminRoutes.map(renderRouteWithSkeleton)}
+                </div>
+              </div>
             </div>
-          ))}
-          <div className="mt-8 flex-1 min-h-0 space-y-4">
-            <Skeleton className="h-5 w-20 px-6 mb-2" />
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={`skel-admin-${i}`}
-                className="flex items-center gap-4 px-6 py-3.5"
-              >
-                <Skeleton className="h-5 w-5 rounded-md" />
-                <Skeleton className="h-4 w-32 rounded-md" />
-              </div>
-            ))}
           </div>
-          <div className="mt-auto space-y-2">
-            {[...Array(2)].map((_, i) => (
-              <div
-                key={`skel-bottom-${i}`}
-                className="flex items-center gap-4 px-6 py-3.5"
-              >
-                <Skeleton className="h-5 w-5 rounded-md" />
-                <Skeleton className="h-4 w-32 rounded-md" />
-              </div>
-            ))}
+          {/* Bottom skeleton routes */}
+          <div className="py-6 mt-auto space-y-2">
+            {skeletonBottomRoutes.map(renderRouteWithSkeleton)}
           </div>
         </div>
       </div>
@@ -171,7 +180,9 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
     >
       <div className="flex flex-col h-full px-4">
         {/* Main Routes */}
-        <nav className="pt-6 space-y-2">{mainRoutes.map(renderRoute)}</nav>
+        <nav className="pt-6 space-y-2">
+          {mainRoutes.map(renderRouteWithSkeleton)}
+        </nav>
 
         {/* Admin Section - Scrollable */}
         {adminGroup && (
@@ -186,7 +197,7 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
                   {adminGroup.label}
                 </div>
                 <div className="space-y-2">
-                  {adminGroup.routes.map(renderRoute)}
+                  {adminGroup.routes.map(renderRouteWithSkeleton)}
                 </div>
               </div>
             </div>
@@ -195,7 +206,7 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
 
         {/* Bottom Routes */}
         <div className="py-6 mt-auto space-y-2">
-          {bottomRoutes.map(renderRoute)}
+          {bottomRoutes.map(renderRouteWithSkeleton)}
         </div>
       </div>
     </div>
