@@ -1,10 +1,9 @@
 "use server";
 
-import { auth } from "@/utils/auth";
 import { BASE_URL } from "@/utils/fetch-client";
+import { Session } from "next-auth";
 
-export async function serverFetchUser() {
-  const session = await auth();
+export async function serverFetchUser(session: Session) {
   const res = await fetch(`${BASE_URL}/get-user/${session?.user?.id}`, {
     method: "GET",
     headers: { Authorization: session?.user?.token || "" },

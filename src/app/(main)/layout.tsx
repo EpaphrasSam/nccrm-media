@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { SessionProvider } from "@/context/SessionProvider";
 import { serverFetchUser } from "@/services/users/actions";
 import { auth } from "@/utils/auth";
+import { Session } from "next-auth";
 
 export default async function MainLayout({
   children,
@@ -10,7 +11,7 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const user = await serverFetchUser();
+  const user = await serverFetchUser(session as Session);
 
   return (
     <SessionProvider session={session} user={user}>

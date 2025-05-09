@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useForm, Controller } from "react-hook-form";
@@ -6,7 +7,7 @@ import { z } from "zod";
 import { Input, Button, Skeleton, Textarea, Checkbox } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useRolesStore } from "@/store/roles";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import type {
   BaseFunctions,
@@ -135,16 +136,68 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     defaultValues: getDefaultValues(),
   });
 
+  const analysisPerms = useMemo(
+    () => ["view", "add", "edit", "delete", "approve"] as const,
+    []
+  );
+  type AnalysisPerm = (typeof analysisPerms)[number];
+  type AnalysisField = `functions.situational_analysis.${AnalysisPerm}`;
+
+  const skipAnalysisEffect = useRef(false);
+
   useEffect(() => {
     const subscription = watch((value, { name }) => {
-      if (name && name.startsWith("functions.situational_analysis")) {
-        const analysis = value.functions?.situational_analysis || {};
-        const anyAnalysisSelected = Object.values(analysis).some(Boolean);
-        if (anyAnalysisSelected) {
-          setValue("functions.situational_report.view", true);
-        }
-        // Do nothing if none are selected (never set to false)
+      const analysis = value.functions?.situational_analysis || {};
+      const report = value.functions?.situational_report || {};
+
+      // If situational_report.view is unchecked, deselect all situational_analysis permissions (including view)
+      if (name === "functions.situational_report.view" && !report.view) {
+        skipAnalysisEffect.current = true;
+        analysisPerms.forEach((perm) => {
+          setValue(
+            `functions.situational_analysis.${perm}` as AnalysisField,
+            false
+          );
+        });
+        // After a tick, allow analysis effect again
+        setTimeout(() => {
+          skipAnalysisEffect.current = false;
+        }, 0);
+        return;
       }
+
+      // If any situational_analysis permission is checked, set situational_report.view to true
+      if (
+        name &&
+        name.startsWith("functions.situational_analysis") &&
+        Object.values(analysis).some(Boolean) &&
+        !report.view &&
+        !skipAnalysisEffect.current
+      ) {
+        setValue("functions.situational_report.view", true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue, analysisPerms]);
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      const modules = Object.keys(value.functions || {});
+      const perms = ["add", "edit", "delete", "approve"] as const;
+      type ModulePerms = { [key: string]: boolean };
+      const functionsObj = value.functions as Record<string, ModulePerms>;
+      modules.forEach((mod) => {
+        const modPerms = functionsObj[mod] || {};
+        perms.forEach((perm) => {
+          if (
+            Object.prototype.hasOwnProperty.call(modPerms, perm) &&
+            modPerms[perm] &&
+            !modPerms.view
+          ) {
+            setValue(`functions.${mod}.view` as any, true);
+          }
+        });
+      });
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue]);
