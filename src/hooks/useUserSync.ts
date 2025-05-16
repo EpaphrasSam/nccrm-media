@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { fetchClient } from "@/utils/fetch-client";
 import type { AuthResponse } from "@/services/auth/types";
 import isEqual from "fast-deep-equal";
+import { addToast } from "@heroui/toast";
 
 function pickRelevantUserFields(user: AuthResponse | null | undefined) {
   if (!user) return null;
@@ -51,6 +52,11 @@ export function useUserSync(pollInterval = 0) {
       } catch (err: any) {
         // If backend returns 408, log out
         if (err?.response?.status === 408) {
+          addToast({
+            title: "Session expired",
+            description: "Please log in again.",
+            color: "danger",
+          });
           signOut();
         }
         throw err;
@@ -67,6 +73,11 @@ export function useUserSync(pollInterval = 0) {
 
     // If user is deactivated, sign out immediately
     if (pickedUser && pickedUser.status === "deactivated") {
+      addToast({
+        title: "Account deactivated",
+        description: "Please contact support.",
+        color: "danger",
+      });
       signOut();
       return;
     }
