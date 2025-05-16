@@ -12,7 +12,6 @@ import {
   Skeleton,
   Badge,
   Checkbox,
-  addToast,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { GENDERS } from "@/lib/constants";
@@ -22,6 +21,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { generateUsername, generatePassword } from "@/helpers/userHelpers";
 import { useSession } from "next-auth/react";
 import { userService } from "@/services/users/api";
+import { useUserSync } from "@/hooks/useUserSync";
 
 // Section schemas
 const profileSchema = z.object({
@@ -82,6 +82,8 @@ export default function SettingsPage() {
     },
   });
 
+  const { mutate } = useUserSync();
+
   // Reset forms when session changes
   useEffect(() => {
     if (status !== "loading" && session?.user) {
@@ -140,19 +142,14 @@ export default function SettingsPage() {
         Object.assign(updateData, { image: file });
       }
 
-      await userService.update(session.user.id, updateData);
-      addToast({
-        title: "Success",
-        description: "Profile updated successfully",
-        color: "success",
-      });
+      const result = await userService.update(session.user.id, updateData);
+      if (
+        ("error" in result && !result.error) ||
+        (!("error" in result) && result)
+      )
+        mutate();
     } catch (error) {
       console.error("Failed to update profile:", error);
-      addToast({
-        title: "Error",
-        description: "Failed to update profile",
-        color: "danger",
-      });
     }
   };
 
@@ -160,19 +157,14 @@ export default function SettingsPage() {
     if (!session?.user?.id) return;
 
     try {
-      await userService.update(session.user.id, data);
-      addToast({
-        title: "Success",
-        description: "Personal information updated successfully",
-        color: "success",
-      });
+      const result = await userService.update(session.user.id, data);
+      if (
+        ("error" in result && !result.error) ||
+        (!("error" in result) && result)
+      )
+        mutate();
     } catch (error) {
       console.error("Failed to update personal info:", error);
-      addToast({
-        title: "Error",
-        description: "Failed to update personal information",
-        color: "danger",
-      });
     }
   };
 
@@ -180,19 +172,14 @@ export default function SettingsPage() {
     if (!session?.user?.id) return;
 
     try {
-      await userService.update(session.user.id, data);
-      addToast({
-        title: "Success",
-        description: "Account information updated successfully",
-        color: "success",
-      });
+      const result = await userService.update(session.user.id, data);
+      if (
+        ("error" in result && !result.error) ||
+        (!("error" in result) && result)
+      )
+        mutate();
     } catch (error) {
       console.error("Failed to update account info:", error);
-      addToast({
-        title: "Error",
-        description: "Failed to update account information",
-        color: "danger",
-      });
     }
   };
 

@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "NCCRM Media",
-  description: "NCCRM Media",
+  title: "NCCRM DataHub",
+  description: "DataHub for NCCRM",
 };
 
 export default function RootLayout({

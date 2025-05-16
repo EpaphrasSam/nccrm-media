@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -8,11 +9,6 @@ import {
   ModalBody,
   ModalFooter,
   Button,
-  CheckboxGroup,
-  Checkbox,
-  Select,
-  SelectItem,
-  DateRangePicker,
   Spinner,
   addToast,
   Table,
@@ -21,18 +17,21 @@ import {
   TableColumn,
   TableRow,
   TableCell,
-  ScrollShadow,
-  Tabs,
-  Tab,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  Select,
+  SelectItem,
+  DateRangePicker,
 } from "@heroui/react";
-import { RangeValue } from "@react-types/shared";
-import { DateValue } from "@react-types/datepicker";
 import useSWR from "swr";
 import { eventService } from "@/services/events/api";
 import type { Event as EventType } from "@/services/events/types";
 import { buttonStyles, tableStyles } from "@/lib/styles";
-import { parseDate } from "@internationalized/date";
-import { FiX } from "react-icons/fi";
+import { Pagination } from "@/components/common/navigation/Pagination";
+import { FiFilter, FiX } from "react-icons/fi";
+import type { RangeValue } from "@heroui/react";
+import { DateValue, parseDate } from "@internationalized/date";
 
 interface ExportPreviewModalProps {
   isOpen: boolean;
@@ -89,10 +88,30 @@ const ALL_COLUMNS = [
   { key: "updated_at", label: "Updated At" },
 ];
 
-// Helper to get nested property value
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getNestedValue = (obj: any, path: string): any => {
   return path.split(".").reduce((acc, part) => acc && acc[part], obj);
+};
+
+type FilterState = {
+  [key: string]: string[] | (RangeValue<DateValue> | null);
+  "reporter.name": string[];
+  event_date: RangeValue<DateValue> | null;
+  "sub_indicator.main_indicator.thematic_area.name": string[];
+  "sub_indicator.main_indicator.name": string[];
+  "sub_indicator.name": string[];
+  region: string[];
+  status: string[];
+};
+
+const initialFilters: FilterState = {
+  "reporter.name": [],
+  event_date: null,
+  "sub_indicator.main_indicator.thematic_area.name": [],
+  "sub_indicator.main_indicator.name": [],
+  "sub_indicator.name": [],
+  region: [],
+  status: [],
 };
 
 export function ExportPreviewModal({
@@ -100,16 +119,7 @@ export function ExportPreviewModal({
   onClose,
 }: ExportPreviewModalProps) {
   const [isExporting, setIsExporting] = useState(false);
-  const [selectedColumns, setSelectedColumns] = useState<string[]>(
-    ALL_COLUMNS.slice(0, 5).map((col) => col.key) // Default to first 5 columns
-  );
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateRangeFilter, setDateRangeFilter] =
-    useState<RangeValue<DateValue> | null>(null);
-  const [activeTab, setActiveTab] = useState<"sidebar" | "table">("table");
-
-  // Derived value for select all
-  const selectAll = selectedColumns.length === ALL_COLUMNS.length;
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
 
   // Fetch ALL events when modal is open
   const {
@@ -142,44 +152,6 @@ export function ExportPreviewModal({
     }
   }, [fetchError]);
 
-  // Memoize filtered data
-  const filteredEvents = useMemo(() => {
-    if (!allEventsData) return [];
-
-    return allEventsData.filter((event) => {
-      // Status Filter
-      if (statusFilter !== "all" && event.status !== statusFilter) {
-        return false;
-      }
-
-      // Date Range Filter (using report_date for this example)
-      if (dateRangeFilter?.start && dateRangeFilter?.end) {
-        try {
-          const eventDate = parseDate(event.report_date.split("T")[0]);
-          if (
-            eventDate.compare(dateRangeFilter.start) < 0 ||
-            eventDate.compare(dateRangeFilter.end) > 0
-          ) {
-            return false;
-          }
-        } catch (e) {
-          console.warn(
-            "Invalid date format for filtering:",
-            event.report_date,
-            e
-          );
-          return true; // Or false if invalid dates should be excluded
-        }
-      }
-      return true;
-    });
-  }, [allEventsData, statusFilter, dateRangeFilter]);
-
-  // Memoize the columns to render based on selection
-  const columnsToRender = useMemo(() => {
-    return ALL_COLUMNS.filter((col) => selectedColumns.includes(col.key));
-  }, [selectedColumns]);
-
   // Format cell content (memoized for performance)
   const renderCell = useCallback((item: EventType, columnKey: React.Key) => {
     const key = columnKey as string;
@@ -205,16 +177,63 @@ export function ExportPreviewModal({
     return <span className="text-xs">{String(value)}</span>;
   }, []);
 
+  // Memoize the columns to render based on selection
+  const PREVIEW_COLUMNS = [
+    { key: "reporter.name", label: "Reporter" },
+    { key: "event_date", label: "Event Date" },
+    {
+      key: "sub_indicator.main_indicator.thematic_area.name",
+      label: "Thematic Area",
+    },
+    { key: "sub_indicator.main_indicator.name", label: "Main Indicator" },
+    { key: "sub_indicator.name", label: "Sub Indicator" },
+    { key: "region", label: "Region" },
+    { key: "status", label: "Status" },
+  ];
+
+  // Add frontend pagination for the preview table
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const filteredEvents = useMemo(() => {
+    if (!allEventsData) return [];
+    return allEventsData.filter((item) => {
+      for (const col of PREVIEW_COLUMNS) {
+        const key = col.key;
+        if (key === "event_date") {
+          const range = filters.event_date as RangeValue<DateValue> | null;
+          const value = getNestedValue(item, "event_date");
+          // Only use the date part for parseDate
+          const dateString = value ? String(value).split("T")[0] : null;
+          if (range !== null && range.start && dateString) {
+            const date = parseDate(dateString);
+            if (date && date.compare(range.start) < 0) return false;
+          }
+          if (range !== null && range.end && dateString) {
+            const date = parseDate(dateString);
+            if (date && date.compare(range.end) > 0) return false;
+          }
+        } else {
+          const selected = filters[key] as string[];
+          if (selected && selected.length > 0) {
+            const value = getNestedValue(item, key);
+            if (!selected.includes(String(value))) return false;
+          }
+        }
+      }
+      return true;
+    });
+  }, [allEventsData, filters]);
+
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredEvents.slice(start, start + pageSize);
+  }, [filteredEvents, currentPage]);
+
   const handleExport = () => {
-    if (
-      !filteredEvents ||
-      filteredEvents.length === 0 ||
-      selectedColumns.length === 0
-    ) {
+    if (!filteredEvents || filteredEvents.length === 0) {
       addToast({
         title: "Nothing to Export",
-        description:
-          "No data matches the current filters or no columns selected.",
+        description: "No data to export.",
         color: "warning",
       });
       return;
@@ -222,14 +241,10 @@ export function ExportPreviewModal({
     setIsExporting(true);
 
     try {
-      // Get selected column labels and keys in order
-      const columnsToExport = ALL_COLUMNS.filter((col) =>
-        selectedColumns.includes(col.key)
-      );
-      const headers = columnsToExport.map((col) => col.label);
-      const keys = columnsToExport.map((col) => col.key);
+      // Always export all columns and all filtered data
+      const headers = ALL_COLUMNS.map((col) => col.label);
+      const keys = ALL_COLUMNS.map((col) => col.key);
 
-      // Format data for CSV based on selection
       const csvData = filteredEvents.map((event: EventType) => {
         const row: Record<
           string,
@@ -237,22 +252,20 @@ export function ExportPreviewModal({
         > = {};
         keys.forEach((key) => {
           let value = getNestedValue(event, key);
-          // Special handling for dates and arrays
           if (key.endsWith("_date") || key.endsWith("_at")) {
             value = value ? new Date(value).toLocaleString() : "";
           } else if (key === "follow_ups") {
             value = (value || []).join("; ");
           }
-          row[key] = value; // Use key temporarily, will map to header later
+          row[key] = value;
         });
         return row;
       });
 
-      // Convert to CSV string
       const csvRows = [
-        headers.map((header) => `"${header}"`).join(","), // Quoted headers
+        headers.map((header) => `"${header}"`).join(","),
         ...csvData.map((row) =>
-          keys // Use the ordered keys to extract values
+          keys
             .map((key) => {
               const value = row[key];
               const escapedValue = value?.toString().replace(/"/g, '""') || "";
@@ -265,7 +278,6 @@ export function ExportPreviewModal({
       const BOM = "\uFEFF";
       const csvString = BOM + csvRows.join("\n");
 
-      // Download file
       const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -293,13 +305,72 @@ export function ExportPreviewModal({
     }
   };
 
-  // Handle select all columns
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedColumns(ALL_COLUMNS.map((col) => col.key));
-    } else {
-      setSelectedColumns([]);
+  // Compute unique values for each column
+  const uniqueValues = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    if (!allEventsData) return result;
+    PREVIEW_COLUMNS.forEach((col) => {
+      if (col.key === "event_date") return;
+      const values = Array.from(
+        new Set(
+          allEventsData.map((item) => {
+            const v = getNestedValue(item, col.key);
+            return v == null ? "" : String(v);
+          })
+        )
+      ).filter((v) => v !== "");
+      result[col.key] = values;
+    });
+    return result;
+  }, [allEventsData]);
+
+  // Handle filter change
+  const handleFilterChange = (key: string, values: string[]) => {
+    setFilters((prev) => ({ ...prev, [key]: values }));
+    setCurrentPage(1);
+  };
+
+  const handleDateFilterChange = (range: RangeValue<DateValue> | null) => {
+    setFilters((prev) => ({ ...prev, event_date: range }));
+    setCurrentPage(1);
+  };
+
+  // Helper to get filter label from key
+  const getFilterLabel = (key: string) => {
+    const col = PREVIEW_COLUMNS.find((c) => c.key === key);
+    return col ? col.label : key;
+  };
+
+  // Helper to get display value for a filter
+  const getFilterDisplay = (key: string, value: unknown) => {
+    if (
+      key === "event_date" &&
+      value &&
+      typeof value === "object" &&
+      value !== null
+    ) {
+      const v = value as { start?: DateValue; end?: DateValue };
+      const start = v.start ? v.start.toString() : "";
+      const end = v.end ? v.end.toString() : "";
+      return start && end ? `${start} - ${end}` : start || end;
     }
+    if (Array.isArray(value)) return value.join(", ");
+    return value as string;
+  };
+
+  // Clear a single filter
+  const handleClearFilter = (key: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: key === "event_date" ? null : [],
+    }));
+    setCurrentPage(1);
+  };
+
+  // Clear all filters
+  const handleClearAllFilters = () => {
+    setFilters(initialFilters);
+    setCurrentPage(1);
   };
 
   return (
@@ -315,190 +386,151 @@ export function ExportPreviewModal({
             Export Preview
           </h1>
           <p className="text-sm-plus font-extrabold leading-117 text-brand-gray">
-            Select columns and filters, then export your data.
+            Preview the first 7 columns. Export will include all columns.
           </p>
         </ModalHeader>
-        <ModalBody className="flex flex-col md:flex-row gap-4 md:gap-6 p-2 md:p-6">
-          {/* Tabs for mobile */}
-          <div className="block md:hidden sticky top-0 z-20 bg-white border-b border-brand-gray-light">
-            <Tabs
-              selectedKey={activeTab}
-              variant="underlined"
-              onSelectionChange={(key) =>
-                setActiveTab(key as "sidebar" | "table")
-              }
-            >
-              <Tab key="sidebar" title="Filters & Columns" />
-              <Tab key="table" title="Table" />
-            </Tabs>
-          </div>
-          {/* Sidebar: filters + columns */}
-          <div
-            className={
-              `w-full md:w-1/4 min-w-[0] md:min-w-[300px] md:max-w-[400px] flex flex-col gap-6 md:border-r h-max md:pr-6 mb-4 md:mb-0 bg-white rounded-xl shadow-sm p-4 md:p-6 ` +
-              (activeTab === "sidebar" ? "block" : "hidden") +
-              " md:block"
-            }
-          >
-            <h3 className="text-md-plus font-extrabold leading-117 text-brand-black mb-2">
-              Filters & Columns
-            </h3>
-            {/* Filters */}
-            <div className="space-y-3">
-              <h4 className="text-sm-plus font-extrabold leading-117 text-brand-black mb-1">
-                Filter Data
-              </h4>
-              <Select
-                label="Status"
-                placeholder="Filter by status"
-                variant="bordered"
-                selectedKeys={[statusFilter]}
-                size="sm"
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0]?.toString() || "all";
-                  setStatusFilter(value);
-                }}
-              >
-                <SelectItem key="all">All Statuses</SelectItem>
-                <SelectItem key="pending">Pending</SelectItem>
-                <SelectItem key="approved">Approved</SelectItem>
-                <SelectItem key="rejected">Rejected</SelectItem>
-              </Select>
-              <DateRangePicker
-                label="Report Date Range"
-                variant="bordered"
-                size="sm"
-                value={dateRangeFilter}
-                onChange={setDateRangeFilter}
-                className="flex-grow"
-                showMonthAndYearPickers
-                endContent={
-                  dateRangeFilter ? (
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => setDateRangeFilter(null)}
-                      aria-label="Clear date range"
-                      isDisabled={!dateRangeFilter}
-                      startContent={<FiX size={16} color="gray" />}
-                    />
-                  ) : null
-                }
-              />
-            </div>
-            {/* Columns */}
-            <div className="flex-grow flex flex-col gap-2 mt-6">
-              <h4 className="text-sm-plus font-extrabold leading-117 text-brand-black mb-1">
-                Select Columns
-              </h4>
-              <div className="border border-brand-gray-light rounded-lg bg-white p-3">
-                <div className="mb-2">
-                  <Checkbox
-                    isSelected={selectAll}
-                    onValueChange={handleSelectAll}
-                    size="sm"
-                    className="font-medium text-brand-black"
-                  >
-                    Select All
-                  </Checkbox>
-                </div>
-                <ScrollShadow hideScrollBar className="custom-scrollbar">
-                  <CheckboxGroup
-                    value={selectedColumns}
-                    onValueChange={setSelectedColumns}
-                    className="space-y-2"
-                  >
-                    {ALL_COLUMNS.map((col) => (
-                      <Checkbox
-                        key={col.key}
-                        value={col.key}
-                        size="sm"
-                        className="font-medium text-brand-black"
-                      >
-                        {col.label}
-                      </Checkbox>
-                    ))}
-                  </CheckboxGroup>
-                </ScrollShadow>
-              </div>
-            </div>
-            {/* Summary */}
-            <div className="mt-auto p-3 border border-brand-gray-light rounded-lg bg-white text-sm-plus">
-              <h4 className="font-extrabold text-brand-black mb-1">
-                Preview Summary
-              </h4>
-              <p className="text-brand-black">
-                Total fetched: {allEventsData?.length ?? 0}
-              </p>
-              <p className="text-brand-black">
-                Showing: {filteredEvents.length}
-              </p>
-              <p className="text-brand-black">
-                Columns: {selectedColumns.length}
-              </p>
-            </div>
-          </div>
-          {/* Table */}
-          <div
-            className={
-              `flex-grow flex flex-col overflow-hidden w-full ` +
-              (activeTab === "table" ? "block" : "hidden") +
-              " md:block"
-            }
-          >
+        <ModalBody className="flex flex-col gap-4 p-2 md:p-6">
+          <div className="flex-grow flex flex-col overflow-hidden w-full">
             <div className="px-2 md:px-4 md:sticky md:top-0 md:z-10 md:bg-white md:shadow-sm md:rounded-xl">
-              <>
-                {isLoadingAllEvents && !allEventsData ? (
-                  <div className="flex-grow flex justify-center items-center">
-                    <Spinner label="Loading all events..." />
-                  </div>
-                ) : fetchError ? (
-                  <div className="flex-grow flex justify-center items-center text-danger p-4">
-                    Failed to load event data. Please try again later.
-                  </div>
-                ) : (
-                  <div className="md:max-h-[70vh] md:overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm p-2 md:p-4">
-                    <Table
-                      aria-label="Event export preview table"
-                      classNames={tableStyles}
-                      isHeaderSticky
-                      removeWrapper
-                    >
-                      <TableHeader columns={columnsToRender}>
-                        {(column) => (
-                          <TableColumn
-                            key={column.key}
-                            className="text-xs-plus font-extrabold text-brand-black md:sticky md:top-0 md:bg-white z-20"
-                          >
-                            {column.label}
-                          </TableColumn>
-                        )}
-                      </TableHeader>
-                      <TableBody
-                        items={filteredEvents}
-                        emptyContent={
-                          isLoadingAllEvents
-                            ? " "
-                            : "No events match the current filters."
-                        }
-                        isLoading={isLoadingAllEvents}
-                        loadingContent={<Spinner label="Applying filters..." />}
+              {/* Active Filters Chips */}
+              {Object.entries(filters).some(
+                ([key, value]) =>
+                  (Array.isArray(value) && value.length > 0) ||
+                  (key === "event_date" && value)
+              ) && (
+                <div className="flex flex-wrap gap-2 mb-4 items-center">
+                  {Object.entries(filters).map(([key, value]) => {
+                    if (
+                      (Array.isArray(value) && value.length === 0) ||
+                      (key === "event_date" && !value)
+                    )
+                      return null;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center bg-brand-gray-light text-brand-black rounded-full px-3 py-1 text-xs font-semibold gap-2"
                       >
-                        {(item) => (
-                          <TableRow key={item.id}>
-                            {(columnKey) => (
-                              <TableCell className="align-top text-xs-plus text-brand-black px-2 py-1">
-                                {renderCell(item, columnKey)}
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </>
+                        <span>
+                          {getFilterLabel(key)}: {getFilterDisplay(key, value)}
+                        </span>
+                        <button
+                          className="ml-1 text-gray-500 hover:text-red-500 focus:outline-none"
+                          onClick={() => handleClearFilter(key)}
+                          aria-label={`Clear ${getFilterLabel(key)}`}
+                        >
+                          <FiX className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  <button
+                    className="ml-2 px-2 py-1 rounded bg-brand-red-dark text-white text-xs font-bold hover:bg-brand-red"
+                    onClick={handleClearAllFilters}
+                  >
+                    Clear All
+                  </button>
+                </div>
+              )}
+              {isLoadingAllEvents && !allEventsData ? (
+                <div className="flex-grow flex justify-center items-center">
+                  <Spinner label="Loading all events..." />
+                </div>
+              ) : fetchError ? (
+                <div className="flex-grow flex justify-center items-center text-danger p-4">
+                  Failed to load event data. Please try again later.
+                </div>
+              ) : (
+                <div className="md:max-h-[70vh] md:overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm p-2 md:p-4">
+                  <Table
+                    aria-label="Event export preview table"
+                    classNames={tableStyles}
+                    isHeaderSticky
+                    removeWrapper
+                  >
+                    <TableHeader columns={PREVIEW_COLUMNS}>
+                      {(column) => (
+                        <TableColumn
+                          key={column.key}
+                          className="text-xs-plus font-extrabold text-brand-black md:sticky md:top-0 md:bg-white z-20"
+                        >
+                          <div className="flex items-center gap-1">
+                            {column.label}
+                            <Popover placement="bottom-start">
+                              <PopoverTrigger>
+                                <Button
+                                  isIconOnly
+                                  variant="light"
+                                  size="sm"
+                                  className="p-0"
+                                >
+                                  <FiFilter className="w-3 h-3" color="gray" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-4 min-w-[180px]">
+                                {column.key === "event_date" ? (
+                                  <DateRangePicker
+                                    label="Event Date Range"
+                                    value={
+                                      filters.event_date as RangeValue<DateValue>
+                                    }
+                                    onChange={handleDateFilterChange}
+                                    showMonthAndYearPickers
+                                  />
+                                ) : (
+                                  <Select
+                                    label={`Filter ${column.label}`}
+                                    placeholder={`Select ${column.label}`}
+                                    variant="bordered"
+                                    selectionMode="multiple"
+                                    selectedKeys={
+                                      filters[column.key] as string[]
+                                    }
+                                    onSelectionChange={(keys) =>
+                                      handleFilterChange(
+                                        column.key,
+                                        Array.from(keys).map((k) => String(k))
+                                      )
+                                    }
+                                    className="w-[250px]"
+                                  >
+                                    {uniqueValues[column.key]?.map((v) => (
+                                      <SelectItem key={v}>{v}</SelectItem>
+                                    ))}
+                                  </Select>
+                                )}
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </TableColumn>
+                      )}
+                    </TableHeader>
+                    <TableBody
+                      items={paginatedEvents}
+                      emptyContent={
+                        isLoadingAllEvents ? " " : "No events to preview."
+                      }
+                      isLoading={isLoadingAllEvents}
+                      loadingContent={<Spinner label="Loading..." />}
+                    >
+                      {(item) => (
+                        <TableRow key={item.id}>
+                          {(columnKey) => (
+                            <TableCell className="align-top text-xs-plus text-brand-black px-2 py-1">
+                              {renderCell(item, columnKey)}
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                  <Pagination
+                    total={Math.ceil(filteredEvents.length / pageSize)}
+                    pageSize={pageSize}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </ModalBody>
@@ -512,21 +544,18 @@ export function ExportPreviewModal({
           </Button>
           <Button
             color="primary"
-            onPress={handleExport}
+            onClick={handleExport}
             isLoading={isExporting}
             isDisabled={
               isLoadingAllEvents ||
               isExporting ||
               !!fetchError ||
               !filteredEvents ||
-              filteredEvents.length === 0 ||
-              selectedColumns.length === 0
+              filteredEvents.length === 0
             }
             className={`bg-brand-green-dark text-white ${buttonStyles}`}
           >
-            {isExporting
-              ? "Exporting..."
-              : `Export ${filteredEvents.length} Events`}
+            {isExporting ? "Exporting..." : `Export `}
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -288,70 +288,121 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         return;
       }
 
-      // Format data for CSV
-      const csvData = events.map((event) => ({
-        ID: event.id,
-        Reporter: event.reporter.name,
-        "Report Date": new Date(event.report_date).toLocaleDateString(),
-        Details: event.details || "",
-        Status: event.status,
-        "Event Date": event.event_date
-          ? new Date(event.event_date).toLocaleDateString()
-          : "",
-        Region: event.region,
-        District: event.district,
-        City: event.city,
-        Coordinates: event.coordinates,
-        "Location Details": event.location_details || "",
-        "Thematic Area": event.sub_indicator.main_indicator.thematic_area.name,
-        "Main Indicator": event.sub_indicator.main_indicator.name,
-        "Sub Indicator": event.sub_indicator.name,
-        // Perpetrator Information
-        Perpetrator: event.perpetrator || "",
-        "Perpetrator Gender": event.pep_gender || "",
-        "Perpetrator Age": event.pep_age || "",
-        "Perpetrator Occupation": event.pep_occupation || "",
-        "Perpetrator Organization": event.pep_organization || "",
-        "Perpetrator Notes": event.pep_note || "",
-        // Victim Information
-        Victim: event.victim || "",
-        "Victim Gender": event.victim_gender || "",
-        "Victim Age": event.victim_age || "",
-        "Victim Occupation": event.victim_occupation || "",
-        "Victim Organization": event.victim_organization || "",
-        "Victim Notes": event.victim_note || "",
-        // Outcome Information
-        "Death Count (Men)": event.death_count_men || "",
-        "Death Count (Women/Children)": event.death_count_women_chldren || "",
-        "Death Details": event.death_details || "",
-        "Injury Count (Men)": event.injury_count_men || "",
-        "Injury Count (Women/Children)": event.injury_count_women_chldren || "",
-        "Injury Details": event.injury_details || "",
-        "Losses Count": event.losses_count || "",
-        "Losses Details": event.losses_details || "",
-        // Context Information
-        "Information Credibility": event.info_credibility || "",
-        "Information Source": event.info_source || "",
-        "Geographic Scope": event.geo_scope || "",
-        Impact: event.impact || "",
-        "Weapons Used": event.weapons_use || "",
-        "Context Details": event.context_details || "",
-        "Follow-ups": (event.follow_ups || []).join("; "),
-        "Created At": new Date(event.created_at).toLocaleString(),
-        "Updated At": new Date(event.updated_at).toLocaleString(),
-      }));
+      // Import ALL_COLUMNS from ExportPreviewModal or define it here
+      const ALL_COLUMNS = [
+        { key: "id", label: "ID" },
+        { key: "reporter.name", label: "Reporter" },
+        { key: "report_date", label: "Report Date" },
+        { key: "details", label: "Details" },
+        { key: "status", label: "Status" },
+        { key: "event_date", label: "Event Date" },
+        { key: "region", label: "Region" },
+        { key: "district", label: "District" },
+        { key: "city", label: "City" },
+        { key: "coordinates", label: "Coordinates" },
+        { key: "location_details", label: "Location Details" },
+        {
+          key: "sub_indicator.main_indicator.thematic_area.name",
+          label: "Thematic Area",
+        },
+        { key: "sub_indicator.main_indicator.name", label: "Main Indicator" },
+        { key: "sub_indicator.name", label: "Sub Indicator" },
+        { key: "perpetrator", label: "Perpetrator" },
+        { key: "pep_gender", label: "Perpetrator Gender" },
+        { key: "pep_age", label: "Perpetrator Age" },
+        { key: "pep_occupation", label: "Perpetrator Occupation" },
+        { key: "pep_organization", label: "Perpetrator Organization" },
+        { key: "pep_note", label: "Perpetrator Notes" },
+        { key: "victim", label: "Victim" },
+        { key: "victim_gender", label: "Victim Gender" },
+        { key: "victim_age", label: "Victim Age" },
+        { key: "victim_occupation", label: "Victim Occupation" },
+        { key: "victim_organization", label: "Victim Organization" },
+        { key: "victim_note", label: "Victim Notes" },
+        { key: "death_count_men", label: "Death Count (Men)" },
+        {
+          key: "death_count_women_chldren",
+          label: "Death Count (Women/Children)",
+        },
+        { key: "death_details", label: "Death Details" },
+        { key: "injury_count_men", label: "Injury Count (Men)" },
+        {
+          key: "injury_count_women_chldren",
+          label: "Injury Count (Women/Children)",
+        },
+        { key: "injury_details", label: "Injury Details" },
+        { key: "losses_count", label: "Losses Count" },
+        { key: "losses_details", label: "Losses Details" },
+        { key: "info_credibility", label: "Information Credibility" },
+        { key: "info_source", label: "Information Source" },
+        { key: "geo_scope", label: "Geographic Scope" },
+        { key: "impact", label: "Impact" },
+        { key: "weapons_use", label: "Weapons Used" },
+        { key: "context_details", label: "Context Details" },
+        { key: "follow_ups", label: "Follow-ups" },
+        { key: "created_at", label: "Created At" },
+        { key: "updated_at", label: "Updated At" },
+      ];
+
+      // Helper to get nested property value
+      const getNestedValue = (obj: Event, path: string): unknown => {
+        return path.split(".").reduce<unknown>((acc, part) => {
+          if (acc && typeof acc === "object" && part in acc) {
+            return (acc as Record<string, unknown>)[part];
+          }
+          return undefined;
+        }, obj);
+      };
+
+      // Format data for CSV based on ALL_COLUMNS
+      const csvData = events.map((event) => {
+        const row: Record<
+          string,
+          string | number | boolean | undefined | null
+        > = {};
+        ALL_COLUMNS.forEach((col) => {
+          let value = getNestedValue(event, col.key);
+          // Special handling for dates and arrays
+          if (col.key.endsWith("_date") || col.key.endsWith("_at")) {
+            if (
+              typeof value === "string" ||
+              typeof value === "number" ||
+              value instanceof Date
+            ) {
+              value = value ? new Date(value).toLocaleString() : "";
+            } else {
+              value = "";
+            }
+          } else if (col.key === "follow_ups") {
+            if (Array.isArray(value)) {
+              value = value.join("; ");
+            } else {
+              value = "";
+            }
+          }
+          if (
+            typeof value !== "string" &&
+            typeof value !== "number" &&
+            typeof value !== "boolean" &&
+            value !== null &&
+            value !== undefined
+          ) {
+            value = "";
+          }
+          row[col.key] = value as string | number | boolean | undefined | null;
+        });
+        return row;
+      });
 
       // Convert to CSV
-      const headers = Object.keys(csvData[0]);
+      const headers = ALL_COLUMNS.map((col) => col.label);
+      const keys = ALL_COLUMNS.map((col) => col.key);
       const csvRows = [
-        // Add headers with quotes to handle commas in header names
         headers.map((header) => `"${header}"`).join(","),
-        // Add data rows
         ...csvData.map((row) =>
-          headers
-            .map((header) => {
-              const value = row[header as keyof typeof row];
-              // Escape commas and quotes in the value
+          keys
+            .map((key) => {
+              const value = row[key];
               const escapedValue = value?.toString().replace(/"/g, '""') || "";
               return `"${escapedValue}"`;
             })

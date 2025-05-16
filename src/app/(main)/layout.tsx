@@ -1,20 +1,14 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { SessionProvider } from "@/context/SessionProvider";
-import { serverFetchUser } from "@/services/users/actions";
-import { auth } from "@/utils/auth";
-import { Session } from "next-auth";
+import { UserSyncPoller } from "@/components/common/UserSyncPoller";
 
-export default async function MainLayout({
+export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  const user = await serverFetchUser(session as Session);
-
   return (
-    <SessionProvider session={session} user={user}>
+    <UserSyncPoller>
       <div className="flex flex-col h-screen">
         <Navbar />
         <div className="flex flex-1 overflow-hidden">
@@ -24,6 +18,6 @@ export default async function MainLayout({
           </main>
         </div>
       </div>
-    </SessionProvider>
+    </UserSyncPoller>
   );
 }

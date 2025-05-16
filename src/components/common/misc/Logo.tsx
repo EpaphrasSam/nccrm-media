@@ -25,7 +25,7 @@ export function Logo({
           hideText ? "hidden" : hideTextOnMobile ? "md:block hidden" : "block"
         }`}
       >
-        NCCRM-Media
+        NCCRM DataHub
       </span>
     </div>
   );
