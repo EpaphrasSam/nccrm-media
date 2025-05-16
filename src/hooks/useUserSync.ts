@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import useSWR from "swr";
 import { useEffect } from "react";
 import { fetchClient } from "@/utils/fetch-client";
@@ -37,12 +38,24 @@ function pickRelevantUserFields(user: AuthResponse | null | undefined) {
 export function useUserSync(pollInterval = 0) {
   const { data: session, update } = useSession();
 
-  const { data: user, mutate } = useSWR(
+  const {
+    data: user,
+
+    mutate,
+  } = useSWR(
     session?.user?.id ? `/get-user/${session.user.id}` : null,
-    (url) =>
-      fetchClient
-        .get(url)
-        .then((res) => (res.data as { user: AuthResponse }).user),
+    async (url) => {
+      try {
+        const res = await fetchClient.get(url);
+        return (res.data as { user: AuthResponse }).user;
+      } catch (err: any) {
+        // If backend returns 408, log out
+        if (err?.response?.status === 408) {
+          signOut();
+        }
+        throw err;
+      }
+    },
     { refreshInterval: pollInterval }
   );
 
@@ -51,6 +64,13 @@ export function useUserSync(pollInterval = 0) {
     const pickedSessionUser = pickRelevantUserFields(
       session?.user as AuthResponse
     );
+
+    // If user is deactivated, sign out immediately
+    if (pickedUser && pickedUser.status === "deactivated") {
+      signOut();
+      return;
+    }
+
     if (
       pickedUser &&
       pickedSessionUser &&
