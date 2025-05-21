@@ -39,7 +39,7 @@ const eventSchema = z.object({
   region: z.string().min(1, "Region is required"),
   district: z.string().min(1, "District is required"),
   location_details: z.string().optional(),
-  sub_indicator_id: z.string().min(1, "Sub indicator is required"),
+  sub_indicator_id: z.string().min(1, "What is required"),
   follow_ups: z.array(z.string()).default([]),
   city: z.string().min(1, "City is required"),
   coordinates: z.string().min(1, "Coordinates are required"),
@@ -253,6 +253,21 @@ export function EventForm({ isNew = false }: EventFormProps) {
 
   const [inputValue, setInputValue] = useState("");
 
+  // Sync inputValue with selected sub-indicator's name
+  const selectedSubIndicatorId = watch("sub_indicator_id");
+  useEffect(() => {
+    if (selectedSubIndicatorId && subIndicators) {
+      const selected = subIndicators.find(
+        (sub) => sub.id === selectedSubIndicatorId
+      );
+      if (selected) {
+        setInputValue(selected.name);
+        return;
+      }
+    }
+    setInputValue("");
+  }, [selectedSubIndicatorId, subIndicators]);
+
   if (isFormLoading || localLoading) {
     return (
       <div className="flex flex-col h-screen">
@@ -406,8 +421,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
                       (item) => item.id === key
                     );
                     if (selectedItem?.type === "sub") {
+                      setInputValue(selectedItem.name);
                       const input = document.querySelector(
-                        `input[name="${field.name}"]`
+                        `input[name=\"${field.name}\"]`
                       ) as HTMLInputElement;
                       if (input) input.value = selectedItem.name;
                     }

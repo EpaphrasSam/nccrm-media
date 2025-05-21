@@ -30,8 +30,8 @@ export const situationalReportingService = {
     const promise = fetchClient
       .get<SituationalReportsResponse>("/get-situational-reports", {
         params: {
-          page: params.page || 1,
-          limit: params.limit || 10,
+          ...(params.page && { page: params.page }),
+          ...(params.limit && { limit: params.limit }),
           search: params.search,
           ...(params.year && { year: params.year }),
         },

@@ -335,7 +335,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         { key: "losses_details", label: "Losses Details" },
         { key: "info_credibility", label: "Information Credibility" },
         { key: "info_source", label: "Information Source" },
-        { key: "geo_scope", label: "Geographic Scope" },
         { key: "impact", label: "Impact" },
         { key: "weapons_use", label: "Weapons Used" },
         { key: "context_details", label: "Context Details" },

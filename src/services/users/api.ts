@@ -24,8 +24,8 @@ export const userService = {
     const promise = fetchClient
       .get<UserListResponse>(`/admin/all-users`, {
         params: {
-          page: params.page || 1,
-          limit: params.limit || 10,
+          ...(params.page && { page: params.page }),
+          ...(params.limit && { limit: params.limit }),
           ...(params.department && { department: params.department }),
           ...(params.role && { role: params.role }),
           ...(params.search && { search: params.search }),

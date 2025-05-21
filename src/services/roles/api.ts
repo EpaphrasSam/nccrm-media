@@ -22,8 +22,8 @@ export const roleService = {
     const promise = fetchClient
       .get<RoleListResponse>("/admin/all-roles", {
         params: {
-          page: params?.page || 1,
-          limit: params?.limit || 20,
+          ...(params?.page && { page: params.page }),
+          ...(params?.limit && { limit: params.limit }),
           ...(params?.search && { search: params.search }),
         },
       })

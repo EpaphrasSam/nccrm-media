@@ -22,8 +22,8 @@ export const mainIndicatorService = {
     const promise = fetchClient
       .get<MainIndicatorListResponse>("/admin/all-main-indicators", {
         params: {
-          page: params?.page || 1,
-          limit: params?.limit || 20,
+          ...(params?.page && { page: params.page }),
+          ...(params?.limit && { limit: params.limit }),
           ...(params?.search && { search: params.search }),
         },
       })

@@ -24,7 +24,6 @@ import { usePermissions } from "@/hooks/usePermissions";
 const contextSchema = z.object({
   info_credibility: z.string().optional(),
   info_source: z.string().optional(),
-  geo_scope: z.string().optional(),
   impact: z.string().optional(),
   weapons_use: z.string().optional(),
   context_details: z.string().optional(),
@@ -57,7 +56,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     () => ({
       info_credibility: formData.context?.info_credibility || "",
       info_source: formData.context?.info_source || "",
-      geo_scope: formData.context?.geo_scope || "",
       impact: formData.context?.impact || "",
       weapons_use: formData.context?.weapons_use || "",
       context_details: formData.context?.context_details || "",
@@ -238,21 +236,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
               label="Information Source"
               labelPlacement="outside"
               placeholder="Enter the type of information source"
-              variant="bordered"
-              classNames={inputStyles}
-            />
-          )}
-        />
-
-        <Controller
-          name="geo_scope"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              label="Geographic Scope"
-              labelPlacement="outside"
-              placeholder="Enter the geographic scope definition"
               variant="bordered"
               classNames={inputStyles}
             />

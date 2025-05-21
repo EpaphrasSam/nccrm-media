@@ -23,8 +23,8 @@ export const eventService = {
     const promise = fetchClient
       .get<EventListResponse>("/get-events", {
         params: {
-          page: params.page || 1,
-          limit: params.limit || 10,
+          ...(params.page && { page: params.page }),
+          ...(params.limit && { limit: params.limit }),
           ...(params.status && { status: params.status }),
           ...(params.thematic_area && { thematic_area: params.thematic_area }),
           ...(params.search && { search: params.search }),

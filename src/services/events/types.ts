@@ -37,7 +37,6 @@ export interface Event {
   losses_details?: string;
   info_credibility?: string;
   info_source?: string;
-  geo_scope?: string;
   impact?: string;
   weapons_use?: string;
   context_details?: string;

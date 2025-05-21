@@ -13,6 +13,7 @@ import {
   Tab,
   Checkbox,
   Spinner,
+  addToast,
 } from "@heroui/react";
 import { PiMicrosoftExcelLogoThin } from "react-icons/pi";
 import { FaChevronLeft } from "react-icons/fa";
@@ -43,13 +44,8 @@ const years = Array.from({ length: currentYear - 1999 }, (_, i) =>
 );
 
 export function OverviewHeader() {
-  const {
-    overviewFilters,
-    setOverviewFilters,
-    resetOverviewFilters,
-    exportToExcel,
-    isExporting,
-  } = useSituationalReportingStore();
+  const { overviewFilters, setOverviewFilters, resetOverviewFilters } =
+    useSituationalReportingStore();
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
     from: overviewFilters?.from,
@@ -63,6 +59,8 @@ export function OverviewHeader() {
   const [activeTab, setActiveTab] = useState(
     overviewFilters?.reports ? "advanced" : "basic"
   );
+
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch and group reports using SWR
   const { data: groupedReports = {}, isLoading: isLoadingReports } =
@@ -144,6 +142,69 @@ export function OverviewHeader() {
     });
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // Fetch all situational report summaries
+      const response = await situationalReportingService.getAnalysis();
+      const data = "data" in response ? response.data : response;
+      const years = Object.keys(data);
+      if (!years.length) {
+        addToast({
+          title: "No summary data to export.",
+          color: "danger",
+        });
+        return;
+      }
+      // Collect all unique thematic areas
+      const thematicAreas = Array.from(
+        new Set(years.flatMap((year) => Object.keys(data[year] || {})))
+      );
+      // Prepare CSV headers and rows
+      const headers = ["Year", ...thematicAreas];
+      const csvRows = [
+        headers.join(","),
+        ...years.map((year) =>
+          [
+            year,
+            ...thematicAreas.map((area) => {
+              const yearData = data[year] as Record<string, number>;
+              return yearData && yearData[area] !== undefined
+                ? yearData[area]
+                : "";
+            }),
+          ]
+            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .join(",")
+        ),
+      ];
+      const BOM = "\uFEFF";
+      const csvString = BOM + csvRows.join("\n");
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `situational_overview_export_${
+          new Date().toISOString().split("T")[0]
+        }.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      addToast({
+        title: "Failed to export summary.",
+        color: "danger",
+      });
+      console.error(error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
       <div className="flex items-center gap-4">
@@ -160,11 +221,11 @@ export function OverviewHeader() {
         <Button
           color="primary"
           startContent={<PiMicrosoftExcelLogoThin className="h-4 w-4" />}
-          onPress={exportToExcel}
+          onPress={handleExport}
           isLoading={isExporting}
           className={`${buttonStyles} bg-brand-green-dark min-w-[48px]`}
         >
-          Export Excel
+          Export
         </Button>
       </div>
 
