@@ -150,7 +150,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
 
   const getDefaultValues = useCallback(
     () => ({
-      reporter_id: session?.user?.id || "",
+      reporter_id: currentEvent?.reporter?.id || session?.user?.id || "",
       report_date: formatDateForInput(
         formData.event?.report_date || new Date().toISOString()
       ),
@@ -211,9 +211,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
   useEffect(() => {
     reset({
       ...getDefaultValues(),
-      reporter_id: session?.user?.id || "",
+      reporter_id: currentEvent?.reporter?.id || session?.user?.id || "",
     });
-  }, [reset, getDefaultValues, session?.user?.id]);
+  }, [reset, getDefaultValues, session?.user?.id, currentEvent?.reporter?.id]);
 
   const onSubmit = async (data: EventFormValues) => {
     // Check if event_date is in the future
@@ -290,7 +290,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
     >
       <div className="flex flex-col gap-6">
         <Input
-          value={session?.user?.name || ""}
+          value={currentEvent?.reporter?.name || session?.user?.name || ""}
           label="Reporter"
           labelPlacement="outside"
           readOnly
@@ -301,7 +301,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
         <Controller
           name="reporter_id"
           control={control}
-          defaultValue={session?.user?.id || ""}
+          defaultValue={currentEvent?.reporter?.id || session?.user?.id || ""}
           render={({ field }) => <Input {...field} type="hidden" />}
         />
 

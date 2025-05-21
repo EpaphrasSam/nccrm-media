@@ -8,8 +8,8 @@ if (isServer) {
   derivedBaseUrl = process.env.SERVER_API_URL || "";
   derivedAuthUrl = process.env.AUTH_URL || "";
 } else {
-  derivedBaseUrl = "/backend";
-  // derivedBaseUrl = "http://localhost:3035";
+  // derivedBaseUrl = "/backend";
+  derivedBaseUrl = "http://localhost:3035";
   derivedAuthUrl = window.location.origin;
 }
 

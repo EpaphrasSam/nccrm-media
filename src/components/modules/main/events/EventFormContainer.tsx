@@ -35,7 +35,7 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
       // For edit mode, add delay only on initial load
       const timer = setTimeout(() => {
         setLocalLoading(false);
-      }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [eventId, isFormLoading, resetForm, setCurrentStep, setFormLoading]);
