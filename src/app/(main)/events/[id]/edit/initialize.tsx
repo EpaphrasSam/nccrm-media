@@ -108,7 +108,6 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
             context: {
               info_credibility: event?.info_credibility,
               info_source: event?.info_source,
-              geo_scope: event?.geo_scope,
               impact: event?.impact,
               weapons_use: event?.weapons_use,
               context_details: event?.context_details,

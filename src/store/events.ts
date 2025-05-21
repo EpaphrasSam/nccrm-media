@@ -67,7 +67,6 @@ export interface OutcomeFormData {
 export interface ContextFormData {
   info_credibility?: string;
   info_source?: string;
-  geo_scope?: string;
   impact?: string;
   weapons_use?: string;
   context_details?: string;
