@@ -121,7 +121,7 @@ export const useDepartmentsStore = create<DepartmentsState>((set) => ({
         totalDepartments: 0,
       });
       storeSync.trigger();
-      navigationService.replace("/admin/departments");
+      // navigationService.replace("/admin/departments");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

@@ -10,6 +10,7 @@ import {
   TableCell,
   Button,
   Skeleton,
+  Tooltip,
 } from "@heroui/react";
 import { FiTrash2 } from "react-icons/fi";
 import { useThematicAreasStore } from "@/store/thematic-areas";
@@ -137,28 +138,32 @@ export function ThematicAreasTable() {
                 <TableCell>
                   <div className="flex items-center">
                     {canEdit && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => editThematicArea(thematicArea)}
-                        className="text-brand-green-dark"
-                        size="sm"
-                        aria-label="Edit thematic area"
-                      >
-                        <FaRegEdit className="w-4 h-4" color="blue" />
-                      </Button>
+                      <Tooltip content="Edit thematic area" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => editThematicArea(thematicArea)}
+                          className="text-brand-green-dark"
+                          size="sm"
+                          aria-label="Edit thematic area"
+                        >
+                          <FaRegEdit className="w-4 h-4" color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDelete && (
-                      <Button
-                        isIconOnly
-                        color="danger"
-                        variant="light"
-                        onPress={() => handleDeleteClick(thematicArea.id)}
-                        size="sm"
-                        aria-label="Delete thematic area"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="Delete thematic area" color="danger">
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onPress={() => handleDeleteClick(thematicArea.id)}
+                          size="sm"
+                          aria-label="Delete thematic area"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>

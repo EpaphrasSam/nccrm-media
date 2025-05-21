@@ -245,8 +245,8 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
         await createRole(data);
       } else if (currentRole) {
         await updateRole(currentRole.id, {
-          newName: data.name,
-          newDescription: data.description,
+          name: data.name,
+          description: data.description,
           functions: data.functions,
         });
       }

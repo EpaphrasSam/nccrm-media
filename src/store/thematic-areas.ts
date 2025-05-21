@@ -123,7 +123,7 @@ export const useThematicAreasStore = create<ThematicAreasState>((set) => ({
         totalThematicAreas: 0,
       });
       storeSync.trigger();
-      navigationService.replace("/admin/thematic-areas");
+      // navigationService.replace("/admin/thematic-areas");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

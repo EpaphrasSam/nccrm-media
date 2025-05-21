@@ -273,7 +273,7 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
           render={({ field }) => (
             <Input
               {...field}
-              label="Weapons Use"
+              label="Weapon Used"
               labelPlacement="outside"
               placeholder="Enter the weapon use description"
               variant="bordered"

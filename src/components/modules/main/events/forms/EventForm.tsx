@@ -51,33 +51,6 @@ interface EventFormProps {
   isNew?: boolean;
 }
 
-// Add these interfaces before the EventForm component
-interface SubIndicatorItem {
-  id: string;
-  name: string;
-  type: "sub";
-  textValue: string;
-  selectable: true;
-}
-
-interface MainIndicatorGroup {
-  id: string;
-  name: string;
-  type: "main";
-  textValue: string;
-  selectable: false;
-  subIndicators: SubIndicatorItem[];
-}
-
-interface ThematicAreaGroup {
-  id: string;
-  name: string;
-  type: "thematic";
-  textValue: string;
-  selectable: false;
-  mainIndicators: Record<string, MainIndicatorGroup>;
-}
-
 // Define NominatimResult type
 interface NominatimResult {
   place_id: number;
@@ -342,73 +315,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
           name="sub_indicator_id"
           control={control}
           render={({ field }) => {
-            // Group items hierarchically but keep flat structure
-            const groupedItems = subIndicators?.reduce((acc, subIndicator) => {
-              const thematicArea = subIndicator.main_indicator?.thematic_area;
-              const mainIndicator = subIndicator.main_indicator;
-
-              if (!thematicArea || !mainIndicator) return acc;
-
-              // Initialize thematic area if not exists
-              if (!acc[thematicArea.id]) {
-                acc[thematicArea.id] = {
-                  id: thematicArea.id,
-                  name: thematicArea.name,
-                  type: "thematic",
-                  textValue: thematicArea.name,
-                  selectable: false,
-                  mainIndicators: {},
-                };
-              }
-
-              // Initialize main indicator if not exists
-              if (!acc[thematicArea.id].mainIndicators[mainIndicator.id]) {
-                acc[thematicArea.id].mainIndicators[mainIndicator.id] = {
-                  id: mainIndicator.id,
-                  name: mainIndicator.name,
-                  type: "main",
-                  textValue: mainIndicator.name,
-                  selectable: false,
-                  subIndicators: [],
-                };
-              }
-
-              // Add sub indicator with simplified textValue
-              acc[thematicArea.id].mainIndicators[
-                mainIndicator.id
-              ].subIndicators.push({
-                id: subIndicator.id,
-                name: subIndicator.name,
-                type: "sub",
-                textValue: subIndicator.name, // Only use sub-indicator name for search
-                selectable: true,
-              });
-
-              return acc;
-            }, {} as Record<string, ThematicAreaGroup>);
-
-            // Filtered items based on inputValue
-            const filteredItems = Object.values(groupedItems || {}).flatMap(
-              (thematicArea: ThematicAreaGroup) => {
-                // Filter main indicators
-                const filteredMainIndicators = Object.values(
-                  thematicArea.mainIndicators
-                ).flatMap((mainIndicator: MainIndicatorGroup) => {
-                  // Filter sub indicators by inputValue
-                  const filteredSubs = mainIndicator.subIndicators.filter(
-                    (sub) =>
-                      sub.name.toLowerCase().includes(inputValue.toLowerCase())
-                  );
-                  if (filteredSubs.length > 0) {
-                    return [mainIndicator, ...filteredSubs];
-                  }
-                  return [];
-                });
-                if (filteredMainIndicators.length > 0) {
-                  return [thematicArea, ...filteredMainIndicators];
-                }
-                return [];
-              }
+            // Only show sub-indicator items, no grouping
+            const filteredItems = (subIndicators || []).filter((sub) =>
+              sub.name.toLowerCase().includes(inputValue.toLowerCase())
             );
 
             return (
@@ -420,7 +329,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
                     const selectedItem = filteredItems.find(
                       (item) => item.id === key
                     );
-                    if (selectedItem?.type === "sub") {
+                    if (selectedItem) {
                       setInputValue(selectedItem.name);
                       const input = document.querySelector(
                         `input[name=\"${field.name}\"]`
@@ -435,9 +344,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
                         const selectedItem = filteredItems.find(
                           (item) => item.id === field.value
                         );
-                        return selectedItem?.type === "sub"
-                          ? selectedItem.name
-                          : "";
+                        return selectedItem ? selectedItem.name : "";
                       })()
                     : ""
                 }
@@ -458,42 +365,16 @@ export function EventForm({ isNew = false }: EventFormProps) {
                 }}
                 isInvalid={!!errors.sub_indicator_id}
                 errorMessage={errors.sub_indicator_id?.message}
-                disabledKeys={filteredItems
-                  .filter((item) => !item.selectable)
-                  .map((item) => item.id)}
                 inputValue={inputValue}
                 onInputChange={setInputValue}
               >
                 {(item) => (
                   <AutocompleteItem
                     key={item.id}
-                    textValue={item.textValue}
-                    className={cn(
-                      "transition-colors",
-                      item.type === "thematic" &&
-                        "flex w-full sticky top-0 z-20 py-2 px-2 bg-default-100 shadow-small rounded-small",
-                      item.type === "main" &&
-                        "flex w-full sticky top-10 z-10 py-1.5 px-2 bg-gray-50/80 border-b",
-                      item.type === "sub" &&
-                        "py-2 px-2 hover:bg-gray-100 cursor-pointer",
-                      !item.selectable && "pointer-events-none"
-                    )}
+                    textValue={item.name}
+                    className={cn("py-2 px-2 hover:bg-gray-100 cursor-pointer")}
                   >
-                    {item.type === "thematic" ? (
-                      <div className="flex items-center w-full">
-                        <span className="font-semibold text-sm text-gray-900">
-                          {item.name}
-                        </span>
-                      </div>
-                    ) : item.type === "main" ? (
-                      <div className="flex items-center w-full">
-                        <span className="font-medium text-sm ml-1 text-gray-800">
-                          {item.name}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-sm pl-2">{item.name}</span>
-                    )}
+                    <span className="text-sm pl-2">{item.name}</span>
                   </AutocompleteItem>
                 )}
               </Autocomplete>

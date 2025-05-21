@@ -10,6 +10,7 @@ import {
   TableCell,
   Button,
   Skeleton,
+  Tooltip,
 } from "@heroui/react";
 import { FiTrash2, FiEye } from "react-icons/fi";
 import { FaRegEdit } from "react-icons/fa";
@@ -139,40 +140,46 @@ export function SituationalReportingTable() {
                 <TableCell>
                   <div className="flex items-center">
                     {canViewAnalysis && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => handleViewAnalysis(report.id)}
-                        className="text-brand-blue"
-                        size="sm"
-                        aria-label="View analysis"
-                      >
-                        <FiEye className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="View analysis" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => handleViewAnalysis(report.id)}
+                          className="text-brand-blue"
+                          size="sm"
+                          aria-label="View analysis"
+                        >
+                          <FiEye className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canEditReport && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => editReport(report)}
-                        className="text-brand-green-dark"
-                        size="sm"
-                        aria-label="Edit report"
-                      >
-                        <FaRegEdit className="w-4 h-4" color="blue" />
-                      </Button>
+                      <Tooltip content="Edit report" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => editReport(report)}
+                          className="text-brand-green-dark"
+                          size="sm"
+                          aria-label="Edit report"
+                        >
+                          <FaRegEdit className="w-4 h-4" color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDeleteReport && (
-                      <Button
-                        isIconOnly
-                        color="danger"
-                        variant="light"
-                        onPress={() => handleDeleteClick(report?.id)}
-                        size="sm"
-                        aria-label="Delete report"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="Delete report" color="danger">
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onPress={() => handleDeleteClick(report?.id)}
+                          size="sm"
+                          aria-label="Delete report"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>

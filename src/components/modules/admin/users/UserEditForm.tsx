@@ -40,7 +40,7 @@ const personalInfoSchema = z.object({
 });
 
 const accountInfoSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  username: z.string().optional(),
   department_id: z.string().min(1, "Department is required"),
   password: z.string().optional(),
 });

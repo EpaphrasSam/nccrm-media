@@ -114,7 +114,7 @@ export const useRolesStore = create<RolesState>((set) => ({
       // Only execute these if no error was thrown
       set({ currentRole: undefined });
       storeSync.trigger();
-      navigationService.replace("/admin/roles");
+      // navigationService.replace("/admin/roles");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

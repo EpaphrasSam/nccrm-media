@@ -10,6 +10,7 @@ import {
   TableCell,
   Button,
   Skeleton,
+  Tooltip,
 } from "@heroui/react";
 import { FiTrash2 } from "react-icons/fi";
 import { useDepartmentsStore } from "@/store/departments";
@@ -137,28 +138,32 @@ export function DepartmentsTable() {
                 <TableCell>
                   <div className="flex items-center">
                     {canEditDept && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => editDepartment(department)}
-                        className="text-brand-green-dark"
-                        size="sm"
-                        aria-label="Edit department"
-                      >
-                        <FaRegEdit className="w-4 h-4" color="blue" />
-                      </Button>
+                      <Tooltip content="Edit department" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => editDepartment(department)}
+                          className="text-brand-green-dark"
+                          size="sm"
+                          aria-label="Edit department"
+                        >
+                          <FaRegEdit className="w-4 h-4" color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDeleteDept && (
-                      <Button
-                        isIconOnly
-                        color="danger"
-                        variant="light"
-                        onPress={() => handleDeleteClick(department.id)}
-                        size="sm"
-                        aria-label="Delete department"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="Delete department" color="danger">
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onPress={() => handleDeleteClick(department.id)}
+                          size="sm"
+                          aria-label="Delete department"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>

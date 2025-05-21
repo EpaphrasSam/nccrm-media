@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownItem,
   Spinner,
+  Tooltip,
 } from "@heroui/react";
 import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2, FiMoreVertical, FiCheck, FiX } from "react-icons/fi";
@@ -188,80 +189,86 @@ export function EventsTable() {
                 <TableCell>
                   <div className="flex items-center">
                     {canEdit && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => editEvent(event)}
-                        className="text-brand-green-dark"
-                        size="sm"
-                        aria-label="Edit event"
-                      >
-                        <FaRegEdit className="w-4 h-4" color="blue" />
-                      </Button>
+                      <Tooltip content="Edit event" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => editEvent(event)}
+                          className="text-brand-green-dark"
+                          size="sm"
+                          aria-label="Edit event"
+                        >
+                          <FaRegEdit className="w-4 h-4" color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDelete && (
-                      <Button
-                        onPress={() => handleDeleteClick(event.id)}
-                        color="danger"
-                        variant="light"
-                        size="sm"
-                        aria-label="Delete event"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="Delete event" color="danger">
+                        <Button
+                          onPress={() => handleDeleteClick(event.id)}
+                          color="danger"
+                          variant="light"
+                          size="sm"
+                          aria-label="Delete event"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canApprove && event?.status === "pending" && (
-                      <Dropdown closeOnSelect={false}>
-                        <DropdownTrigger>
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            aria-label="More event actions"
-                          >
-                            <FiMoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label="Event actions">
-                          <DropdownItem
-                            key="approve"
-                            startContent={
-                              loadingAction?.eventId === event.id &&
-                              loadingAction?.action === "approve" ? (
-                                <Spinner size="sm" />
-                              ) : (
-                                <FiCheck className="w-4 h-4" />
-                              )
-                            }
-                            onPress={() => handleApprove(event.id)}
-                            isDisabled={
-                              loadingAction?.eventId === event.id &&
-                              loadingAction?.action === "approve"
-                            }
-                            className="text-success"
-                          >
-                            Approve
-                          </DropdownItem>
-                          <DropdownItem
-                            key="reject"
-                            startContent={
-                              loadingAction?.eventId === event.id &&
-                              loadingAction?.action === "reject" ? (
-                                <Spinner size="sm" />
-                              ) : (
-                                <FiX className="w-4 h-4" />
-                              )
-                            }
-                            onPress={() => handleReject(event.id)}
-                            isDisabled={
-                              loadingAction?.eventId === event.id &&
-                              loadingAction?.action === "reject"
-                            }
-                            className="text-danger"
-                          >
-                            Reject
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
+                      <Tooltip content="Approve event">
+                        <Dropdown closeOnSelect={false}>
+                          <DropdownTrigger>
+                            <Button
+                              isIconOnly
+                              variant="light"
+                              aria-label="More event actions"
+                            >
+                              <FiMoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownTrigger>
+                          <DropdownMenu aria-label="Event actions">
+                            <DropdownItem
+                              key="approve"
+                              startContent={
+                                loadingAction?.eventId === event.id &&
+                                loadingAction?.action === "approve" ? (
+                                  <Spinner size="sm" />
+                                ) : (
+                                  <FiCheck className="w-4 h-4" />
+                                )
+                              }
+                              onPress={() => handleApprove(event.id)}
+                              isDisabled={
+                                loadingAction?.eventId === event.id &&
+                                loadingAction?.action === "approve"
+                              }
+                              className="text-success"
+                            >
+                              Approve
+                            </DropdownItem>
+                            <DropdownItem
+                              key="reject"
+                              startContent={
+                                loadingAction?.eventId === event.id &&
+                                loadingAction?.action === "reject" ? (
+                                  <Spinner size="sm" />
+                                ) : (
+                                  <FiX className="w-4 h-4" />
+                                )
+                              }
+                              onPress={() => handleReject(event.id)}
+                              isDisabled={
+                                loadingAction?.eventId === event.id &&
+                                loadingAction?.action === "reject"
+                              }
+                              className="text-danger"
+                            >
+                              Reject
+                            </DropdownItem>
+                          </DropdownMenu>
+                        </Dropdown>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>

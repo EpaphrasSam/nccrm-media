@@ -10,6 +10,7 @@ import {
   TableCell,
   Skeleton,
   Button,
+  Tooltip,
 } from "@heroui/react";
 import { FiTrash2 } from "react-icons/fi";
 import { FaRegEdit } from "react-icons/fa";
@@ -117,28 +118,32 @@ export function RolesTable() {
                 <TableCell>
                   <div className="flex items-center">
                     {canEditRole && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => editRole(role)}
-                        className="text-brand-green-dark"
-                        size="sm"
-                        aria-label="Edit role"
-                      >
-                        <FaRegEdit className="w-4 h-4" color="blue" />
-                      </Button>
+                      <Tooltip content="Edit role" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => editRole(role)}
+                          className="text-brand-green-dark"
+                          size="sm"
+                          aria-label="Edit role"
+                        >
+                          <FaRegEdit className="w-4 h-4" color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDeleteRole && (
-                      <Button
-                        isIconOnly
-                        color="danger"
-                        variant="light"
-                        onPress={() => handleDeleteClick(role.id)}
-                        size="sm"
-                        aria-label="Delete role"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="Delete role" color="danger">
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onPress={() => handleDeleteClick(role.id)}
+                          size="sm"
+                          aria-label="Delete role"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>

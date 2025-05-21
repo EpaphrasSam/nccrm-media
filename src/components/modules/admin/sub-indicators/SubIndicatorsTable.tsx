@@ -9,6 +9,7 @@ import {
   TableCell,
   Button,
   Skeleton,
+  Tooltip,
 } from "@heroui/react";
 import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
@@ -159,27 +160,31 @@ export function SubIndicatorsTable() {
                 <TableCell>
                   <div className="flex items-center justify-start gap-2">
                     {canEdit && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        size="sm"
-                        onPress={() => editSubIndicator(subIndicator)}
-                        className={buttonStyles}
-                      >
-                        <FaRegEdit size={18} color="blue" />
-                      </Button>
+                      <Tooltip content="Edit sub-indicator" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          size="sm"
+                          onPress={() => editSubIndicator(subIndicator)}
+                          className={buttonStyles}
+                        >
+                          <FaRegEdit size={18} color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDelete && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        color="danger"
-                        size="sm"
-                        onPress={() => handleDeleteClick(subIndicator.id)}
-                        className={buttonStyles}
-                      >
-                        <FiTrash2 className="h-4 w-4" />
-                      </Button>
+                      <Tooltip content="Delete sub-indicator" color="danger">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          color="danger"
+                          size="sm"
+                          onPress={() => handleDeleteClick(subIndicator.id)}
+                          className={buttonStyles}
+                        >
+                          <FiTrash2 className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>

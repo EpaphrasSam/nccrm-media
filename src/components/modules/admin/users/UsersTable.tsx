@@ -23,6 +23,7 @@ import {
   Select,
   SelectItem,
   Spinner,
+  Tooltip,
 } from "@heroui/react";
 import { FiCheck, FiX, FiUser, FiMoreVertical, FiTrash2 } from "react-icons/fi";
 import { FaRegEdit } from "react-icons/fa";
@@ -289,28 +290,32 @@ export function UsersTable() {
                 <TableCell>
                   <div className="flex items-center">
                     {canEditUser && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => editUser(user)}
-                        className="text-brand-green-dark"
-                        size="sm"
-                        aria-label="Edit user"
-                      >
-                        <FaRegEdit className="w-4 h-4 " color="blue" />
-                      </Button>
+                      <Tooltip content="Edit user" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => editUser(user)}
+                          className="text-brand-green-dark"
+                          size="sm"
+                          aria-label="Edit user"
+                        >
+                          <FaRegEdit className="w-4 h-4" color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDeleteUser && (
-                      <Button
-                        isIconOnly
-                        color="danger"
-                        variant="light"
-                        onPress={() => handleDeleteClick(user?.id)}
-                        size="sm"
-                        aria-label="Delete user"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="Delete user" color="danger">
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onPress={() => handleDeleteClick(user?.id)}
+                          size="sm"
+                          aria-label="Delete user"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canApproveUser &&
                       (user?.status === USER_STATUSES.PENDING_VERIFICATION ||

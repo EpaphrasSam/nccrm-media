@@ -17,8 +17,8 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       <AdminPageLayout
         header={
           <AdminPageHeader
-            title="Situational Reporting"
-            description="Fill in the details for situational reporting"
+            title="Situational Analysis"
+            description="Fill in the details for situational analysis"
           />
         }
       >

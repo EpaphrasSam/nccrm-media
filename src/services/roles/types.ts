@@ -45,8 +45,8 @@ export interface RoleCreateInput {
 
 // Type for updating an existing role
 export interface RoleUpdateInput {
-  newName?: string;
-  newDescription?: string;
+  name?: string;
+  description?: string;
   functions?: RolePermissions;
 }
 

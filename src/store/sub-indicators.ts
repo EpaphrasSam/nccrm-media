@@ -119,7 +119,7 @@ export const useSubIndicatorsStore = create<SubIndicatorsState>((set) => ({
         totalSubIndicators: 0,
       });
       storeSync.trigger();
-      navigationService.replace("/admin/sub-indicators");
+      // navigationService.replace("/admin/sub-indicators");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

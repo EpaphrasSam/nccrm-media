@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -122,6 +122,7 @@ export function AnalysisForm() {
     watch,
     setValue,
     formState: { errors, isSubmitting },
+    control,
   } = useForm<FormData>({
     resolver: zodResolver(analysisSchema),
     defaultValues: {
@@ -173,17 +174,15 @@ export function AnalysisForm() {
     };
   }, [currentAnalysis, currentMainIndicator, reset]);
 
-  // Clear form when thematic area changes
+  // Clear form whenever thematic area changes
   useEffect(() => {
-    if (!currentThematicArea) {
-      reset({
-        currentStatus: undefined,
-        escalationPotential: undefined,
-        responseAdequacy: undefined,
-        atRiskGroup: [],
-        comments: "",
-      });
-    }
+    reset({
+      currentStatus: undefined,
+      escalationPotential: undefined,
+      responseAdequacy: undefined,
+      atRiskGroup: [],
+      comments: "",
+    });
   }, [currentThematicArea, reset]);
 
   // Clear form on unmount or when switching reports
@@ -265,6 +264,7 @@ export function AnalysisForm() {
               disallowEmptySelection
               className="w-full"
               classNames={inputStyles}
+              variant="bordered"
             >
               {filteredIndicators.map((indicator) => (
                 <SelectItem key={indicator.id}>{indicator.name}</SelectItem>
@@ -414,20 +414,35 @@ export function AnalysisForm() {
                     Please select all risk groups (Multiple-choice)
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-4">
-                  {atRiskGroups.map((group) => (
-                    <Checkbox
-                      key={group}
-                      size="sm"
-                      color="danger"
-                      value={group}
-                      {...register("atRiskGroup")}
-                      isDisabled={isFormDisabled}
-                    >
-                      {group}
-                    </Checkbox>
-                  ))}
-                </div>
+                <Controller
+                  name="atRiskGroup"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="flex flex-wrap gap-4">
+                      {atRiskGroups.map((group) => (
+                        <Checkbox
+                          key={group}
+                          size="sm"
+                          color="danger"
+                          value={group}
+                          isDisabled={isFormDisabled}
+                          isSelected={field.value?.includes(group)}
+                          onChange={(checked) => {
+                            if (checked) {
+                              field.onChange([...(field.value || []), group]);
+                            } else {
+                              field.onChange(
+                                (field.value || []).filter((g) => g !== group)
+                              );
+                            }
+                          }}
+                        >
+                          {group}
+                        </Checkbox>
+                      ))}
+                    </div>
+                  )}
+                />
                 {errors.atRiskGroup && (
                   <p className="text-sm text-red-600">
                     {errors.atRiskGroup.message}

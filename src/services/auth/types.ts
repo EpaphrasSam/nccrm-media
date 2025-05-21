@@ -27,7 +27,7 @@ export interface LoginCredentials {
 export interface SignupData {
   email: string;
   name: string;
-  department: string;
+  departmentId: string;
   phoneNumber: string;
   password: string;
 }

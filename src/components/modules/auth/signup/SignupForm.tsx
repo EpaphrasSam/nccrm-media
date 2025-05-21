@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Input, Select, SelectItem, Button } from "@heroui/react";
+import { Input, Button, Autocomplete, AutocompleteItem } from "@heroui/react";
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import useSWR from "swr";
@@ -36,6 +36,7 @@ export function SignupForm() {
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deptInputValue, setDeptInputValue] = useState("");
   const {
     control,
     handleSubmit,
@@ -56,7 +57,7 @@ export function SignupForm() {
     const signupData: SignupData = {
       email: data.email,
       name: data.fullName,
-      department: data.department,
+      departmentId: data.department,
       phoneNumber: data.phoneNumber,
       password: data.password,
     };
@@ -139,25 +140,51 @@ export function SignupForm() {
         <Controller
           name="department"
           control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              label="Department"
-              labelPlacement="outside"
-              placeholder="Select a department"
-              isRequired
-              radius="sm"
-              variant="bordered"
-              size="md"
-              classNames={inputStyles}
-              errorMessage={errors.department?.message}
-              isInvalid={!!errors.department}
-              isLoading={!departments}
-              items={departments || []}
-            >
-              {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
-            </Select>
-          )}
+          render={({ field }) => {
+            // Filter departments by input value
+            const filteredDepartments = (departments || []).filter((dept) =>
+              dept.name.toLowerCase().includes(deptInputValue.toLowerCase())
+            );
+            return (
+              <Autocomplete
+                {...field}
+                label="Department"
+                labelPlacement="outside"
+                placeholder="Select a department"
+                isRequired
+                radius="sm"
+                variant="bordered"
+                size="md"
+                classNames={{
+                  listbox: "overflow-visible",
+                }}
+                inputProps={{
+                  classNames: {
+                    label: "text-base font-medium pb-2",
+                    inputWrapper: "py-6 rounded-xlg",
+                    base: "border-brand-gray-light",
+                  },
+                }}
+                errorMessage={errors.department?.message}
+                isInvalid={!!errors.department}
+                isLoading={!departments}
+                items={filteredDepartments}
+                selectedKey={field.value || undefined}
+                onSelectionChange={(key) =>
+                  field.onChange(key?.toString() || "")
+                }
+                inputValue={deptInputValue}
+                onInputChange={setDeptInputValue}
+                defaultFilter={(textValue, inputValue) =>
+                  textValue.toLowerCase().includes(inputValue.toLowerCase())
+                }
+              >
+                {(item) => (
+                  <AutocompleteItem key={item.id}>{item.name}</AutocompleteItem>
+                )}
+              </Autocomplete>
+            );
+          }}
         />
 
         <Controller

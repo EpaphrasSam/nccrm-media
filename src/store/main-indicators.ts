@@ -123,7 +123,7 @@ export const useMainIndicatorsStore = create<MainIndicatorsState>((set) => ({
         currentMainIndicator: undefined,
       });
       storeSync.trigger();
-      navigationService.replace("/admin/main-indicators");
+      // navigationService.replace("/admin/main-indicators");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

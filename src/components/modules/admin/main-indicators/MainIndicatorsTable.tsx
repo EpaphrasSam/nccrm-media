@@ -9,6 +9,7 @@ import {
   TableCell,
   Button,
   Skeleton,
+  Tooltip,
 } from "@heroui/react";
 import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
@@ -152,28 +153,32 @@ export function MainIndicatorsTable() {
                 <TableCell>
                   <div className="flex items-center">
                     {canEdit && (
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => editMainIndicator(mainIndicator)}
-                        className="text-brand-green-dark"
-                        size="sm"
-                        aria-label="Edit main indicator"
-                      >
-                        <FaRegEdit className="w-4 h-4" color="blue" />
-                      </Button>
+                      <Tooltip content="Edit main indicator" color="primary">
+                        <Button
+                          isIconOnly
+                          variant="light"
+                          onPress={() => editMainIndicator(mainIndicator)}
+                          className="text-brand-green-dark"
+                          size="sm"
+                          aria-label="Edit main indicator"
+                        >
+                          <FaRegEdit className="w-4 h-4" color="blue" />
+                        </Button>
+                      </Tooltip>
                     )}
                     {canDelete && (
-                      <Button
-                        isIconOnly
-                        color="danger"
-                        variant="light"
-                        onPress={() => handleDeleteClick(mainIndicator.id)}
-                        size="sm"
-                        aria-label="Delete main indicator"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip content="Delete main indicator" color="danger">
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onPress={() => handleDeleteClick(mainIndicator.id)}
+                          size="sm"
+                          aria-label="Delete main indicator"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>
