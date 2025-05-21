@@ -176,6 +176,12 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
               <SelectItem key="female" textValue="Female">
                 Female
               </SelectItem>
+              <SelectItem key="mix" textValue="Mix">
+                Mixed
+              </SelectItem>
+              <SelectItem key="unknown" textValue="Unknown">
+                Unknown
+              </SelectItem>
             </Select>
           )}
         />

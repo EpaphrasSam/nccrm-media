@@ -7,6 +7,7 @@ import type {
   UserValidateInput,
   UserQueryParams,
 } from "@/services/users/types";
+import type { UserStatus, Gender } from "@/lib/constants";
 import { userService } from "@/services/users/api";
 import { urlSync } from "@/utils/url-sync";
 import { navigationService } from "@/utils/navigation";
@@ -132,7 +133,46 @@ export const useUsersStore = create<UsersState>((set) => ({
           throw new Error(error);
         },
       });
-      set({ currentUser: undefined });
+      const updatedUser = await userService.fetchCurrentUser(id);
+      set({
+        currentUser: updatedUser
+          ? {
+              id: updatedUser.id,
+              name: updatedUser.name,
+              status: updatedUser.status as UserStatus,
+              image: updatedUser.image || "",
+              email: updatedUser.email,
+              username: updatedUser.username || "",
+              phone_number: updatedUser.phone_number || "",
+              gender: updatedUser.gender as Gender,
+              department:
+                updatedUser.department &&
+                typeof updatedUser.department === "object" &&
+                updatedUser.department !== null &&
+                (updatedUser.department as { id?: unknown; name?: unknown })
+                  .id &&
+                (updatedUser.department as { id?: unknown; name?: unknown })
+                  .name
+                  ? {
+                      id: String(
+                        (updatedUser.department as { id: unknown }).id
+                      ),
+                      name: String(
+                        (updatedUser.department as { name: unknown }).name
+                      ),
+                    }
+                  : {
+                      id: "",
+                      name: updatedUser.department
+                        ? String(updatedUser.department)
+                        : "",
+                    },
+              role: updatedUser.role
+                ? { id: updatedUser.role.id, name: updatedUser.role.name }
+                : { id: "", name: "" },
+            }
+          : undefined,
+      });
       storeSync.trigger();
       navigationService.refresh();
     } catch {

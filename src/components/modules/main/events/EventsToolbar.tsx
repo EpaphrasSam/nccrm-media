@@ -140,7 +140,7 @@ export function EventsToolbar() {
         size="md"
         className={`${buttonStyles} bg-brand-green-dark min-w-[48px]`}
       >
-        <span className="sm:inline hidden">Preview Export</span>
+        <span className="sm:inline hidden">Event Summary</span>
       </Button>
     </div>
   );

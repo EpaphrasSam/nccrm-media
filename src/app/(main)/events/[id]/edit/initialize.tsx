@@ -3,7 +3,7 @@
 import { useEventsStore } from "@/store/events";
 import { eventService } from "@/services/events/api";
 import { subIndicatorService } from "@/services/sub-indicators/api";
-import useSWR, { SWRConfiguration } from "swr";
+import useSWR, { SWRConfiguration, mutate as swrMutate } from "swr";
 import { useEffect } from "react";
 import { storeSync } from "@/lib/store-sync";
 import { addToast } from "@heroui/toast";
@@ -33,7 +33,6 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
   const { isLoading, mutate, isValidating } = useSWR(
     `event/${id}`,
     async () => {
-      console.log("IS LOADING", isLoading);
       try {
         const [eventResponse, subIndicatorsResponse] = await Promise.all([
           eventService.fetchById(id, userId),
@@ -50,9 +49,7 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
             ? subIndicatorsResponse.data.subIndicators
             : subIndicatorsResponse.subIndicators;
 
-        console.log("EVENT", event);
-
-        if (!event && !isLoading && !isValidating) {
+        if (!event && !isLoading) {
           addToast({
             title: "Error",
             description: "Event not found",
@@ -138,12 +135,11 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
     };
   }, [mutate]);
 
-  // Clear SWR cache for previous id on unmount or id change
-  // useEffect(() => {
-  //   return () => {
-  //     swrMutate(`event/${id}`, undefined, { revalidate: false });
-  //   };
-  // }, [id]);
+  useEffect(() => {
+    return () => {
+      swrMutate(`event/${id}`, undefined, { revalidate: false });
+    };
+  }, [id]);
 
   useEffect(() => {
     setFormLoading(isLoading || isValidating);
