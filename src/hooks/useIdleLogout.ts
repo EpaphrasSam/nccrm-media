@@ -8,10 +8,12 @@ const IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 export function useIdleLogout() {
   const timer = useRef<NodeJS.Timeout | null>(null);
   const { status } = useSession();
-  const isActive = sessionStorage.getItem("active");
 
   useEffect(() => {
     if (status !== "authenticated") return;
+    if (window !== undefined) return;
+
+    const isActive = sessionStorage.getItem("active");
 
     if (!isActive) {
       signOutWithSessionClear();
@@ -50,5 +52,5 @@ export function useIdleLogout() {
       if (timer.current) clearTimeout(timer.current);
       events.forEach((event) => window.removeEventListener(event, resetTimer));
     };
-  }, [status, isActive]);
+  }, [status]);
 }
