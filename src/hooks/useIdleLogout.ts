@@ -1,17 +1,32 @@
 import { useEffect, useRef } from "react";
-import { signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutWithSessionClear } from "@/utils/fetch-client";
 import { addToast } from "@heroui/react";
 
 const IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 export function useIdleLogout() {
   const timer = useRef<NodeJS.Timeout | null>(null);
+  const { status } = useSession();
 
   useEffect(() => {
+    if (status !== "authenticated") return;
+
+    if (!sessionStorage.getItem("active")) {
+      signOutWithSessionClear();
+      addToast({
+        title: "Session timeout",
+        description: "Session timeout, please log in again.",
+        color: "danger",
+      });
+      return;
+    }
+    sessionStorage.setItem("active", "true");
+
     const resetTimer = () => {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
-        signOut();
+        signOutWithSessionClear();
         addToast({
           title: "Idle timeout",
           description: "You have been logged out due to inactivity.",
@@ -35,5 +50,5 @@ export function useIdleLogout() {
       if (timer.current) clearTimeout(timer.current);
       events.forEach((event) => window.removeEventListener(event, resetTimer));
     };
-  }, []);
+  }, [status]);
 }

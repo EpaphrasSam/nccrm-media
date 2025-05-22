@@ -1,6 +1,6 @@
-import { fetchClient } from "@/utils/fetch-client";
+import { fetchClient, signOutWithSessionClear } from "@/utils/fetch-client";
 import { clientApiCall } from "@/utils/api-wrapper";
-import { signIn, signOut } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import type {
   AuthResponse,
   LoginCredentials,
@@ -29,7 +29,7 @@ export const authService = {
   },
 
   logout(options?: ApiOptions) {
-    const promise = signOut().then(() => null);
+    const promise = signOutWithSessionClear().then(() => null);
     return clientApiCall(promise, null, false, options);
   },
 

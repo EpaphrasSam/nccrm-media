@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import { useEffect } from "react";
-import { fetchClient } from "@/utils/fetch-client";
+import { fetchClient, signOutWithSessionClear } from "@/utils/fetch-client";
 import type { AuthResponse } from "@/services/auth/types";
 import isEqual from "fast-deep-equal";
 import { addToast } from "@heroui/toast";
@@ -57,7 +57,7 @@ export function useUserSync(pollInterval = 0) {
             description: "Please log in again.",
             color: "danger",
           });
-          signOut();
+          signOutWithSessionClear();
         }
         throw err;
       }
@@ -78,7 +78,7 @@ export function useUserSync(pollInterval = 0) {
         description: "Please contact support.",
         color: "danger",
       });
-      signOut();
+      signOutWithSessionClear();
       return;
     }
 

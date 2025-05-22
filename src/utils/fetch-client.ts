@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { signOut as nextAuthSignOut } from "next-auth/react";
 const isServer = typeof window === "undefined";
 
 let derivedBaseUrl: string;
@@ -8,8 +10,8 @@ if (isServer) {
   derivedBaseUrl = process.env.SERVER_API_URL || "";
   derivedAuthUrl = process.env.AUTH_URL || "";
 } else {
-  // derivedBaseUrl = "/backend";
-  derivedBaseUrl = "http://localhost:3035";
+  derivedBaseUrl = "/backend";
+  // derivedBaseUrl = "http://localhost:3035";
   derivedAuthUrl = window.location.origin;
 }
 
@@ -37,17 +39,17 @@ interface FetchError extends Error {
 
 async function signOut() {
   try {
-    const signOutUrlPath = "/api/auth/signout"; // Relative path
-    // Calls to NextAuth's own API routes should be relative to the app's origin
+    let signOutUrlPath = "/api/auth/signout";
+    if (typeof window === "undefined") {
+      signOutUrlPath = `${BASE_URL}/api/auth/signout`;
+    }
     await fetch(signOutUrlPath, { method: "POST" });
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("active");
+    }
 
-    // The middleware will handle the redirect, but just in case
     window.location.href = "/login";
-  } catch (error) {
-    console.error("Error during sign out:", error);
-    // Fallback redirect
-    // window.location.href = "/login";
-  }
+  } catch {}
 }
 
 function getDefaultErrorMessage(status: number): string {
@@ -85,11 +87,14 @@ function getDefaultErrorMessage(status: number): string {
 
 async function getAuthSession() {
   try {
-    const sessionUrlPath = "/api/auth/session"; // Relative path
+    let sessionUrlPath = "/api/auth/session";
+    if (typeof window === "undefined") {
+      // On the server, use absolute URL based on BASE_URL
+      sessionUrlPath = `${BASE_URL}/api/auth/session`;
+    }
     const session = await fetch(sessionUrlPath).then((res) => res.json());
     return session;
-  } catch (error) {
-    console.error("Error fetching session:", error);
+  } catch {
     return null;
   }
 }
@@ -234,5 +239,11 @@ export const fetchClient = {
     customFetch<T>(url, { ...options, method: "DELETE" }),
 };
 
+function signOutWithSessionClear(...args: any[]) {
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("active");
+  }
+  return nextAuthSignOut(...args);
+}
 // Export getAuthSession and signOut if they are used directly from other modules
-export { getAuthSession, signOut };
+export { getAuthSession, signOut, signOutWithSessionClear };

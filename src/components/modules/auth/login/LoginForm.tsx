@@ -37,6 +37,7 @@ export function LoginForm() {
       const result = await authService.login(data);
 
       if (result) {
+        sessionStorage.setItem("active", "true");
         addToast({
           title: "Login Successful",
           color: "success",
