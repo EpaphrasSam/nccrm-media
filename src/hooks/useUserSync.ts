@@ -47,11 +47,12 @@ export function useUserSync(pollInterval = 0) {
     session?.user?.id ? `/get-user/${session.user.id}` : null,
     async (url) => {
       try {
-        const res = await fetchClient.get(url);
+        const res = await fetchClient.get(url, { returnErrorStatus: true });
         return (res.data as { user: AuthResponse }).user;
       } catch (err: any) {
+        console.log("Error in useUserSync", err);
         // If backend returns 408, log out
-        if (err?.response?.status === 408) {
+        if (err?.response?.status === 408 || err?.response?.status === 404) {
           addToast({
             title: "Session expired",
             description: "Please log in again.",

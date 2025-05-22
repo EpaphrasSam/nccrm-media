@@ -11,7 +11,6 @@ export function useIdleLogout() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    if (window !== undefined) return;
 
     const isActive = sessionStorage.getItem("active");
 
