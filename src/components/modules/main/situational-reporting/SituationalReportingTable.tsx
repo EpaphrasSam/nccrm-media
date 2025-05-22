@@ -82,7 +82,7 @@ export function SituationalReportingTable() {
 
   const canEditReport = hasPermission("situational_report", "edit");
   const canDeleteReport = hasPermission("situational_report", "delete");
-  const canViewAnalysis = hasPermission("situational_analysis", "view");
+  const canViewAnalysis = hasPermission("situational_report", "view");
 
   const handleViewAnalysis = (reportId: string) => {
     router.push(`/situational-reporting/analysis/${reportId}/`);

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useForm, Controller } from "react-hook-form";
@@ -7,7 +6,7 @@ import { z } from "zod";
 import { Input, Button, Skeleton, Textarea, Checkbox } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useRolesStore } from "@/store/roles";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/components/common/modals/DeleteConfirmationModal";
 import type {
   BaseFunctions,
@@ -39,7 +38,6 @@ const rolePermissionsSchema = z.object({
   event: roleFunctionsSchema,
   user: roleFunctionsSchema,
   situational_report: roleFunctionsSchema,
-  situational_analysis: roleFunctionsSchema,
 });
 
 const roleSchema = z.object({
@@ -59,13 +57,7 @@ type PermissionKey = keyof RolePermissions;
 
 // Helper to check if a module has approve permission using type information
 const hasApprovePermission = (key: PermissionKey): boolean => {
-  // Use type guard to check if the permission has approve
-  return (
-    key === "event" ||
-    key === "user" ||
-    key === "situational_report" ||
-    key === "situational_analysis"
-  );
+  return key === "event" || key === "user" || key === "situational_report";
 };
 
 // Helper to format label from key
@@ -97,7 +89,6 @@ const DEFAULT_PERMISSIONS: RolePermissions = {
   event: ROLE_FUNCTIONS,
   user: ROLE_FUNCTIONS,
   situational_report: ROLE_FUNCTIONS,
-  situational_analysis: ROLE_FUNCTIONS,
 };
 
 export function RoleForm({ isNew = false }: RoleFormProps) {
@@ -129,78 +120,10 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-    watch,
-    setValue,
   } = useForm<RoleFormValues>({
     resolver: zodResolver(roleSchema),
     defaultValues: getDefaultValues(),
   });
-
-  const analysisPerms = useMemo(
-    () => ["view", "add", "edit", "delete", "approve"] as const,
-    []
-  );
-  type AnalysisPerm = (typeof analysisPerms)[number];
-  type AnalysisField = `functions.situational_analysis.${AnalysisPerm}`;
-
-  const skipAnalysisEffect = useRef(false);
-
-  useEffect(() => {
-    const subscription = watch((value, { name }) => {
-      const analysis = value.functions?.situational_analysis || {};
-      const report = value.functions?.situational_report || {};
-
-      // If situational_report.view is unchecked, deselect all situational_analysis permissions (including view)
-      if (name === "functions.situational_report.view" && !report.view) {
-        skipAnalysisEffect.current = true;
-        analysisPerms.forEach((perm) => {
-          setValue(
-            `functions.situational_analysis.${perm}` as AnalysisField,
-            false
-          );
-        });
-        // After a tick, allow analysis effect again
-        setTimeout(() => {
-          skipAnalysisEffect.current = false;
-        }, 0);
-        return;
-      }
-
-      // If any situational_analysis permission is checked, set situational_report.view to true
-      if (
-        name &&
-        name.startsWith("functions.situational_analysis") &&
-        Object.values(analysis).some(Boolean) &&
-        !report.view &&
-        !skipAnalysisEffect.current
-      ) {
-        setValue("functions.situational_report.view", true);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, setValue, analysisPerms]);
-
-  useEffect(() => {
-    const subscription = watch((value) => {
-      const modules = Object.keys(value.functions || {});
-      const perms = ["add", "edit", "delete", "approve"] as const;
-      type ModulePerms = { [key: string]: boolean };
-      const functionsObj = value.functions as Record<string, ModulePerms>;
-      modules.forEach((mod) => {
-        const modPerms = functionsObj[mod] || {};
-        perms.forEach((perm) => {
-          if (
-            Object.prototype.hasOwnProperty.call(modPerms, perm) &&
-            modPerms[perm] &&
-            !modPerms.view
-          ) {
-            setValue(`functions.${mod}.view` as any, true);
-          }
-        });
-      });
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, setValue]);
 
   // Handle loading states
   useEffect(() => {
@@ -363,7 +286,9 @@ export function RoleForm({ isNew = false }: RoleFormProps) {
                         onValueChange={onChange}
                         color="danger"
                       >
-                        Can approve
+                        {key === "situational_report"
+                          ? "Can view all"
+                          : "Can approve"}
                       </Checkbox>
                     )}
                   />

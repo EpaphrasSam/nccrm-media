@@ -13,10 +13,11 @@ import {
   Select,
   SelectItem,
   Skeleton,
+  cn,
 } from "@heroui/react";
 import { useSituationalReportingStore } from "@/store/situational-reporting";
 import type { AnalysisCreateInput } from "@/services/situational-reporting/types";
-import { inputStyles } from "@/lib/styles";
+import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useParams } from "next/navigation";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -109,7 +110,7 @@ export function AnalysisForm() {
   } = useSituationalReportingStore();
 
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
-  const canEditAnalysis = hasPermission("situational_analysis", "edit");
+  const canEditAnalysis = hasPermission("situational_report", "edit");
 
   const filteredIndicators = mainIndicators.filter(
     (indicator) => indicator.thematic_area_id === currentThematicArea
@@ -469,7 +470,10 @@ export function AnalysisForm() {
 
               <div className="flex justify-center">
                 <Button
-                  className="px-8 bg-[#27632E] text-white"
+                  className={cn(
+                    buttonStyles,
+                    "bg-brand-green-dark text-white px-8"
+                  )}
                   onPress={() => handleSubmit(onSubmit)()}
                   isDisabled={isFormDisabled}
                   isLoading={isSubmitting}

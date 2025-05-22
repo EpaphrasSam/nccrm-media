@@ -28,7 +28,7 @@ interface LoginResponse {
 }
 
 const authRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
-const publicRoutes = ["/", "/settings", "/unauthorized"];
+const publicRoutes = ["/", "/settings", "/unauthorized", "/not-found"];
 
 type PermissionModule = keyof RolePermissions;
 type PermissionAction = keyof BaseFunctions;
@@ -53,8 +53,9 @@ function checkPermission(
 
 function hasAccessForPath(
   pathname: string,
-  permissions: RolePermissions | null | undefined
-): boolean {
+  permissions: RolePermissions | null | undefined,
+  nextUrl?: URL
+): boolean | Response {
   const segments = pathname.split("/").filter(Boolean);
 
   if (publicRoutes.includes(pathname)) {
@@ -70,14 +71,10 @@ function hasAccessForPath(
     } else if (subPath.endsWith("/edit")) {
       return checkPermission(permissions, "situational_report", "edit");
     } else if (subPath.endsWith("/analysis")) {
-      return checkPermission(permissions, "situational_analysis", "view");
+      return checkPermission(permissions, "situational_report", "view");
     } else if (subPath === "/overview-summary") {
-      return (
-        checkPermission(permissions, "situational_report", "view") &&
-        checkPermission(permissions, "situational_analysis", "view")
-      );
+      return checkPermission(permissions, "situational_report", "view");
     }
-
     return checkPermission(permissions, "situational_report", "view");
   }
 
@@ -91,6 +88,9 @@ function hasAccessForPath(
   const permissionModule = moduleMap[moduleSegment];
 
   if (!permissionModule) {
+    if (nextUrl) {
+      return Response.redirect(new URL("/not-found", nextUrl));
+    }
     return false;
   }
 
@@ -196,8 +196,11 @@ export const authConfig = {
       }
 
       // Check permissions for the requested path
-      if (hasAccessForPath(pathname, userPermissions)) {
+      const accessResult = hasAccessForPath(pathname, userPermissions, nextUrl);
+      if (accessResult === true) {
         return true; // Access granted
+      } else if (accessResult instanceof Response) {
+        return accessResult; // Redirect to /not-found
       }
 
       // If no access, redirect to the dedicated unauthorized page

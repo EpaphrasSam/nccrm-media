@@ -9,9 +9,7 @@ export function OverviewSummaryButton() {
   const router = useRouter();
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
 
-  const canViewOverview =
-    hasPermission("situational_report", "view") &&
-    hasPermission("situational_analysis", "view");
+  const canViewOverview = hasPermission("situational_report", "view");
 
   if (permissionsLoading || !canViewOverview) {
     return null;

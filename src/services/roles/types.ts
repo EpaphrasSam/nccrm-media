@@ -20,7 +20,6 @@ export interface RolePermissions {
   event: RoleFunctions;
   user: RoleFunctions;
   situational_report: RoleFunctions;
-  situational_analysis: RoleFunctions;
 }
 
 export interface Role {
