@@ -55,7 +55,7 @@ export function useUserSync(pollInterval = 0) {
             description: "Please log in again.",
             color: "danger",
           });
-          signOutWithSessionClear();
+          signOutWithSessionClear({ callbackUrl: "/login" });
         }
         throw err;
       }
@@ -64,9 +64,6 @@ export function useUserSync(pollInterval = 0) {
   );
 
   useEffect(() => {
-    if (!sessionStorage.getItem("active")) {
-      return;
-    }
     const pickedUser = pickRelevantUserFields(user);
     const pickedSessionUser = pickRelevantUserFields(
       session?.user as AuthResponse
@@ -79,7 +76,7 @@ export function useUserSync(pollInterval = 0) {
         description: "Please contact support.",
         color: "danger",
       });
-      signOutWithSessionClear();
+      signOutWithSessionClear({ callbackUrl: "/login" });
       return;
     }
 
@@ -90,7 +87,7 @@ export function useUserSync(pollInterval = 0) {
         description: "Please contact support.",
         color: "danger",
       });
-      signOutWithSessionClear();
+      signOutWithSessionClear({ callbackUrl: "/login" });
       return;
     }
 

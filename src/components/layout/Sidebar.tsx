@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { routes, bottomRoutes, Route, RouteGroup } from "@/lib/routes";
 import { authService } from "@/services/auth/api";
 import { useState, useMemo } from "react";
@@ -15,7 +15,6 @@ interface SidebarProps {
 
 export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Use the permissions hook
@@ -31,7 +30,6 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
     try {
       setIsLoggingOut(true);
       await authService.logout();
-      router.push("/login");
     } catch (error) {
       console.error("Logout failed", error);
     } finally {

@@ -43,7 +43,9 @@ export const authService = {
   },
 
   logout(options?: ApiOptions) {
-    const promise = signOutWithSessionClear().then(() => null);
+    const promise = signOutWithSessionClear({ callbackUrl: "/login" }).then(
+      () => null
+    );
     return clientApiCall(promise, null, false, options);
   },
 
