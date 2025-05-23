@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Input, Button, Autocomplete, AutocompleteItem } from "@heroui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import useSWR from "swr";
 import { Logo } from "@/components/common/misc/Logo";
@@ -40,6 +40,7 @@ export function SignupForm() {
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -51,6 +52,21 @@ export function SignupForm() {
     "departments",
     () => authService.getDepartment() as Promise<Department[]>
   );
+
+  // Sync deptInputValue with selected department's name
+  const selectedDepartmentId = watch("department");
+  useEffect(() => {
+    if (selectedDepartmentId && departments) {
+      const selected = departments.find(
+        (dept) => dept.id === selectedDepartmentId
+      );
+      if (selected) {
+        setDeptInputValue(selected.name);
+        return;
+      }
+    }
+    setDeptInputValue("");
+  }, [selectedDepartmentId, departments]);
 
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
@@ -170,8 +186,26 @@ export function SignupForm() {
                 isLoading={!departments}
                 items={filteredDepartments}
                 selectedKey={field.value || undefined}
-                onSelectionChange={(key) =>
-                  field.onChange(key?.toString() || "")
+                onSelectionChange={(key) => {
+                  if (key) {
+                    field.onChange(key.toString());
+                    const selectedItem = filteredDepartments.find(
+                      (item) => item.id === key
+                    );
+                    if (selectedItem) {
+                      setDeptInputValue(selectedItem.name);
+                    }
+                  }
+                }}
+                defaultInputValue={
+                  field.value
+                    ? (() => {
+                        const selectedItem = filteredDepartments.find(
+                          (item) => item.id === field.value
+                        );
+                        return selectedItem ? selectedItem.name : "";
+                      })()
+                    : ""
                 }
                 inputValue={deptInputValue}
                 onInputChange={setDeptInputValue}

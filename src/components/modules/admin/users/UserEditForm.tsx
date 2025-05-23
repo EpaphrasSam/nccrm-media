@@ -31,11 +31,11 @@ import { usePermissions } from "@/hooks/usePermissions";
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  role_id: z.string().min(1, "Role is required"),
+  role_id: z.string().optional(),
 });
 
 const personalInfoSchema = z.object({
-  phone_number: z.string().min(1, "Phone number is required"),
+  phone_number: z.string().optional(),
   gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]),
 });
 
