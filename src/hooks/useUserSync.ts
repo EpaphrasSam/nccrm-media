@@ -64,6 +64,9 @@ export function useUserSync(pollInterval = 0) {
   );
 
   useEffect(() => {
+    if (!sessionStorage.getItem("active")) {
+      return;
+    }
     const pickedUser = pickRelevantUserFields(user);
     const pickedSessionUser = pickRelevantUserFields(
       session?.user as AuthResponse

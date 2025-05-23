@@ -196,7 +196,6 @@ async function customFetch<T>(
       ok: response.ok,
     };
   } catch (error: any) {
-    console.log("FETCH ERROR", error);
     // Handle network errors or other non-HTTP errors
     if (!error.status) {
       error.message =
@@ -242,6 +241,7 @@ export const fetchClient = {
 function signOutWithSessionClear(...args: any[]) {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem("active");
+    sessionStorage.setItem("signedOut", "1");
   }
   return nextAuthSignOut(...args);
 }
