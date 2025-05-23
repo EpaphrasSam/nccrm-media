@@ -1,6 +1,5 @@
 import { fetchClient, signOutWithSessionClear } from "@/utils/fetch-client";
 import { clientApiCall } from "@/utils/api-wrapper";
-import { signIn } from "next-auth/react";
 import type {
   AuthResponse,
   LoginCredentials,
@@ -10,22 +9,37 @@ import type {
   ChangePasswordData,
 } from "./types";
 import { Department } from "../departments/types";
-import { AUTH_ERROR_MESSAGES, type AuthErrorCode } from "./errors";
 import type { ApiOptions } from "@/services/users/api";
 
+interface LoginResponse {
+  user: AuthResponse;
+  token: string;
+  message?: string;
+}
+
 export const authService = {
-  login(credentials: LoginCredentials, options?: ApiOptions) {
-    const promise = signIn("credentials", {
-      ...credentials,
-      redirect: false,
-    }).then((result) => {
-      if (result?.error) {
-        const code = result.code as AuthErrorCode;
-        throw new Error(AUTH_ERROR_MESSAGES[code] || "Authentication failed");
-      }
-      return result;
-    });
-    return clientApiCall(promise, null, false, options);
+  async login(credentials: LoginCredentials) {
+    const promise = fetchClient
+      .post<LoginResponse>("/auth/login", credentials, {
+        returnErrorStatus: true,
+      })
+      .then((res) => {
+        const { user, token, ...rest } = res.data;
+        if (user.status === "deactivated") {
+          return Promise.reject(
+            new Error(
+              "Account has been deactivated, please contact your administrator"
+            )
+          );
+        }
+        if (user.status === "pending_verification") {
+          return Promise.reject(
+            new Error("Account not approved, please contact your administrator")
+          );
+        }
+        return { ...user, token, ...rest };
+      });
+    return clientApiCall(promise, null, false);
   },
 
   logout(options?: ApiOptions) {

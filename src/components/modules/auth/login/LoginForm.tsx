@@ -11,6 +11,7 @@ import { Logo } from "@/components/common/misc/Logo";
 import { inputStyles } from "@/lib/styles";
 import { authService } from "@/services/auth/api";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -37,9 +38,32 @@ export function LoginForm() {
       const result = await authService.login(data);
 
       if (result) {
+        // Serialize nested objects
+        const safeResult = {
+          ...result,
+          role: result.role ? JSON.stringify(result.role) : null,
+          department: result.department
+            ? JSON.stringify(result.department)
+            : null,
+        };
+
+        const signInResult = await signIn("credentials", {
+          ...safeResult,
+          redirect: false,
+        });
+
+        if (signInResult?.error) {
+          addToast({
+            title: "Login Error",
+            description: signInResult.error,
+            color: "danger",
+          });
+          return;
+        }
+
         sessionStorage.setItem("active", "true");
         addToast({
-          title: "Login Successful",
+          title: "Login successful",
           color: "success",
         });
         router.push("/");
