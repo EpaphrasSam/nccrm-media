@@ -15,24 +15,24 @@ export function useIdleLogout() {
     const isActive = sessionStorage.getItem("active");
 
     if (!isActive) {
-      signOutWithSessionClear({ callbackUrl: "/login" });
       addToast({
         title: "Session timeout",
         description: "Session timeout, please log in again.",
         color: "danger",
       });
+      signOutWithSessionClear({ callbackUrl: "/login" });
       return;
     }
 
     const resetTimer = () => {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
-        signOutWithSessionClear({ callbackUrl: "/login" });
         addToast({
           title: "Idle timeout",
           description: "You have been logged out due to inactivity.",
           color: "danger",
         });
+        signOutWithSessionClear({ callbackUrl: "/login" });
       }, IDLE_TIMEOUT);
     };
 
