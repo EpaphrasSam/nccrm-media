@@ -192,6 +192,7 @@ export function UserCreateForm() {
                 placeholder="Enter full name"
                 variant="bordered"
                 classNames={inputStyles}
+                isRequired
                 isInvalid={!!errors.name}
                 errorMessage={errors.name?.message}
               />
@@ -209,6 +210,7 @@ export function UserCreateForm() {
                 placeholder="Enter email address"
                 variant="bordered"
                 classNames={inputStyles}
+                isRequired
                 isInvalid={!!errors.email}
                 errorMessage={errors.email?.message}
               />
@@ -226,6 +228,7 @@ export function UserCreateForm() {
                 placeholder="Enter phone number"
                 variant="bordered"
                 classNames={inputStyles}
+                isRequired
                 isInvalid={!!errors.phone_number}
                 errorMessage={errors.phone_number?.message}
               />
@@ -247,6 +250,7 @@ export function UserCreateForm() {
                 placeholder="Select gender"
                 variant="bordered"
                 classNames={inputStyles}
+                isRequired
                 isInvalid={!!errors.gender}
                 errorMessage={errors.gender?.message}
               >
@@ -277,6 +281,7 @@ export function UserCreateForm() {
                   placeholder="Enter username"
                   variant="bordered"
                   classNames={inputStyles}
+                  isRequired
                   isInvalid={!!errors.username}
                   errorMessage={errors.username?.message}
                   isReadOnly={autoGenerateUsername}
@@ -308,6 +313,7 @@ export function UserCreateForm() {
                 placeholder="Enter password"
                 variant="bordered"
                 classNames={inputStyles}
+                isRequired
                 isInvalid={!!errors.password}
                 errorMessage={errors.password?.message}
                 description={
@@ -354,6 +360,7 @@ export function UserCreateForm() {
                 placeholder="Select a role"
                 variant="bordered"
                 classNames={inputStyles}
+                isRequired
                 isInvalid={!!errors.role_id}
                 errorMessage={errors.role_id?.message}
               >
@@ -381,6 +388,7 @@ export function UserCreateForm() {
                 placeholder="Select a department"
                 variant="bordered"
                 classNames={inputStyles}
+                isRequired
                 isInvalid={!!errors.department_id}
                 errorMessage={errors.department_id?.message}
               >

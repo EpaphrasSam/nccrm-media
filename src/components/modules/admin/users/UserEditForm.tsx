@@ -180,13 +180,22 @@ export function UserEditForm() {
     if (!currentUser || !canEditUser) return;
     try {
       setIsSubmittingProfile(true);
-      const updateData = { ...data };
+      const updateData: Partial<ProfileFormData & { image?: File }> = {
+        name: data.name,
+        email: data.email,
+      };
+
+      // Only include role_id if it's not empty
+      if (data.role_id && data.role_id.trim() !== "") {
+        updateData.role_id = data.role_id;
+      }
+
       if (profileImage && profileImage !== currentUser.image) {
         // Only include image if it has changed
         const response = await fetch(profileImage);
         const blob = await response.blob();
         const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
-        Object.assign(updateData, { image: file });
+        updateData.image = file;
       }
       await updateUser(currentUser.id, updateData);
     } catch (error) {
@@ -200,7 +209,16 @@ export function UserEditForm() {
     if (!currentUser || !canEditUser) return;
     try {
       setIsSubmittingPersonalInfo(true);
-      await updateUser(currentUser.id, data);
+      const updateData: Partial<PersonalInfoFormData> = {
+        gender: data.gender,
+      };
+
+      // Only include phone_number if it's not empty
+      if (data.phone_number && data.phone_number.trim() !== "") {
+        updateData.phone_number = data.phone_number;
+      }
+
+      await updateUser(currentUser.id, updateData);
     } catch (error) {
       console.error("Failed to update personal info:", error);
     } finally {
@@ -212,7 +230,21 @@ export function UserEditForm() {
     if (!currentUser || !canEditUser) return;
     try {
       setIsSubmittingAccountInfo(true);
-      await updateUser(currentUser.id, data);
+      const updateData: Partial<AccountInfoFormData> = {
+        department_id: data.department_id,
+      };
+
+      // Only include username if it's not empty
+      if (data.username && data.username.trim() !== "") {
+        updateData.username = data.username;
+      }
+
+      // Only include password if it's not empty
+      if (data.password && data.password.trim() !== "") {
+        updateData.password = data.password;
+      }
+
+      await updateUser(currentUser.id, updateData);
     } catch (error) {
       console.error("Failed to update account info:", error);
     } finally {
@@ -334,6 +366,7 @@ export function UserEditForm() {
                     placeholder="Enter full name"
                     variant="underlined"
                     classNames={{ label: "text-base font-medium" }}
+                    isRequired
                     isInvalid={!!profileForm.formState.errors.name}
                     errorMessage={profileForm.formState.errors.name?.message}
                   />
@@ -351,6 +384,7 @@ export function UserEditForm() {
                       placeholder="Enter email"
                       variant="underlined"
                       classNames={{ label: "text-base font-medium" }}
+                      isRequired
                       isInvalid={!!profileForm.formState.errors.email}
                       errorMessage={profileForm.formState.errors.email?.message}
                     />
@@ -442,6 +476,7 @@ export function UserEditForm() {
                   placeholder="Select gender"
                   variant="bordered"
                   classNames={inputStyles}
+                  isRequired
                   isInvalid={!!personalInfoForm.formState.errors.gender}
                   errorMessage={
                     personalInfoForm.formState.errors.gender?.message
@@ -569,6 +604,7 @@ export function UserEditForm() {
                   placeholder="Select department"
                   variant="bordered"
                   classNames={inputStyles}
+                  isRequired
                   isInvalid={!!accountInfoForm.formState.errors.department_id}
                   errorMessage={
                     accountInfoForm.formState.errors.department_id?.message
