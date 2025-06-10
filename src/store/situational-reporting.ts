@@ -151,10 +151,7 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
             throw new Error(error);
           },
         });
-        set((state) => ({
-          reports: state.reports.filter((r) => r.id !== reportId),
-          totalReports: state.totalReports - 1,
-        }));
+
         storeSync.trigger();
       } catch {
         // Error has been handled by handleError, we just need to stop execution

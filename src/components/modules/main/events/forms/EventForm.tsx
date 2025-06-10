@@ -35,7 +35,7 @@ const eventSchema = z.object({
   reporter_id: z.string().min(1, "Reporter is required"),
   report_date: z.string().min(1, "Report date is required"),
   details: z.string().optional(),
-  event_date: z.string().optional(),
+  event_date: z.string().min(1, "Event date is required"),
   region: z.string().min(1, "Region is required"),
   district: z.string().min(1, "District is required"),
   location_details: z.string().optional(),
@@ -128,7 +128,9 @@ export function EventForm({ isNew = false }: EventFormProps) {
         formData.event?.report_date || new Date().toISOString()
       ),
       details: formData.event?.details || "",
-      event_date: formatDateForInput(formData.event?.event_date) || "",
+      event_date:
+        formatDateForInput(formData.event?.event_date) ||
+        formatDateForInput(new Date().toISOString()),
       region: formData.event?.region || "",
       district: formData.event?.district || "",
       location_details: formData.event?.location_details || "",

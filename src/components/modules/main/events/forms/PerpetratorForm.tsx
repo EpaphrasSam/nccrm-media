@@ -19,10 +19,9 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const perpetratorSchema = z.object({
   perpetrator: z.string().optional(),
-  pep_age: z.coerce.number().optional(),
+  pep_age: z.string().optional(),
   pep_gender: z.string().optional(),
   pep_occupation: z.string().optional(),
-  pep_organization: z.string().optional(),
   pep_note: z.string().optional(),
 });
 
@@ -31,6 +30,14 @@ type PerpetratorFormValues = z.infer<typeof perpetratorSchema>;
 interface PerpetratorFormProps {
   isNew?: boolean;
 }
+
+// AU Age Brackets
+const ageBrackets = [
+  { key: "0-18", label: "0-18 years (Child)" },
+  { key: "15-35", label: "15-35 years (Youth)" },
+  { key: "36-59", label: "36-59 years (Adult)" },
+  { key: "60+", label: "60+ years (Older Persons/Elderly)" },
+];
 
 export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
   const {
@@ -45,10 +52,9 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
   const getDefaultValues = useCallback(
     () => ({
       perpetrator: formData.perpetrator?.perpetrator || "",
-      pep_age: formData.perpetrator?.pep_age || 0,
+      pep_age: formData.perpetrator?.pep_age || "",
       pep_gender: formData.perpetrator?.pep_gender || "",
       pep_occupation: formData.perpetrator?.pep_occupation || "",
-      pep_organization: formData.perpetrator?.pep_organization || "",
       pep_note: formData.perpetrator?.pep_note || "",
     }),
     [formData.perpetrator]
@@ -136,20 +142,27 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
         <Controller
           name="pep_age"
           control={control}
-          render={({ field: { value, onChange, ...field } }) => (
-            <Input
-              {...field}
-              type="number"
-              value={value?.toString() || ""}
-              onChange={(e) => onChange(Number(e.target.value))}
+          render={({ field }) => (
+            <Select
+              selectedKeys={field.value ? [field.value] : []}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0]?.toString();
+                if (value) field.onChange(value);
+              }}
               label="Age"
               labelPlacement="outside"
-              placeholder="Enter the age"
+              placeholder="Select age"
               variant="bordered"
               classNames={inputStyles}
               isInvalid={!!errors.pep_age}
               errorMessage={errors.pep_age?.message}
-            />
+            >
+              {ageBrackets.map((bracket) => (
+                <SelectItem key={bracket.key} textValue={bracket.key}>
+                  {bracket.label}
+                </SelectItem>
+              ))}
+            </Select>
           )}
         />
 
@@ -200,23 +213,6 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
               classNames={inputStyles}
               isInvalid={!!errors.pep_occupation}
               errorMessage={errors.pep_occupation?.message}
-            />
-          )}
-        />
-
-        <Controller
-          name="pep_organization"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              label="Organization"
-              labelPlacement="outside"
-              placeholder="Enter the organization"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.pep_organization}
-              errorMessage={errors.pep_organization?.message}
             />
           )}
         />

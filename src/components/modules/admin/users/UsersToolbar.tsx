@@ -22,40 +22,40 @@ interface FilterState {
 
 export function UsersToolbar() {
   const {
-    setSearchQuery,
     setFilters,
     resetFilters,
     addUser,
     isFiltersLoading,
     departments,
     roles,
+    filters,
   } = useUsersStore();
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
-    department: "all",
-    role: "all",
+    department: filters.department || "all",
+    role: filters.role || "all",
   });
 
+  const handleSearch = (query: string) => {
+    setFilters({ ...filters, search: query, page: 1 });
+  };
+
   const handleApplyFilters = () => {
-    const filters: Record<string, string> = {};
-
-    if (tempFilters.department && tempFilters.department !== "all") {
-      filters.department = tempFilters.department;
-    }
-
-    if (tempFilters.role && tempFilters.role !== "all") {
-      filters.role = tempFilters.role;
-    }
-
-    setFilters(filters);
+    setFilters({
+      ...filters,
+      department:
+        tempFilters.department === "all" ? undefined : tempFilters.department,
+      role: tempFilters.role === "all" ? undefined : tempFilters.role,
+      page: 1,
+    });
   };
 
   const handleClearFilters = () => {
+    resetFilters();
     setTempFilters({
       department: "all",
       role: "all",
     });
-    resetFilters();
   };
 
   const FilterComponent = (
@@ -152,7 +152,7 @@ export function UsersToolbar() {
   return (
     <AdminToolbar
       searchPlaceholder="Search users..."
-      onSearch={setSearchQuery}
+      onSearch={handleSearch}
       addButtonLabel="Add User"
       onAdd={addUser}
       filterComponent={FilterComponent}

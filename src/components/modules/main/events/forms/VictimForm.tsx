@@ -19,10 +19,9 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const victimSchema = z.object({
   victim: z.string().optional(),
-  victim_age: z.coerce.number().optional(),
+  victim_age: z.string().optional(),
   victim_gender: z.string().optional(),
   victim_occupation: z.string().optional(),
-  victim_organization: z.string().optional(),
   victim_note: z.string().optional(),
 });
 
@@ -31,6 +30,14 @@ type VictimFormValues = z.infer<typeof victimSchema>;
 interface VictimFormProps {
   isNew?: boolean;
 }
+
+// AU Age Brackets
+const ageBrackets = [
+  { key: "0-18", label: "0-18 years (Child)" },
+  { key: "15-35", label: "15-35 years (Youth)" },
+  { key: "36-59", label: "36-59 years (Adult)" },
+  { key: "60+", label: "60+ years (Older Persons/Elderly)" },
+];
 
 export function VictimForm({ isNew = false }: VictimFormProps) {
   const {
@@ -45,10 +52,9 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
   const getDefaultValues = useCallback(
     () => ({
       victim: formData.victim?.victim || "",
-      victim_age: formData.victim?.victim_age || 0,
+      victim_age: formData.victim?.victim_age || "",
       victim_gender: formData.victim?.victim_gender || "",
       victim_occupation: formData.victim?.victim_occupation || "",
-      victim_organization: formData.victim?.victim_organization || "",
       victim_note: formData.victim?.victim_note || "",
     }),
     [formData.victim]
@@ -135,20 +141,27 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
         <Controller
           name="victim_age"
           control={control}
-          render={({ field: { value, onChange, ...field } }) => (
-            <Input
-              {...field}
-              type="number"
-              value={value?.toString() || ""}
-              onChange={(e) => onChange(Number(e.target.value))}
+          render={({ field }) => (
+            <Select
+              selectedKeys={field.value ? [field.value] : []}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0]?.toString();
+                if (value) field.onChange(value);
+              }}
               label="Age"
               labelPlacement="outside"
-              placeholder="Enter the age"
+              placeholder="Select age"
               variant="bordered"
               classNames={inputStyles}
               isInvalid={!!errors.victim_age}
               errorMessage={errors.victim_age?.message}
-            />
+            >
+              {ageBrackets.map((bracket) => (
+                <SelectItem key={bracket.key} textValue={bracket.key}>
+                  {bracket.label}
+                </SelectItem>
+              ))}
+            </Select>
           )}
         />
 
@@ -199,23 +212,6 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
               classNames={inputStyles}
               isInvalid={!!errors.victim_occupation}
               errorMessage={errors.victim_occupation?.message}
-            />
-          )}
-        />
-
-        <Controller
-          name="victim_organization"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              label="Organization"
-              labelPlacement="outside"
-              placeholder="Enter the organization"
-              variant="bordered"
-              classNames={inputStyles}
-              isInvalid={!!errors.victim_organization}
-              errorMessage={errors.victim_organization?.message}
             />
           )}
         />

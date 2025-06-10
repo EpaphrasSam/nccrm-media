@@ -22,7 +22,6 @@ import { FileUpload } from "./FileUpload";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const contextSchema = z.object({
-  info_credibility: z.string().optional(),
   info_source: z.string().optional(),
   impact: z.string().optional(),
   weapons_use: z.string().optional(),
@@ -54,7 +53,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
 
   const getDefaultValues = useCallback(
     () => ({
-      info_credibility: formData.context?.info_credibility || "",
       info_source: formData.context?.info_source || "",
       impact: formData.context?.impact || "",
       weapons_use: formData.context?.weapons_use || "",
@@ -124,16 +122,14 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
         sub_indicator_id: formData.event.sub_indicator_id || "",
         follow_ups: formData.event.follow_ups || [],
         perpetrator: formData.perpetrator?.perpetrator || "",
-        pep_age: formData.perpetrator?.pep_age || 0,
+        pep_age: formData.perpetrator?.pep_age || "",
         pep_gender: (formData.perpetrator?.pep_gender || "male") as Gender,
         pep_occupation: formData.perpetrator?.pep_occupation || "",
-        pep_organization: formData.perpetrator?.pep_organization || "",
         pep_note: formData.perpetrator?.pep_note || "",
         victim: formData.victim?.victim || "",
-        victim_age: formData.victim?.victim_age || 0,
+        victim_age: formData.victim?.victim_age || "",
         victim_gender: (formData.victim?.victim_gender || "male") as Gender,
         victim_occupation: formData.victim?.victim_occupation || "",
-        victim_organization: formData.victim?.victim_organization || "",
         victim_note: formData.victim?.victim_note || "",
         death_count_men: formData.outcome?.death_count_men || 0,
         death_count_women_chldren:
@@ -184,12 +180,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     );
   }
 
-  const credibilityOptions = [
-    { id: "high", name: "High" },
-    { id: "medium", name: "Medium" },
-    { id: "low", name: "Low" },
-  ];
-
   const impactOptions = [
     { id: "high", name: "High" },
     { id: "medium", name: "Medium" },
@@ -202,31 +192,6 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
       className="flex flex-col min-h-[calc(100vh-14rem)]"
     >
       <div className="flex flex-col gap-6">
-        <Controller
-          name="info_credibility"
-          control={control}
-          render={({ field }) => (
-            <Select
-              selectedKeys={field.value ? [field.value] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
-              }}
-              label="Information Credibility"
-              labelPlacement="outside"
-              placeholder="Select the level of information credibility"
-              variant="bordered"
-              classNames={inputStyles}
-            >
-              {credibilityOptions.map((option) => (
-                <SelectItem key={option.id} textValue={option.name}>
-                  {option.name}
-                </SelectItem>
-              ))}
-            </Select>
-          )}
-        />
-
         <Controller
           name="info_source"
           control={control}

@@ -100,10 +100,6 @@ export const useUsersStore = create<UsersState>((set) => ({
           throw new Error(error);
         },
       });
-      set((state) => ({
-        users: state.users.filter((u) => u.id !== userId),
-        totalUsers: state.totalUsers - 1,
-      }));
       storeSync.trigger();
     } catch {
       // Error has been handled by handleError, we just need to stop execution

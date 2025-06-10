@@ -38,18 +38,16 @@ export interface EventFormData {
 export interface PerpetratorFormData {
   perpetrator?: string;
   pep_gender?: string;
-  pep_age?: number;
+  pep_age?: string;
   pep_occupation?: string;
-  pep_organization?: string;
   pep_note?: string;
 }
 
 export interface VictimFormData {
   victim?: string;
-  victim_age?: number;
+  victim_age?: string;
   victim_gender?: string;
   victim_occupation?: string;
-  victim_organization?: string;
   victim_note?: string;
 }
 
@@ -65,7 +63,6 @@ export interface OutcomeFormData {
 }
 
 export interface ContextFormData {
-  info_credibility?: string;
   info_source?: string;
   impact?: string;
   weapons_use?: string;
@@ -236,7 +233,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
           throw new Error(error);
         },
       });
-      get().resetForm();
       navigationService.replace("/events");
     } catch {
       // Error has been handled by handleError, we just need to stop execution
@@ -308,15 +304,13 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         { key: "sub_indicator.name", label: "Sub Indicator" },
         { key: "perpetrator", label: "Perpetrator" },
         { key: "pep_gender", label: "Perpetrator Gender" },
-        { key: "pep_age", label: "Perpetrator Age" },
+        { key: "pep_age", label: "Perpetrator Age Bracket" },
         { key: "pep_occupation", label: "Perpetrator Occupation" },
-        { key: "pep_organization", label: "Perpetrator Organization" },
         { key: "pep_note", label: "Perpetrator Notes" },
         { key: "victim", label: "Victim" },
         { key: "victim_gender", label: "Victim Gender" },
-        { key: "victim_age", label: "Victim Age" },
+        { key: "victim_age", label: "Victim Age Bracket" },
         { key: "victim_occupation", label: "Victim Occupation" },
-        { key: "victim_organization", label: "Victim Organization" },
         { key: "victim_note", label: "Victim Notes" },
         { key: "death_count_men", label: "Death Count (Men)" },
         {
@@ -332,7 +326,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         { key: "injury_details", label: "Injury Details" },
         { key: "losses_count", label: "Losses Count" },
         { key: "losses_details", label: "Losses Details" },
-        { key: "info_credibility", label: "Information Credibility" },
         { key: "info_source", label: "Information Source" },
         { key: "impact", label: "Impact" },
         { key: "weapons_use", label: "Weapons Used" },

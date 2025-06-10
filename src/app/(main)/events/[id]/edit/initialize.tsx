@@ -84,7 +84,6 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
               pep_gender: event?.pep_gender,
               pep_age: event?.pep_age,
               pep_occupation: event?.pep_occupation,
-              pep_organization: event?.pep_organization,
               pep_note: event?.pep_note,
             },
             victim: {
@@ -92,7 +91,6 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
               victim_age: event?.victim_age,
               victim_gender: event?.victim_gender,
               victim_occupation: event?.victim_occupation,
-              victim_organization: event?.victim_organization,
               victim_note: event?.victim_note,
             },
             outcome: {
@@ -106,7 +104,6 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
               losses_details: event?.losses_details,
             },
             context: {
-              info_credibility: event?.info_credibility,
               info_source: event?.info_source,
               impact: event?.impact,
               weapons_use: event?.weapons_use,
