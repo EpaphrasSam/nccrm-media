@@ -15,7 +15,13 @@ interface InitializeEventProps {
 }
 
 export function InitializeEvent({ id, userId }: InitializeEventProps) {
-  const { setFormLoading } = useEventsStore();
+  const { setFormLoading, setMode, setCurrentStep } = useEventsStore();
+
+  // Set edit mode and reset step when component mounts
+  useEffect(() => {
+    setMode("edit");
+    setCurrentStep("event");
+  }, [id, setMode, setCurrentStep]);
 
   // Common SWR config to handle errors
   const swrConfig: SWRConfiguration = {

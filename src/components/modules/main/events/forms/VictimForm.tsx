@@ -2,7 +2,6 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Input,
   Button,
@@ -10,36 +9,23 @@ import {
   Textarea,
   Select,
   SelectItem,
+  cn,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-
-const victimSchema = z.object({
-  victim: z.string().optional(),
-  victim_age: z.string().optional(),
-  victim_gender: z.string().optional(),
-  victim_occupation: z.string().optional(),
-  victim_note: z.string().optional(),
-});
-
-type VictimFormValues = z.infer<typeof victimSchema>;
+import { victimSchema, type VictimFormValues, ageBrackets } from "./schemas";
 
 interface VictimFormProps {
   isNew?: boolean;
+  registerSaveCallback?: (stepKey: string, callback: () => void) => void;
 }
 
-// AU Age Brackets
-const ageBrackets = [
-  { key: "0-18", label: "0-18 years (Child)" },
-  { key: "15-35", label: "15-35 years (Youth)" },
-  { key: "36-59", label: "36-59 years (Adult)" },
-  { key: "60+", label: "60+ years (Older Persons/Elderly)" },
-];
-
-export function VictimForm({ isNew = false }: VictimFormProps) {
+export function VictimForm({
+  isNew = false,
+  registerSaveCallback,
+}: VictimFormProps) {
   const {
     setVictimForm,
     currentEvent,
@@ -51,24 +37,41 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
 
   const getDefaultValues = useCallback(
     () => ({
-      victim: formData.victim?.victim || "",
-      victim_age: formData.victim?.victim_age || "",
-      victim_gender: formData.victim?.victim_gender || "",
-      victim_occupation: formData.victim?.victim_occupation || "",
-      victim_note: formData.victim?.victim_note || "",
+      victim: currentEvent?.victim || formData.victim?.victim || "",
+      victim_age: currentEvent?.victim_age || formData.victim?.victim_age || "",
+      victim_gender:
+        currentEvent?.victim_gender || formData.victim?.victim_gender || "",
+      victim_occupation:
+        currentEvent?.victim_occupation ||
+        formData.victim?.victim_occupation ||
+        "",
+      victim_note:
+        currentEvent?.victim_note || formData.victim?.victim_note || "",
     }),
-    [formData.victim]
+    [formData.victim, currentEvent]
   );
 
   const {
     control,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<VictimFormValues>({
     resolver: zodResolver(victimSchema),
     defaultValues: getDefaultValues(),
   });
+
+  // Register save callback for step navigation
+  useEffect(() => {
+    if (registerSaveCallback) {
+      const saveFormData = () => {
+        const currentData = getValues();
+        setVictimForm(currentData);
+      };
+      registerSaveCallback("victim", saveFormData);
+    }
+  }, [registerSaveCallback, getValues, setVictimForm]);
 
   useEffect(() => {
     if (isNew) {
@@ -145,8 +148,14 @@ export function VictimForm({ isNew = false }: VictimFormProps) {
             <Select
               selectedKeys={field.value ? [field.value] : []}
               onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
+                const selectedKey = Array.from(keys)[0]?.toString();
+                if (selectedKey) {
+                  // Find the bracket and use its value
+                  const selectedBracket = ageBrackets.find(
+                    (bracket) => bracket.key === selectedKey
+                  );
+                  field.onChange(selectedBracket?.value || selectedKey);
+                }
               }}
               label="Age"
               labelPlacement="outside"

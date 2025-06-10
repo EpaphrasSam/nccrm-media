@@ -2,7 +2,6 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Input,
   Button,
@@ -20,24 +19,17 @@ import { FaChevronLeft } from "react-icons/fa";
 import { Gender } from "@/services/events/types";
 import { FileUpload } from "./FileUpload";
 import { usePermissions } from "@/hooks/usePermissions";
-
-const contextSchema = z.object({
-  info_source: z.string().optional(),
-  impact: z.string().optional(),
-  weapons_use: z.string().optional(),
-  context_details: z.string().optional(),
-  docs: z.array(z.instanceof(File)).optional(),
-  files: z.array(z.string()).optional(),
-  newDocs: z.array(z.instanceof(File)).optional(),
-});
-
-type ContextFormValues = z.infer<typeof contextSchema>;
+import { contextSchema, type ContextFormValues } from "./schemas";
 
 interface ContextFormProps {
   isNew?: boolean;
+  registerSaveCallback?: (stepKey: string, callback: () => void) => void;
 }
 
-export function ContextForm({ isNew = false }: ContextFormProps) {
+export function ContextForm({
+  isNew = false,
+  registerSaveCallback,
+}: ContextFormProps) {
   const {
     setContextForm,
     currentEvent,
@@ -53,10 +45,15 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
 
   const getDefaultValues = useCallback(
     () => ({
-      info_source: formData.context?.info_source || "",
-      impact: formData.context?.impact || "",
-      weapons_use: formData.context?.weapons_use || "",
-      context_details: formData.context?.context_details || "",
+      info_source:
+        currentEvent?.info_source || formData.context?.info_source || "",
+      impact: currentEvent?.impact || formData.context?.impact || "",
+      weapons_use:
+        currentEvent?.weapons_use || formData.context?.weapons_use || "",
+      context_details:
+        currentEvent?.context_details ||
+        formData.context?.context_details ||
+        "",
       docs: [],
       files: currentEvent?.files || [],
       newDocs: [],
@@ -69,11 +66,23 @@ export function ContextForm({ isNew = false }: ContextFormProps) {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { isSubmitting },
   } = useForm<ContextFormValues>({
     resolver: zodResolver(contextSchema),
     defaultValues: getDefaultValues(),
   });
+
+  // Register save callback for step navigation
+  useEffect(() => {
+    if (registerSaveCallback) {
+      const saveFormData = () => {
+        const currentData = getValues();
+        setContextForm(currentData);
+      };
+      registerSaveCallback("context", saveFormData);
+    }
+  }, [registerSaveCallback, getValues, setContextForm]);
 
   useEffect(() => {
     if (isNew) {

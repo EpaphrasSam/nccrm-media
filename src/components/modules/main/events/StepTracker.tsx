@@ -53,6 +53,7 @@ const CustomStepper = styled(Stepper)(() => ({
   "& .MuiStepLabel-label": {
     fontFamily: "Roboto",
     fontSize: "14px",
+    cursor: "pointer",
     "&.Mui-active": {
       color: "#AC0000",
     },

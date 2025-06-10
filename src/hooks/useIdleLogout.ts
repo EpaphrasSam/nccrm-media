@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 import { signOutWithSessionClear } from "@/utils/fetch-client";
 import { addToast } from "@heroui/react";
 
-const IDLE_TIMEOUT = 60 * 60 * 1000; // 10 minutes
+const IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 export function useIdleLogout() {
   const timer = useRef<NodeJS.Timeout | null>(null);

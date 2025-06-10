@@ -2,32 +2,22 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Input, Button, Skeleton, Textarea } from "@heroui/react";
+import { Input, Button, Skeleton, Textarea, cn } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-
-const outcomeSchema = z.object({
-  death_count_men: z.coerce.number().optional(),
-  death_count_women_chldren: z.coerce.number().optional(),
-  death_details: z.string().optional(),
-  injury_count_men: z.coerce.number().optional(),
-  injury_count_women_chldren: z.coerce.number().optional(),
-  injury_details: z.string().optional(),
-  losses_count: z.coerce.number().optional(),
-  losses_details: z.string().optional(),
-});
-
-type OutcomeFormValues = z.infer<typeof outcomeSchema>;
+import { outcomeSchema, type OutcomeFormValues } from "./schemas";
 
 interface OutcomeFormProps {
   isNew?: boolean;
+  registerSaveCallback?: (stepKey: string, callback: () => void) => void;
 }
 
-export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
+export function OutcomeForm({
+  isNew = false,
+  registerSaveCallback,
+}: OutcomeFormProps) {
   const {
     setOutcomeForm,
     currentEvent,
@@ -39,29 +29,53 @@ export function OutcomeForm({ isNew = false }: OutcomeFormProps) {
 
   const getDefaultValues = useCallback(
     () => ({
-      death_count_men: formData.outcome?.death_count_men || 0,
+      death_count_men:
+        currentEvent?.death_count_men ?? formData.outcome?.death_count_men ?? 0,
       death_count_women_chldren:
-        formData.outcome?.death_count_women_chldren || 0,
-      death_details: formData.outcome?.death_details || "",
-      injury_count_men: formData.outcome?.injury_count_men || 0,
+        currentEvent?.death_count_women_chldren ??
+        formData.outcome?.death_count_women_chldren ??
+        0,
+      death_details:
+        currentEvent?.death_details || formData.outcome?.death_details || "",
+      injury_count_men:
+        currentEvent?.injury_count_men ??
+        formData.outcome?.injury_count_men ??
+        0,
       injury_count_women_chldren:
-        formData.outcome?.injury_count_women_chldren || 0,
-      injury_details: formData.outcome?.injury_details || "",
-      losses_count: formData.outcome?.losses_count || 0,
-      losses_details: formData.outcome?.losses_details || "",
+        currentEvent?.injury_count_women_chldren ??
+        formData.outcome?.injury_count_women_chldren ??
+        0,
+      injury_details:
+        currentEvent?.injury_details || formData.outcome?.injury_details || "",
+      losses_count:
+        currentEvent?.losses_count ?? formData.outcome?.losses_count ?? 0,
+      losses_details:
+        currentEvent?.losses_details || formData.outcome?.losses_details || "",
     }),
-    [formData.outcome]
+    [formData.outcome, currentEvent]
   );
 
   const {
     control,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<OutcomeFormValues>({
     resolver: zodResolver(outcomeSchema),
     defaultValues: getDefaultValues(),
   });
+
+  // Register save callback for step navigation
+  useEffect(() => {
+    if (registerSaveCallback) {
+      const saveFormData = () => {
+        const currentData = getValues();
+        setOutcomeForm(currentData);
+      };
+      registerSaveCallback("outcome", saveFormData);
+    }
+  }, [registerSaveCallback, getValues, setOutcomeForm]);
 
   useEffect(() => {
     if (isNew) {

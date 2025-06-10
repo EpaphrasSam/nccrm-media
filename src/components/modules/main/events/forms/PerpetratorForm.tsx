@@ -2,7 +2,6 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Input,
   Button,
@@ -10,36 +9,27 @@ import {
   Textarea,
   Select,
   SelectItem,
+  cn,
 } from "@heroui/react";
 import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-
-const perpetratorSchema = z.object({
-  perpetrator: z.string().optional(),
-  pep_age: z.string().optional(),
-  pep_gender: z.string().optional(),
-  pep_occupation: z.string().optional(),
-  pep_note: z.string().optional(),
-});
-
-type PerpetratorFormValues = z.infer<typeof perpetratorSchema>;
+import {
+  perpetratorSchema,
+  type PerpetratorFormValues,
+  ageBrackets,
+} from "./schemas";
 
 interface PerpetratorFormProps {
   isNew?: boolean;
+  registerSaveCallback?: (stepKey: string, callback: () => void) => void;
 }
 
-// AU Age Brackets
-const ageBrackets = [
-  { key: "0-18", label: "0-18 years (Child)" },
-  { key: "15-35", label: "15-35 years (Youth)" },
-  { key: "36-59", label: "36-59 years (Adult)" },
-  { key: "60+", label: "60+ years (Older Persons/Elderly)" },
-];
-
-export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
+export function PerpetratorForm({
+  isNew = false,
+  registerSaveCallback,
+}: PerpetratorFormProps) {
   const {
     setPerpetratorForm,
     currentEvent,
@@ -51,24 +41,41 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
 
   const getDefaultValues = useCallback(
     () => ({
-      perpetrator: formData.perpetrator?.perpetrator || "",
-      pep_age: formData.perpetrator?.pep_age || "",
-      pep_gender: formData.perpetrator?.pep_gender || "",
-      pep_occupation: formData.perpetrator?.pep_occupation || "",
-      pep_note: formData.perpetrator?.pep_note || "",
+      perpetrator:
+        currentEvent?.perpetrator || formData.perpetrator?.perpetrator || "",
+      pep_age: currentEvent?.pep_age || formData.perpetrator?.pep_age || "",
+      pep_gender:
+        currentEvent?.pep_gender || formData.perpetrator?.pep_gender || "",
+      pep_occupation:
+        currentEvent?.pep_occupation ||
+        formData.perpetrator?.pep_occupation ||
+        "",
+      pep_note: currentEvent?.pep_note || formData.perpetrator?.pep_note || "",
     }),
-    [formData.perpetrator]
+    [formData.perpetrator, currentEvent]
   );
 
   const {
     control,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<PerpetratorFormValues>({
     resolver: zodResolver(perpetratorSchema),
     defaultValues: getDefaultValues(),
   });
+
+  // Register save callback for step navigation
+  useEffect(() => {
+    if (registerSaveCallback) {
+      const saveFormData = () => {
+        const currentData = getValues();
+        setPerpetratorForm(currentData);
+      };
+      registerSaveCallback("perpetrator", saveFormData);
+    }
+  }, [registerSaveCallback, getValues, setPerpetratorForm]);
 
   // Handle loading state and form reset
   useEffect(() => {
@@ -146,8 +153,14 @@ export function PerpetratorForm({ isNew = false }: PerpetratorFormProps) {
             <Select
               selectedKeys={field.value ? [field.value] : []}
               onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
+                const selectedKey = Array.from(keys)[0]?.toString();
+                if (selectedKey) {
+                  // Find the bracket and use its value
+                  const selectedBracket = ageBrackets.find(
+                    (bracket) => bracket.key === selectedKey
+                  );
+                  field.onChange(selectedBracket?.value || selectedKey);
+                }
               }}
               label="Age"
               labelPlacement="outside"

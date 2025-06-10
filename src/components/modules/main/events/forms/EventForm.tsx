@@ -2,7 +2,6 @@
 
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useSession } from "next-auth/react";
 import {
   Input,
@@ -19,6 +18,12 @@ import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { FaChevronRight, FaPlus, FaTrash } from "react-icons/fa";
 import useSWR from "swr";
+import { eventSchema, type EventFormValues } from "./schemas";
+
+interface EventFormProps {
+  isNew?: boolean;
+  registerSaveCallback?: (stepKey: string, callback: () => void) => void;
+}
 
 // Helper functions for date formatting
 const formatDateForInput = (dateString: string | null | undefined) => {
@@ -30,26 +35,6 @@ const formatDateForInput = (dateString: string | null | undefined) => {
 const formatDateForSubmit = (dateString: string) => {
   return new Date(dateString).toISOString();
 };
-
-const eventSchema = z.object({
-  reporter_id: z.string().min(1, "Reporter is required"),
-  report_date: z.string().min(1, "Report date is required"),
-  details: z.string().optional(),
-  event_date: z.string().min(1, "Event date is required"),
-  region: z.string().min(1, "Region is required"),
-  district: z.string().min(1, "District is required"),
-  location_details: z.string().optional(),
-  sub_indicator_id: z.string().min(1, "What is required"),
-  follow_ups: z.array(z.string()).default([]),
-  city: z.string().min(1, "City is required"),
-  coordinates: z.string().min(1, "Coordinates are required"),
-});
-
-type EventFormValues = z.infer<typeof eventSchema>;
-
-interface EventFormProps {
-  isNew?: boolean;
-}
 
 // Define NominatimResult type
 interface NominatimResult {
@@ -95,7 +80,10 @@ const nominatimFetcher = async (query: string) => {
   }
 };
 
-export function EventForm({ isNew = false }: EventFormProps) {
+export function EventForm({
+  isNew = false,
+  registerSaveCallback,
+}: EventFormProps) {
   const { data: session } = useSession();
   const {
     setEventForm,
@@ -125,19 +113,29 @@ export function EventForm({ isNew = false }: EventFormProps) {
     () => ({
       reporter_id: currentEvent?.reporter?.id || session?.user?.id || "",
       report_date: formatDateForInput(
-        formData.event?.report_date || new Date().toISOString()
+        currentEvent?.report_date ||
+          formData.event?.report_date ||
+          new Date().toISOString()
       ),
-      details: formData.event?.details || "",
+      details: currentEvent?.details || formData.event?.details || "",
       event_date:
-        formatDateForInput(formData.event?.event_date) ||
-        formatDateForInput(new Date().toISOString()),
-      region: formData.event?.region || "",
-      district: formData.event?.district || "",
-      location_details: formData.event?.location_details || "",
-      sub_indicator_id: formData.event?.sub_indicator_id || "",
+        formatDateForInput(
+          currentEvent?.event_date || formData.event?.event_date
+        ) || formatDateForInput(new Date().toISOString()),
+      region: currentEvent?.region || formData.event?.region || "",
+      district: currentEvent?.district || formData.event?.district || "",
+      location_details:
+        currentEvent?.location_details ||
+        formData.event?.location_details ||
+        "",
+      sub_indicator_id:
+        currentEvent?.sub_indicator_id ||
+        formData.event?.sub_indicator_id ||
+        "",
       follow_ups: currentEvent?.follow_ups || [],
-      city: formData.event?.city || "",
-      coordinates: formData.event?.coordinates || undefined,
+      city: currentEvent?.city || formData.event?.city || "",
+      coordinates:
+        currentEvent?.coordinates || formData.event?.coordinates || "",
     }),
     [formData.event, currentEvent, session?.user?.id]
   );
@@ -150,6 +148,7 @@ export function EventForm({ isNew = false }: EventFormProps) {
     setError,
     setValue,
     watch,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -166,6 +165,26 @@ export function EventForm({ isNew = false }: EventFormProps) {
   const watchedCity = watch("city");
   const watchedDistrict = watch("district");
   const watchedRegion = watch("region");
+
+  // Register save callback for step navigation
+  useEffect(() => {
+    if (registerSaveCallback) {
+      const saveFormData = () => {
+        const currentData = getValues();
+        const formattedData = {
+          ...currentData,
+          report_date: formatDateForSubmit(currentData.report_date),
+          event_date: currentData.event_date
+            ? formatDateForSubmit(currentData.event_date)
+            : "",
+          details: currentData.details || "",
+          location_details: currentData.location_details || "",
+        };
+        setEventForm(formattedData);
+      };
+      registerSaveCallback("event", saveFormData);
+    }
+  }, [registerSaveCallback, getValues, setEventForm]);
 
   // Handle loading states
   useEffect(() => {

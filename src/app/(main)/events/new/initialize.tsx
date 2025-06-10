@@ -3,9 +3,16 @@
 import { useEventsStore } from "@/store/events";
 import { subIndicatorService } from "@/services/sub-indicators/api";
 import useSWR from "swr";
+import { useEffect } from "react";
 
 export function InitializeNewEvent() {
-  const { setFormLoading } = useEventsStore();
+  const { setFormLoading, setMode } = useEventsStore();
+
+  // Set new mode when component mounts, but don't reset step/data
+  useEffect(() => {
+    setMode("new");
+    // Don't reset step - let it restore from localStorage if available
+  }, [setMode]);
 
   // Common SWR config to handle errors
   const swrConfig = {
