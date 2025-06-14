@@ -437,7 +437,7 @@ export function ExportPreviewModal({
                   Failed to load event data. Please try again later.
                 </div>
               ) : (
-                <div className="md:max-h-[70vh] md:overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm p-2 md:p-4">
+                <div className="md:max-h-[70vh] overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm p-2 md:p-4">
                   <Table
                     aria-label="Event export preview table"
                     classNames={tableStyles}
