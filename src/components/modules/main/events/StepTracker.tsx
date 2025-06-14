@@ -7,7 +7,6 @@ import { styled } from "@mui/material/styles";
 interface StepTrackerProps {
   currentStep: EventFormStep;
   onStepClick?: (step: EventFormStep) => void;
-  isEditing?: boolean;
 }
 
 const steps: { key: EventFormStep; label: string }[] = [
@@ -63,17 +62,13 @@ const CustomStepper = styled(Stepper)(() => ({
   },
 }));
 
-export function StepTracker({
-  currentStep,
-  onStepClick,
-  isEditing = false,
-}: StepTrackerProps) {
+export function StepTracker({ currentStep, onStepClick }: StepTrackerProps) {
   const currentStepIndex = steps.findIndex((step) => step.key === currentStep);
 
   const handleStepClick = (index: number) => {
-    if (isEditing || index <= currentStepIndex) {
-      onStepClick?.(steps[index].key);
-    }
+    // Allow navigation to any step in both edit and new modes
+    // The EventFormContainer's handleStepClick callback will handle saving current step data
+    onStepClick?.(steps[index].key);
   };
 
   return (

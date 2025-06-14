@@ -34,6 +34,9 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
   const [isSaving, setIsSaving] = useState(false);
   const autoSaveInterval = useRef<NodeJS.Timeout | null>(null);
   const formSaveCallbacks = useRef<Record<string, () => void>>({});
+  const formValidateCallbacks = useRef<Record<string, () => Promise<boolean>>>(
+    {}
+  );
 
   // Register form save callback
   const registerFormSaveCallback = useCallback(
@@ -43,14 +46,65 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
     []
   );
 
-  // Handle step click with form save
+  // Register form validation callback
+  const registerFormValidateCallback = useCallback(
+    (stepKey: string, callback: () => Promise<boolean>) => {
+      formValidateCallbacks.current[stepKey] = callback;
+    },
+    []
+  );
+
+  // Handle step click with form save and validation
   const handleStepClick = useCallback(
-    (newStep: EventFormStep) => {
-      // Save current step data before switching
-      const currentStepCallback = formSaveCallbacks.current[currentStep];
-      if (currentStepCallback) {
-        currentStepCallback();
+    async (newStep: EventFormStep) => {
+      const stepOrder = [
+        "event",
+        "perpetrator",
+        "victim",
+        "outcome",
+        "context",
+      ];
+      const currentStepIndex = stepOrder.indexOf(currentStep);
+      const newStepIndex = stepOrder.indexOf(newStep);
+
+      // If moving forward, validate current step BEFORE saving
+      if (newStepIndex > currentStepIndex) {
+        // Get current form validation callback
+        const currentValidateCallback =
+          formValidateCallbacks.current[currentStep];
+        if (!currentValidateCallback) {
+          // If no validation callback, just save and proceed
+          const currentSaveCallback = formSaveCallbacks.current[currentStep];
+          if (currentSaveCallback) {
+            currentSaveCallback();
+          }
+          setCurrentStep(newStep);
+          return;
+        }
+
+        // Trigger form validation - this will show field-level errors
+        const isValid = await currentValidateCallback();
+
+        if (!isValid) {
+          // Form validation failed - errors are already shown on the form fields
+          // Don't navigate, just return
+          return;
+        }
+
+        // Validation passed - save current step data and navigate
+        const currentSaveCallback = formSaveCallbacks.current[currentStep];
+        if (currentSaveCallback) {
+          currentSaveCallback();
+        }
+      } else {
+        // Moving backward - always save current step data
+        const currentSaveCallback = formSaveCallbacks.current[currentStep];
+        if (currentSaveCallback) {
+          currentSaveCallback();
+        }
       }
+
+      // Navigation allowed - either going backward or current step validation passed
       setCurrentStep(newStep);
     },
     [currentStep, setCurrentStep]
@@ -222,12 +276,6 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
       };
 
       await updateEvent(currentEvent.id, completeFormData);
-
-      addToast({
-        title: "Success",
-        description: "Event saved successfully.",
-        color: "success",
-      });
     } catch (error) {
       console.error("Failed to save event:", error);
       addToast({
@@ -247,6 +295,7 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
           <EventForm
             isNew={!eventId}
             registerSaveCallback={registerFormSaveCallback}
+            registerValidateCallback={registerFormValidateCallback}
           />
         );
       case "perpetrator":
@@ -254,6 +303,7 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
           <PerpetratorForm
             isNew={!eventId}
             registerSaveCallback={registerFormSaveCallback}
+            registerValidateCallback={registerFormValidateCallback}
           />
         );
       case "victim":
@@ -261,6 +311,7 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
           <VictimForm
             isNew={!eventId}
             registerSaveCallback={registerFormSaveCallback}
+            registerValidateCallback={registerFormValidateCallback}
           />
         );
       case "outcome":
@@ -268,6 +319,7 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
           <OutcomeForm
             isNew={!eventId}
             registerSaveCallback={registerFormSaveCallback}
+            registerValidateCallback={registerFormValidateCallback}
           />
         );
       case "context":
@@ -275,6 +327,7 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
           <ContextForm
             isNew={!eventId}
             registerSaveCallback={registerFormSaveCallback}
+            registerValidateCallback={registerFormValidateCallback}
           />
         );
       default:
@@ -355,7 +408,6 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
           <StepTracker
             currentStep={currentStep}
             onStepClick={handleStepClick}
-            isEditing={!!eventId}
           />
         </div>
 

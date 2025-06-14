@@ -24,11 +24,16 @@ import {
 interface PerpetratorFormProps {
   isNew?: boolean;
   registerSaveCallback?: (stepKey: string, callback: () => void) => void;
+  registerValidateCallback?: (
+    stepKey: string,
+    callback: () => Promise<boolean>
+  ) => void;
 }
 
 export function PerpetratorForm({
   isNew = false,
   registerSaveCallback,
+  registerValidateCallback,
 }: PerpetratorFormProps) {
   const {
     setPerpetratorForm,
@@ -60,6 +65,7 @@ export function PerpetratorForm({
     handleSubmit,
     reset,
     getValues,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<PerpetratorFormValues>({
     resolver: zodResolver(perpetratorSchema),
@@ -76,6 +82,17 @@ export function PerpetratorForm({
       registerSaveCallback("perpetrator", saveFormData);
     }
   }, [registerSaveCallback, getValues, setPerpetratorForm]);
+
+  // Register validation callback for step navigation
+  useEffect(() => {
+    if (registerValidateCallback) {
+      const validateFormData = async () => {
+        const result = await trigger();
+        return result;
+      };
+      registerValidateCallback("perpetrator", validateFormData);
+    }
+  }, [registerValidateCallback, trigger]);
 
   // Handle loading state and form reset
   useEffect(() => {

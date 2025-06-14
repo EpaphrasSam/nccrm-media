@@ -12,11 +12,16 @@ import { outcomeSchema, type OutcomeFormValues } from "./schemas";
 interface OutcomeFormProps {
   isNew?: boolean;
   registerSaveCallback?: (stepKey: string, callback: () => void) => void;
+  registerValidateCallback?: (
+    stepKey: string,
+    callback: () => Promise<boolean>
+  ) => void;
 }
 
 export function OutcomeForm({
   isNew = false,
   registerSaveCallback,
+  registerValidateCallback,
 }: OutcomeFormProps) {
   const {
     setOutcomeForm,
@@ -60,6 +65,7 @@ export function OutcomeForm({
     handleSubmit,
     reset,
     getValues,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<OutcomeFormValues>({
     resolver: zodResolver(outcomeSchema),
@@ -76,6 +82,17 @@ export function OutcomeForm({
       registerSaveCallback("outcome", saveFormData);
     }
   }, [registerSaveCallback, getValues, setOutcomeForm]);
+
+  // Register validation callback for step navigation
+  useEffect(() => {
+    if (registerValidateCallback) {
+      const validateFormData = async () => {
+        const result = await trigger();
+        return result;
+      };
+      registerValidateCallback("outcome", validateFormData);
+    }
+  }, [registerValidateCallback, trigger]);
 
   useEffect(() => {
     if (isNew) {

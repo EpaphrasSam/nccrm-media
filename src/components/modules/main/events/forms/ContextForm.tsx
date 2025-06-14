@@ -24,11 +24,16 @@ import { contextSchema, type ContextFormValues } from "./schemas";
 interface ContextFormProps {
   isNew?: boolean;
   registerSaveCallback?: (stepKey: string, callback: () => void) => void;
+  registerValidateCallback?: (
+    stepKey: string,
+    callback: () => Promise<boolean>
+  ) => void;
 }
 
 export function ContextForm({
   isNew = false,
   registerSaveCallback,
+  registerValidateCallback,
 }: ContextFormProps) {
   const {
     setContextForm,
@@ -67,6 +72,7 @@ export function ContextForm({
     reset,
     setValue,
     getValues,
+    trigger,
     formState: { isSubmitting },
   } = useForm<ContextFormValues>({
     resolver: zodResolver(contextSchema),
@@ -83,6 +89,17 @@ export function ContextForm({
       registerSaveCallback("context", saveFormData);
     }
   }, [registerSaveCallback, getValues, setContextForm]);
+
+  // Register validation callback for step navigation
+  useEffect(() => {
+    if (registerValidateCallback) {
+      const validateFormData = async () => {
+        const result = await trigger();
+        return result;
+      };
+      registerValidateCallback("context", validateFormData);
+    }
+  }, [registerValidateCallback, trigger]);
 
   useEffect(() => {
     if (isNew) {

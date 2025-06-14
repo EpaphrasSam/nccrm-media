@@ -20,11 +20,16 @@ import { victimSchema, type VictimFormValues, ageBrackets } from "./schemas";
 interface VictimFormProps {
   isNew?: boolean;
   registerSaveCallback?: (stepKey: string, callback: () => void) => void;
+  registerValidateCallback?: (
+    stepKey: string,
+    callback: () => Promise<boolean>
+  ) => void;
 }
 
 export function VictimForm({
   isNew = false,
   registerSaveCallback,
+  registerValidateCallback,
 }: VictimFormProps) {
   const {
     setVictimForm,
@@ -56,6 +61,7 @@ export function VictimForm({
     handleSubmit,
     reset,
     getValues,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<VictimFormValues>({
     resolver: zodResolver(victimSchema),
@@ -72,6 +78,17 @@ export function VictimForm({
       registerSaveCallback("victim", saveFormData);
     }
   }, [registerSaveCallback, getValues, setVictimForm]);
+
+  // Register validation callback for step navigation
+  useEffect(() => {
+    if (registerValidateCallback) {
+      const validateFormData = async () => {
+        const result = await trigger();
+        return result;
+      };
+      registerValidateCallback("victim", validateFormData);
+    }
+  }, [registerValidateCallback, trigger]);
 
   useEffect(() => {
     if (isNew) {

@@ -23,6 +23,10 @@ import { eventSchema, type EventFormValues } from "./schemas";
 interface EventFormProps {
   isNew?: boolean;
   registerSaveCallback?: (stepKey: string, callback: () => void) => void;
+  registerValidateCallback?: (
+    stepKey: string,
+    callback: () => Promise<boolean>
+  ) => void;
 }
 
 // Helper functions for date formatting
@@ -83,6 +87,7 @@ const nominatimFetcher = async (query: string) => {
 export function EventForm({
   isNew = false,
   registerSaveCallback,
+  registerValidateCallback,
 }: EventFormProps) {
   const { data: session } = useSession();
   const {
@@ -103,11 +108,17 @@ export function EventForm({
     useState<NominatimResult | null>(null);
 
   // SWR for Nominatim
-  const { data: locationResults, isValidating: isLocationLoading } = useSWR<
-    NominatimResult[]
-  >(locationQuery.length > 2 ? locationQuery : null, nominatimFetcher, {
-    dedupingInterval: 60000,
-  });
+  const {
+    data: locationResults,
+    isValidating: isLocationLoading,
+    mutate: mutateLocation,
+  } = useSWR<NominatimResult[]>(
+    locationQuery.length > 2 ? locationQuery : null,
+    nominatimFetcher,
+    {
+      dedupingInterval: 60000,
+    }
+  );
 
   const getDefaultValues = useCallback(
     () => ({
@@ -149,6 +160,7 @@ export function EventForm({
     setValue,
     watch,
     getValues,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -185,6 +197,18 @@ export function EventForm({
       registerSaveCallback("event", saveFormData);
     }
   }, [registerSaveCallback, getValues, setEventForm]);
+
+  // Register validation callback for step navigation
+  useEffect(() => {
+    if (registerValidateCallback) {
+      const validateFormData = async () => {
+        // Trigger form validation and return whether it's valid
+        const result = await trigger();
+        return result;
+      };
+      registerValidateCallback("event", validateFormData);
+    }
+  }, [registerValidateCallback, trigger]);
 
   // Handle loading states
   useEffect(() => {
@@ -447,12 +471,20 @@ export function EventForm({
               onInputChange={setLocationQuery}
               items={locationResults || []}
               isLoading={isLocationLoading}
+              allowsCustomValue={true}
               inputProps={{
                 classNames: {
                   inputWrapper: "py-6 rounded-xlg",
                 },
               }}
               placeholder="Type a location"
+              onFocus={() => {
+                // If there's a value, trigger a fresh search
+                if (locationQuery && locationQuery.length > 2) {
+                  // Use SWR's mutate to force a fresh API call
+                  mutateLocation();
+                }
+              }}
               onSelectionChange={(key) => {
                 const item = (locationResults || []).find(
                   (i) => String(i.place_id) === String(key)

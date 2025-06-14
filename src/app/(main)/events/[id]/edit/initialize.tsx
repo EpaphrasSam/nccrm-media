@@ -65,57 +65,66 @@ export function InitializeEvent({ id, userId }: InitializeEventProps) {
           return;
         }
 
-        // Set all data in store
+        // Set data in store for edit mode
+        // We need to populate formData for "Save Anywhere" to work, but preserve any existing formData
+        const currentState = useEventsStore.getState();
+
         useEventsStore.setState({
           currentEvent: event,
           subIndicators,
-          formData: {
-            event: {
-              reporter_id: event?.reporter?.id,
-              report_date: event?.report_date,
-              details: event?.details || "",
-              event_date: event?.event_date || "",
-              region: event?.region,
-              district: event?.district,
-              city: event?.city,
-              coordinates: event?.coordinates,
-              location_details: event?.location_details || "",
-              sub_indicator_id: event?.sub_indicator_id,
-              follow_ups: Array.isArray(event?.follow_ups)
-                ? event?.follow_ups
-                : [],
-            },
-            perpetrator: {
-              perpetrator: event?.perpetrator,
-              pep_gender: event?.pep_gender,
-              pep_age: event?.pep_age,
-              pep_occupation: event?.pep_occupation,
-              pep_note: event?.pep_note,
-            },
-            victim: {
-              victim: event?.victim,
-              victim_age: event?.victim_age,
-              victim_gender: event?.victim_gender,
-              victim_occupation: event?.victim_occupation,
-              victim_note: event?.victim_note,
-            },
-            outcome: {
-              death_count_men: event?.death_count_men,
-              death_count_women_chldren: event?.death_count_women_chldren,
-              death_details: event?.death_details,
-              injury_count_men: event?.injury_count_men,
-              injury_count_women_chldren: event?.injury_count_women_chldren,
-              injury_details: event?.injury_details,
-              losses_count: event?.losses_count,
-              losses_details: event?.losses_details,
-            },
-            context: {
-              info_source: event?.info_source,
-              impact: event?.impact,
-              weapons_use: event?.weapons_use,
-              context_details: event?.context_details,
-            },
-          },
+          // Only populate formData if it's not already populated (e.g., direct URL access)
+          // If editEvent() was called, formData should already be set
+          formData: currentState.formData.event
+            ? currentState.formData
+            : {
+                event: {
+                  reporter_id: event?.reporter?.id || "",
+                  report_date: event?.report_date || "",
+                  details: event?.details || "",
+                  event_date: event?.event_date || "",
+                  region: event?.region || "",
+                  district: event?.district || "",
+                  city: event?.city || "",
+                  coordinates: event?.coordinates || "",
+                  location_details: event?.location_details || "",
+                  sub_indicator_id: event?.sub_indicator_id || "",
+                  follow_ups: Array.isArray(event?.follow_ups)
+                    ? event?.follow_ups
+                    : [],
+                },
+                perpetrator: {
+                  perpetrator: event?.perpetrator || "",
+                  pep_gender: event?.pep_gender || "",
+                  pep_age: event?.pep_age || "",
+                  pep_occupation: event?.pep_occupation || "",
+                  pep_note: event?.pep_note || "",
+                },
+                victim: {
+                  victim: event?.victim || "",
+                  victim_age: event?.victim_age || "",
+                  victim_gender: event?.victim_gender || "",
+                  victim_occupation: event?.victim_occupation || "",
+                  victim_note: event?.victim_note || "",
+                },
+                outcome: {
+                  death_count_men: event?.death_count_men || 0,
+                  death_count_women_chldren:
+                    event?.death_count_women_chldren || 0,
+                  death_details: event?.death_details || "",
+                  injury_count_men: event?.injury_count_men || 0,
+                  injury_count_women_chldren:
+                    event?.injury_count_women_chldren || 0,
+                  injury_details: event?.injury_details || "",
+                  losses_count: event?.losses_count || 0,
+                  losses_details: event?.losses_details || "",
+                },
+                context: {
+                  info_source: event?.info_source || "",
+                  impact: event?.impact || "",
+                  weapons_use: event?.weapons_use || "",
+                  context_details: event?.context_details || "",
+                },
+              },
         });
         return event;
       } finally {
