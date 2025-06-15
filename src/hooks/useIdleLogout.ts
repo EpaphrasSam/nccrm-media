@@ -8,6 +8,7 @@ const IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 export function useIdleLogout() {
   const timer = useRef<NodeJS.Timeout | null>(null);
   const { status } = useSession();
+  const lastMousePosition = useRef({ x: -1, y: -1 });
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -36,19 +37,51 @@ export function useIdleLogout() {
       }, IDLE_TIMEOUT);
     };
 
+    // Safari-specific mousemove handler to avoid false triggers
+    const handleMouseMove = (event: MouseEvent) => {
+      const currentX = event.clientX;
+      const currentY = event.clientY;
+
+      // Only reset timer if mouse actually moved (Safari fix)
+      if (
+        lastMousePosition.current.x !== currentX ||
+        lastMousePosition.current.y !== currentY
+      ) {
+        lastMousePosition.current = { x: currentX, y: currentY };
+        resetTimer();
+      }
+    };
+
+    // Comprehensive event list for better Safari/iOS compatibility
     const events = [
-      "mousemove",
       "keydown",
+      "keypress",
       "mousedown",
+      "mouseup",
+      "click",
       "touchstart",
+      "touchmove",
+      "touchend",
       "scroll",
+      "wheel",
+      "focus",
+      "blur",
+      "visibilitychange", // Detect tab switching
     ];
 
-    events.forEach((event) => window.addEventListener(event, resetTimer));
+    // Add mousemove with custom handler
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+
+    // Add other events with standard handler
+    events.forEach((event) =>
+      window.addEventListener(event, resetTimer, { passive: true })
+    );
+
     resetTimer();
 
     return () => {
       if (timer.current) clearTimeout(timer.current);
+      window.removeEventListener("mousemove", handleMouseMove);
       events.forEach((event) => window.removeEventListener(event, resetTimer));
     };
   }, [status]);
