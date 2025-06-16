@@ -2,8 +2,8 @@ import { z } from "zod";
 
 // Centralized Age Brackets (AU Standard)
 export const ageBrackets = [
-  { key: "0-18 years", label: "0-18 years (Child)", value: "0-18 years" },
-  { key: "15-35 years", label: "15-35 years (Youth)", value: "15-35 years" },
+  { key: "0-17 years", label: "0-17 years (Child)", value: "0-17 years" },
+  { key: "18-35 years", label: "18-35 years (Youth)", value: "18-35 years" },
   { key: "36-59 years", label: "36-59 years (Adult)", value: "36-59 years" },
   {
     key: "60+ years",
