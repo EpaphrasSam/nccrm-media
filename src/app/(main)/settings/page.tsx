@@ -365,7 +365,7 @@ export default function SettingsPage() {
                   selectedKeys={field.value ? [field.value] : []}
                   onSelectionChange={(keys) => {
                     const value = Array.from(keys)[0]?.toString();
-                    if (value) field.onChange(value);
+                    field.onChange(value || "");
                   }}
                   label="Gender"
                   labelPlacement="outside"

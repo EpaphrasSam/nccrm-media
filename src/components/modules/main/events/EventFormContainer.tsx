@@ -214,6 +214,15 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
               | "context"
           );
 
+          // Trigger form validation on the error step after a brief delay to ensure form is rendered
+          setTimeout(async () => {
+            const errorStepValidateCallback =
+              formValidateCallbacks.current[firstErrorStep];
+            if (errorStepValidateCallback) {
+              await errorStepValidateCallback();
+            }
+          }, 100);
+
           addToast({
             title: "Validation Error",
             description: `Please fix the errors in the ${firstErrorStep} step before saving.`,
@@ -250,13 +259,14 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
         follow_ups: freshFormData.event.follow_ups || [],
         perpetrator: freshFormData.perpetrator?.perpetrator || "",
         pep_age: freshFormData.perpetrator?.pep_age || "",
-        pep_gender: (freshFormData.perpetrator?.pep_gender || "male") as Gender,
+        pep_gender: (freshFormData.perpetrator?.pep_gender ||
+          "unknown") as Gender,
         pep_occupation: freshFormData.perpetrator?.pep_occupation || "",
         pep_note: freshFormData.perpetrator?.pep_note || "",
         victim: freshFormData.victim?.victim || "",
         victim_age: freshFormData.victim?.victim_age || "",
         victim_gender: (freshFormData.victim?.victim_gender ||
-          "male") as Gender,
+          "unknown") as Gender,
         victim_occupation: freshFormData.victim?.victim_occupation || "",
         victim_note: freshFormData.victim?.victim_note || "",
         death_count_men: freshFormData.outcome?.death_count_men || 0,
@@ -378,7 +388,7 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
         {/* Clear Form Button - New mode only */}
         {!eventId && mode === "new" && (
           <Button
-            onClick={handleClearForm}
+            onPress={handleClearForm}
             variant="flat"
             color="danger"
             startContent={<FaTrash />}

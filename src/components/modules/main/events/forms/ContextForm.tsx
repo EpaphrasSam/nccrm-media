@@ -72,10 +72,11 @@ export function ContextForm({
     reset,
     setValue,
     getValues,
-    trigger,
     formState: { isSubmitting },
   } = useForm<ContextFormValues>({
     resolver: zodResolver(contextSchema),
+    mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: getDefaultValues(),
   });
 
@@ -94,27 +95,33 @@ export function ContextForm({
   useEffect(() => {
     if (registerValidateCallback) {
       const validateFormData = async () => {
-        const result = await trigger();
-        return result;
+        // Actually submit the form to activate reValidateMode
+        return new Promise<boolean>((resolve) => {
+          handleSubmit(
+            () => {
+              // Valid - resolve true
+              resolve(true);
+            },
+            () => {
+              // Invalid - resolve false, but form errors are now shown and reValidateMode is active
+              resolve(false);
+            }
+          )();
+        });
       };
       registerValidateCallback("context", validateFormData);
     }
-  }, [registerValidateCallback, trigger]);
+  }, [registerValidateCallback, handleSubmit]);
 
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
     } else if (!storeLoading && currentEvent) {
+      // Only reset on initial load, not when store updates
       reset(getDefaultValues());
     }
-  }, [
-    isNew,
-    currentEvent,
-    storeLoading,
-    reset,
-    getDefaultValues,
-    setFormLoading,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, currentEvent?.id, storeLoading, reset, setFormLoading]);
 
   const canSubmit = isNew
     ? hasPermission("event", "add")
@@ -149,12 +156,12 @@ export function ContextForm({
         follow_ups: formData.event.follow_ups || [],
         perpetrator: formData.perpetrator?.perpetrator || "",
         pep_age: formData.perpetrator?.pep_age || "",
-        pep_gender: (formData.perpetrator?.pep_gender || "male") as Gender,
+        pep_gender: (formData.perpetrator?.pep_gender || "unknown") as Gender,
         pep_occupation: formData.perpetrator?.pep_occupation || "",
         pep_note: formData.perpetrator?.pep_note || "",
         victim: formData.victim?.victim || "",
         victim_age: formData.victim?.victim_age || "",
-        victim_gender: (formData.victim?.victim_gender || "male") as Gender,
+        victim_gender: (formData.victim?.victim_gender || "unknown") as Gender,
         victim_occupation: formData.victim?.victim_occupation || "",
         victim_note: formData.victim?.victim_note || "",
         death_count_men: formData.outcome?.death_count_men || 0,
@@ -241,7 +248,7 @@ export function ContextForm({
               selectedKeys={field.value ? [field.value] : []}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
+                field.onChange(value || "");
               }}
               label="Impact"
               labelPlacement="outside"

@@ -33,7 +33,7 @@ export const eventSchema = z.object({
 export const perpetratorSchema = z.object({
   perpetrator: z.string().optional(),
   pep_age: z.string().optional(),
-  pep_gender: z.string().optional(),
+  pep_gender: z.string().min(1, "Gender is required"),
   pep_occupation: z.string().optional(),
   pep_note: z.string().optional(),
 });
@@ -42,7 +42,7 @@ export const perpetratorSchema = z.object({
 export const victimSchema = z.object({
   victim: z.string().optional(),
   victim_age: z.string().optional(),
-  victim_gender: z.string().optional(),
+  victim_gender: z.string().min(1, "Gender is required"),
   victim_occupation: z.string().optional(),
   victim_note: z.string().optional(),
 });

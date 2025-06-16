@@ -65,10 +65,11 @@ export function PerpetratorForm({
     handleSubmit,
     reset,
     getValues,
-    trigger,
     formState: { errors, isSubmitting },
   } = useForm<PerpetratorFormValues>({
     resolver: zodResolver(perpetratorSchema),
+    mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: getDefaultValues(),
   });
 
@@ -87,28 +88,34 @@ export function PerpetratorForm({
   useEffect(() => {
     if (registerValidateCallback) {
       const validateFormData = async () => {
-        const result = await trigger();
-        return result;
+        // Actually submit the form to activate reValidateMode
+        return new Promise<boolean>((resolve) => {
+          handleSubmit(
+            () => {
+              // Valid - resolve true
+              resolve(true);
+            },
+            () => {
+              // Invalid - resolve false, but form errors are now shown and reValidateMode is active
+              resolve(false);
+            }
+          )();
+        });
       };
       registerValidateCallback("perpetrator", validateFormData);
     }
-  }, [registerValidateCallback, trigger]);
+  }, [registerValidateCallback, handleSubmit]);
 
   // Handle loading state and form reset
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
     } else if (!isFormLoading && currentEvent) {
+      // Only reset on initial load, not when store updates
       reset(getDefaultValues());
     }
-  }, [
-    isNew,
-    currentEvent,
-    isFormLoading,
-    reset,
-    getDefaultValues,
-    setFormLoading,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, currentEvent?.id, isFormLoading, reset, setFormLoading]);
 
   const onSubmit = async (data: PerpetratorFormValues) => {
     setPerpetratorForm(data);
@@ -171,13 +178,7 @@ export function PerpetratorForm({
               selectedKeys={field.value ? [field.value] : []}
               onSelectionChange={(keys) => {
                 const selectedKey = Array.from(keys)[0]?.toString();
-                if (selectedKey) {
-                  // Find the bracket and use its value
-                  const selectedBracket = ageBrackets.find(
-                    (bracket) => bracket.key === selectedKey
-                  );
-                  field.onChange(selectedBracket?.value || selectedKey);
-                }
+                field.onChange(selectedKey || "");
               }}
               label="Age"
               labelPlacement="outside"
@@ -188,7 +189,7 @@ export function PerpetratorForm({
               errorMessage={errors.pep_age?.message}
             >
               {ageBrackets.map((bracket) => (
-                <SelectItem key={bracket.key} textValue={bracket.key}>
+                <SelectItem key={bracket.value} textValue={bracket.label}>
                   {bracket.label}
                 </SelectItem>
               ))}
@@ -204,7 +205,7 @@ export function PerpetratorForm({
               selectedKeys={field.value ? [field.value] : []}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0]?.toString();
-                if (value) field.onChange(value);
+                field.onChange(value || "");
               }}
               label="Gender"
               labelPlacement="outside"

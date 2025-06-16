@@ -154,19 +154,18 @@ export function EventForm({
   const {
     control,
     handleSubmit,
-    reset,
     register,
     setError,
     setValue,
     watch,
     getValues,
-    trigger,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
-    defaultValues: {
-      ...getDefaultValues(),
-    },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+    defaultValues: getDefaultValues(),
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -202,13 +201,42 @@ export function EventForm({
   useEffect(() => {
     if (registerValidateCallback) {
       const validateFormData = async () => {
-        // Trigger form validation and return whether it's valid
-        const result = await trigger();
-        return result;
+        // Instead of just trigger(), actually submit the form to activate reValidateMode
+        return new Promise<boolean>((resolve) => {
+          handleSubmit(
+            () => {
+              // Valid - resolve true
+              resolve(true);
+            },
+            () => {
+              // Invalid - resolve false, but form errors are now shown and reValidateMode is active
+              resolve(false);
+            }
+          )();
+        });
       };
       registerValidateCallback("event", validateFormData);
     }
-  }, [registerValidateCallback, trigger]);
+  }, [registerValidateCallback, handleSubmit]);
+
+  // Handle loading state and form reset for edit mode
+  useEffect(() => {
+    if (isNew) {
+      setFormLoading(false);
+    } else if (!isFormLoading && currentEvent) {
+      // Only reset on initial load, not when store updates
+      reset(getDefaultValues());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, currentEvent?.id, isFormLoading, reset, setFormLoading]);
+
+  // Handle form reset for new mode (including Clear Form)
+  useEffect(() => {
+    if (isNew) {
+      reset(getDefaultValues());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, formData.event, reset]);
 
   // Handle loading states
   useEffect(() => {
@@ -224,14 +252,6 @@ export function EventForm({
       return () => clearTimeout(timer);
     }
   }, [formData.event, isFormLoading, setFormLoading]);
-
-  // Handle form reset
-  useEffect(() => {
-    reset({
-      ...getDefaultValues(),
-      reporter_id: currentEvent?.reporter?.id || session?.user?.id || "",
-    });
-  }, [reset, getDefaultValues, session?.user?.id, currentEvent?.reporter?.id]);
 
   const onSubmit = async (data: EventFormValues) => {
     // Check if event_date is in the future
@@ -268,23 +288,6 @@ export function EventForm({
     setValue("region", item.address?.state || item.address?.region || "");
     setValue("coordinates", `(${item.lat}, ${item.lon})`);
   };
-
-  const [inputValue, setInputValue] = useState("");
-
-  // Sync inputValue with selected sub-indicator's name
-  const selectedSubIndicatorId = watch("sub_indicator_id");
-  useEffect(() => {
-    if (selectedSubIndicatorId && subIndicators) {
-      const selected = subIndicators.find(
-        (sub) => sub.id === selectedSubIndicatorId
-      );
-      if (selected) {
-        setInputValue(selected.name);
-        return;
-      }
-    }
-    setInputValue("");
-  }, [selectedSubIndicatorId, subIndicators]);
 
   if (isFormLoading || localLoading) {
     return (
@@ -360,40 +363,11 @@ export function EventForm({
           name="sub_indicator_id"
           control={control}
           render={({ field }) => {
-            // Only show sub-indicator items, no grouping
-            const filteredItems = (subIndicators || []).filter((sub) =>
-              sub.name.toLowerCase().includes(inputValue.toLowerCase())
-            );
-
             return (
               <Autocomplete
-                selectedKey={field.value ? field.value : undefined}
-                onSelectionChange={(key) => {
-                  if (key) {
-                    field.onChange(key.toString());
-                    const selectedItem = filteredItems.find(
-                      (item) => item.id === key
-                    );
-                    if (selectedItem) {
-                      setInputValue(selectedItem.name);
-                      const input = document.querySelector(
-                        `input[name=\"${field.name}\"]`
-                      ) as HTMLInputElement;
-                      if (input) input.value = selectedItem.name;
-                    }
-                  }
-                }}
-                defaultInputValue={
-                  field.value
-                    ? (() => {
-                        const selectedItem = filteredItems.find(
-                          (item) => item.id === field.value
-                        );
-                        return selectedItem ? selectedItem.name : "";
-                      })()
-                    : ""
-                }
-                items={filteredItems}
+                selectedKey={field.value || null}
+                onSelectionChange={(key) => field.onChange(key || "")}
+                items={subIndicators || []}
                 label="What"
                 labelPlacement="outside"
                 placeholder="Search for what"
@@ -410,8 +384,6 @@ export function EventForm({
                 }}
                 isInvalid={!!errors.sub_indicator_id}
                 errorMessage={errors.sub_indicator_id?.message}
-                inputValue={inputValue}
-                onInputChange={setInputValue}
               >
                 {(item) => (
                   <AutocompleteItem

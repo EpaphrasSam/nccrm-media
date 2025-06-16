@@ -233,7 +233,7 @@ export function SubIndicatorForm({ isNew = false }: SubIndicatorFormProps) {
             selectedKeys={field.value ? [field.value] : []}
             onSelectionChange={(keys) => {
               const value = Array.from(keys)[0]?.toString();
-              if (value) field.onChange(value);
+              field.onChange(value || "");
             }}
             label="Main Indicator"
             labelPlacement="outside"

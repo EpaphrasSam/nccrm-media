@@ -65,10 +65,11 @@ export function OutcomeForm({
     handleSubmit,
     reset,
     getValues,
-    trigger,
     formState: { errors, isSubmitting },
   } = useForm<OutcomeFormValues>({
     resolver: zodResolver(outcomeSchema),
+    mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: getDefaultValues(),
   });
 
@@ -87,27 +88,33 @@ export function OutcomeForm({
   useEffect(() => {
     if (registerValidateCallback) {
       const validateFormData = async () => {
-        const result = await trigger();
-        return result;
+        // Actually submit the form to activate reValidateMode
+        return new Promise<boolean>((resolve) => {
+          handleSubmit(
+            () => {
+              // Valid - resolve true
+              resolve(true);
+            },
+            () => {
+              // Invalid - resolve false, but form errors are now shown and reValidateMode is active
+              resolve(false);
+            }
+          )();
+        });
       };
       registerValidateCallback("outcome", validateFormData);
     }
-  }, [registerValidateCallback, trigger]);
+  }, [registerValidateCallback, handleSubmit]);
 
   useEffect(() => {
     if (isNew) {
       setFormLoading(false);
     } else if (!isFormLoading && currentEvent) {
+      // Only reset on initial load, not when store updates
       reset(getDefaultValues());
     }
-  }, [
-    isNew,
-    currentEvent,
-    isFormLoading,
-    reset,
-    getDefaultValues,
-    setFormLoading,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, currentEvent?.id, isFormLoading, reset, setFormLoading]);
 
   const onSubmit = async (data: OutcomeFormValues) => {
     setOutcomeForm(data);
