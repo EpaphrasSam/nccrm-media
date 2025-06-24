@@ -1,6 +1,5 @@
 // Basic types
 export type EventStatus = "pending" | "approved";
-export type Gender = "male" | "female";
 
 export interface Event {
   id: string;
@@ -16,13 +15,13 @@ export interface Event {
   location_details?: string;
   sub_indicator_id: string;
   perpetrator?: string;
-  pep_gender?: Gender;
+  pep_gender?: string;
   pep_age?: string;
   pep_occupation?: string;
   pep_note?: string;
   victim?: string;
   victim_age?: string;
-  victim_gender?: Gender;
+  victim_gender?: string;
   victim_occupation?: string;
   victim_note?: string;
   death_count_men?: number;
@@ -85,13 +84,13 @@ export interface EventCreateInput {
   event_date?: string;
   location_details?: string;
   perpetrator?: string;
-  pep_gender?: Gender;
+  pep_gender?: string;
   pep_age?: string;
   pep_occupation?: string;
   pep_note?: string;
   victim?: string;
   victim_age?: string;
-  victim_gender?: Gender;
+  victim_gender?: string;
   victim_occupation?: string;
   victim_note?: string;
   death_count_men?: number;
@@ -120,13 +119,13 @@ export interface EventUpdateInput {
   event_date?: string;
   location_details?: string;
   perpetrator?: string;
-  pep_gender?: Gender;
+  pep_gender?: string;
   pep_age?: string;
   pep_occupation?: string;
   pep_note?: string;
   victim?: string;
   victim_age?: string;
-  victim_gender?: Gender;
+  victim_gender?: string;
   victim_occupation?: string;
   victim_note?: string;
   death_count_men?: number;

@@ -32,6 +32,7 @@ import { Pagination } from "@/components/common/navigation/Pagination";
 import { FiFilter, FiX } from "react-icons/fi";
 import type { RangeValue } from "@heroui/react";
 import { DateValue, parseDate } from "@internationalized/date";
+import { ageBrackets } from "./forms/schemas";
 
 interface ExportPreviewModalProps {
   isOpen: boolean;
@@ -60,11 +61,13 @@ const ALL_COLUMNS = [
   { key: "perpetrator", label: "Perpetrator" },
   { key: "pep_gender", label: "Perpetrator Gender" },
   { key: "pep_age", label: "Perpetrator Age Bracket" },
+  { key: "pep_age_group", label: "Perpetrator Age Group" },
   { key: "pep_occupation", label: "Perpetrator Occupation" },
   { key: "pep_note", label: "Perpetrator Notes" },
   { key: "victim", label: "Victim" },
   { key: "victim_gender", label: "Victim Gender" },
   { key: "victim_age", label: "Victim Age Bracket" },
+  { key: "victim_age_group", label: "Victim Age Group" },
   { key: "victim_occupation", label: "Victim Occupation" },
   { key: "victim_note", label: "Victim Notes" },
   { key: "death_count_men", label: "Death Count (Men)" },
@@ -109,6 +112,16 @@ const initialFilters: FilterState = {
   "sub_indicator.name": [],
   region: [],
   status: [],
+};
+
+// Add helper to get age group label (without numbers)
+const getAgeGroupLabel = (value: string) => {
+  const found = ageBrackets.find((b) => b.value === value);
+  if (!found) return "Unknown";
+  if (found.value === "Mixed" || found.value === "Unknown") return found.label;
+  // Extract label after last space and parenthesis
+  const match = found.label.match(/\(([^)]+)\)$/);
+  return match ? match[1] : found.label;
 };
 
 export function ExportPreviewModal({
@@ -248,13 +261,19 @@ export function ExportPreviewModal({
           string | number | boolean | undefined | null
         > = {};
         keys.forEach((key) => {
-          let value = getNestedValue(event, key);
-          if (key.endsWith("_date") || key.endsWith("_at")) {
-            value = value ? new Date(value).toLocaleString() : "";
-          } else if (key === "follow_ups") {
-            value = (value || []).join("; ");
+          if (key === "pep_age_group") {
+            row[key] = getAgeGroupLabel(event.pep_age || "");
+          } else if (key === "victim_age_group") {
+            row[key] = getAgeGroupLabel(event.victim_age || "");
+          } else {
+            let value = getNestedValue(event, key);
+            if (key.endsWith("_date") || key.endsWith("_at")) {
+              value = value ? new Date(value).toLocaleString() : "";
+            } else if (key === "follow_ups") {
+              value = (value || []).join("; ");
+            }
+            row[key] = value;
           }
-          row[key] = value;
         });
         return row;
       });

@@ -16,7 +16,6 @@ import { buttonStyles, inputStyles } from "@/lib/styles";
 import { useEventsStore } from "@/store/events";
 import { useEffect, useCallback } from "react";
 import { FaChevronLeft } from "react-icons/fa";
-import { Gender } from "@/services/events/types";
 import { FileUpload } from "./FileUpload";
 import { usePermissions } from "@/hooks/usePermissions";
 import { contextSchema, type ContextFormValues } from "./schemas";
@@ -156,12 +155,12 @@ export function ContextForm({
         follow_ups: formData.event.follow_ups || [],
         perpetrator: formData.perpetrator?.perpetrator || "",
         pep_age: formData.perpetrator?.pep_age || "",
-        pep_gender: (formData.perpetrator?.pep_gender || "unknown") as Gender,
+        pep_gender: formData.perpetrator?.pep_gender || "",
         pep_occupation: formData.perpetrator?.pep_occupation || "",
         pep_note: formData.perpetrator?.pep_note || "",
         victim: formData.victim?.victim || "",
         victim_age: formData.victim?.victim_age || "",
-        victim_gender: (formData.victim?.victim_gender || "unknown") as Gender,
+        victim_gender: formData.victim?.victim_gender || "",
         victim_occupation: formData.victim?.victim_occupation || "",
         victim_note: formData.victim?.victim_note || "",
         death_count_men: formData.outcome?.death_count_men || 0,

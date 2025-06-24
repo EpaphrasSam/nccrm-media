@@ -347,7 +347,9 @@ export const useEventsStore = create<EventsState>()(
               throw new Error(error);
             },
           });
-          get().clearForm();
+          setTimeout(() => {
+            get().clearForm();
+          }, 4000);
           navigationService.replace("/events");
         } catch {
           // Error has been handled by handleError, we just need to stop execution

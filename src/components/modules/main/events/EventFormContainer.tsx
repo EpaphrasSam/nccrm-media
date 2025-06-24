@@ -12,7 +12,6 @@ import { Skeleton, Button, addToast } from "@heroui/react";
 import { buttonStyles } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import { FaTrash, FaSave } from "react-icons/fa";
-import { Gender } from "@/services/events/types";
 import { validateFullEventForm } from "./forms/schemas";
 
 interface EventFormContainerProps {
@@ -259,14 +258,12 @@ export function EventFormContainer({ eventId }: EventFormContainerProps) {
         follow_ups: freshFormData.event.follow_ups || [],
         perpetrator: freshFormData.perpetrator?.perpetrator || "",
         pep_age: freshFormData.perpetrator?.pep_age || "",
-        pep_gender: (freshFormData.perpetrator?.pep_gender ||
-          "unknown") as Gender,
+        pep_gender: freshFormData.perpetrator?.pep_gender || "",
         pep_occupation: freshFormData.perpetrator?.pep_occupation || "",
         pep_note: freshFormData.perpetrator?.pep_note || "",
         victim: freshFormData.victim?.victim || "",
         victim_age: freshFormData.victim?.victim_age || "",
-        victim_gender: (freshFormData.victim?.victim_gender ||
-          "unknown") as Gender,
+        victim_gender: freshFormData.victim?.victim_gender || "",
         victim_occupation: freshFormData.victim?.victim_occupation || "",
         victim_note: freshFormData.victim?.victim_note || "",
         death_count_men: freshFormData.outcome?.death_count_men || 0,

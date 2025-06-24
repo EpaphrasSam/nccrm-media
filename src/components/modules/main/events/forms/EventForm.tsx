@@ -120,6 +120,15 @@ export function EventForm({
     }
   );
 
+  // Add state for What Autocomplete search
+  const [whatQuery, setWhatQuery] = useState("");
+  // Filter subIndicators by the search query
+  const filteredSubIndicators = whatQuery
+    ? (subIndicators || []).filter((item) =>
+        item.name.toLowerCase().includes(whatQuery.toLowerCase())
+      )
+    : subIndicators || [];
+
   const getDefaultValues = useCallback(
     () => ({
       reporter_id: currentEvent?.reporter?.id || session?.user?.id || "",
@@ -176,6 +185,22 @@ export function EventForm({
   const watchedCity = watch("city");
   const watchedDistrict = watch("district");
   const watchedRegion = watch("region");
+  const watchedSubIndicatorId = watch("sub_indicator_id");
+
+  // Sync input value with selected item
+  useEffect(() => {
+    if (watchedSubIndicatorId) {
+      const selected = (subIndicators || []).find(
+        (item) => item.id === watchedSubIndicatorId
+      );
+      if (selected && whatQuery !== selected.name) {
+        setWhatQuery(selected.name);
+      }
+    } else if (!watchedSubIndicatorId && whatQuery !== "") {
+      setWhatQuery("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedSubIndicatorId, subIndicators]);
 
   // Register save callback for step navigation
   useEffect(() => {
@@ -363,11 +388,21 @@ export function EventForm({
           name="sub_indicator_id"
           control={control}
           render={({ field }) => {
+            // field.value is the selected id
+            // whatQuery is the input value
             return (
               <Autocomplete
                 selectedKey={field.value || null}
-                onSelectionChange={(key) => field.onChange(key || "")}
-                items={subIndicators || []}
+                onSelectionChange={(key) => {
+                  field.onChange(key || "");
+                  const selected = (subIndicators || []).find(
+                    (item) => item.id === key
+                  );
+                  setWhatQuery(selected ? selected.name : "");
+                }}
+                items={filteredSubIndicators}
+                inputValue={whatQuery}
+                onInputChange={setWhatQuery}
                 label="What"
                 labelPlacement="outside"
                 placeholder="Search for what"
