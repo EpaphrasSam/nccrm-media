@@ -32,7 +32,7 @@ const LOADING_SKELETON_COUNT = 5;
 
 const columns = [
   { key: "reporter", label: "Reporter" },
-  { key: "incidentType", label: "Incident Type" },
+  { key: "what", label: "What" },
   { key: "region", label: "City (District)" },
   { key: "date", label: "Date" },
   { key: "status", label: "Status" },
@@ -165,8 +165,7 @@ export function EventsTable() {
                 </TableCell>
                 <TableCell>
                   <span className="text-sm">
-                    {event.sub_indicator?.main_indicator.thematic_area.name ||
-                      "Unknown"}
+                    {event.sub_indicator.name || "Unknown"}
                   </span>
                 </TableCell>
                 <TableCell>
