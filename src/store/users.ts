@@ -186,7 +186,6 @@ export const useUsersStore = create<UsersState>((set) => ({
       });
       set({ currentUser: undefined });
       storeSync.trigger();
-      navigationService.refresh();
     } catch {
       // Error has been handled by handleError, we just need to stop execution
       return;

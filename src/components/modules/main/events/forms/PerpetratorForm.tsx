@@ -20,6 +20,7 @@ import {
   type PerpetratorFormValues,
   ageBrackets,
 } from "./schemas";
+import { IoCloseOutline } from "react-icons/io5";
 
 interface PerpetratorFormProps {
   isNew?: boolean;
@@ -187,6 +188,15 @@ export function PerpetratorForm({
               classNames={inputStyles}
               isInvalid={!!errors.pep_age}
               errorMessage={errors.pep_age?.message}
+              endContent={
+                field.value ? (
+                  <IoCloseOutline
+                    size={18}
+                    className="cursor-pointer hover:opacity-75"
+                    onClick={() => field.onChange("")}
+                  />
+                ) : null
+              }
             >
               {ageBrackets.map((bracket) => (
                 <SelectItem key={bracket.value} textValue={bracket.label}>
@@ -214,6 +224,15 @@ export function PerpetratorForm({
               classNames={inputStyles}
               isInvalid={!!errors.pep_gender}
               errorMessage={errors.pep_gender?.message}
+              endContent={
+                field.value ? (
+                  <IoCloseOutline
+                    size={18}
+                    className="cursor-pointer hover:opacity-75"
+                    onClick={() => field.onChange("")}
+                  />
+                ) : null
+              }
             >
               <SelectItem key="male" textValue="Male">
                 Male

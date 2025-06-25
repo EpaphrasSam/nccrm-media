@@ -18,9 +18,11 @@ import { PiMicrosoftExcelLogoThin } from "react-icons/pi";
 import useSWR from "swr";
 import { ExportPreviewModal } from "./ExportPreviewModal";
 import { ThematicArea } from "@/services/thematic-areas/types";
+import { EventStatus } from "@/services/events/types";
 
 interface FilterState {
   thematic_area: string;
+  status: string;
 }
 
 export function EventsToolbar() {
@@ -29,6 +31,7 @@ export function EventsToolbar() {
 
   const [tempFilters, setTempFilters] = useState<FilterState>({
     thematic_area: filters.thematic_area || "all",
+    status: filters.status || "all",
   });
 
   // Get filter options from SWR cache
@@ -50,6 +53,10 @@ export function EventsToolbar() {
         tempFilters.thematic_area === "all"
           ? undefined
           : tempFilters.thematic_area,
+      status:
+        tempFilters.status === "all"
+          ? undefined
+          : (tempFilters.status as EventStatus),
       page: 1,
     });
   };
@@ -58,6 +65,7 @@ export function EventsToolbar() {
     resetFilters();
     setTempFilters({
       thematic_area: "all",
+      status: "all",
     });
   };
 
@@ -109,6 +117,21 @@ export function EventsToolbar() {
                     <SelectItem key={area.id}>{area.name}</SelectItem>
                   ))}
                 </>
+              </Select>
+              <Select
+                label="Status"
+                placeholder="Select status"
+                variant="bordered"
+                selectedKeys={[tempFilters.status]}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0]?.toString() || "all";
+                  setTempFilters({ ...tempFilters, status: value });
+                }}
+                className="mt-4"
+              >
+                <SelectItem key="all">All Statuses</SelectItem>
+                <SelectItem key="pending">Pending</SelectItem>
+                <SelectItem key="approved">Approved</SelectItem>
               </Select>
             </>
           )}

@@ -379,7 +379,6 @@ export const useEventsStore = create<EventsState>()(
           });
           set({ currentEvent: null });
           storeSync.trigger();
-          navigationService.replace("/events");
         } catch {
           // Error has been handled by handleError, we just need to stop execution
           return;

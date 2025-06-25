@@ -16,6 +16,7 @@ import { useEventsStore } from "@/store/events";
 import { useEffect, useCallback } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { victimSchema, type VictimFormValues, ageBrackets } from "./schemas";
+import { IoCloseOutline } from "react-icons/io5";
 
 interface VictimFormProps {
   isNew?: boolean;
@@ -182,6 +183,15 @@ export function VictimForm({
               classNames={inputStyles}
               isInvalid={!!errors.victim_age}
               errorMessage={errors.victim_age?.message}
+              endContent={
+                field.value ? (
+                  <IoCloseOutline
+                    size={18}
+                    className="cursor-pointer hover:opacity-75"
+                    onClick={() => field.onChange("")}
+                  />
+                ) : null
+              }
             >
               {ageBrackets.map((bracket) => (
                 <SelectItem key={bracket.value} textValue={bracket.label}>
@@ -209,6 +219,15 @@ export function VictimForm({
               classNames={inputStyles}
               isInvalid={!!errors.victim_gender}
               errorMessage={errors.victim_gender?.message}
+              endContent={
+                field.value ? (
+                  <IoCloseOutline
+                    size={18}
+                    className="cursor-pointer hover:opacity-75"
+                    onClick={() => field.onChange("")}
+                  />
+                ) : null
+              }
             >
               <SelectItem key="male" textValue="Male">
                 Male

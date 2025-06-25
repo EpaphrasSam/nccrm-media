@@ -19,6 +19,7 @@ import { FaChevronLeft } from "react-icons/fa";
 import { FileUpload } from "./FileUpload";
 import { usePermissions } from "@/hooks/usePermissions";
 import { contextSchema, type ContextFormValues } from "./schemas";
+import { IoCloseOutline } from "react-icons/io5";
 
 interface ContextFormProps {
   isNew?: boolean;
@@ -254,6 +255,15 @@ export function ContextForm({
               placeholder="Select the level of impact"
               variant="bordered"
               classNames={inputStyles}
+              endContent={
+                field.value ? (
+                  <IoCloseOutline
+                    size={18}
+                    className="cursor-pointer hover:opacity-75"
+                    onClick={() => field.onChange("")}
+                  />
+                ) : null
+              }
             >
               {impactOptions.map((option) => (
                 <SelectItem key={option.id} textValue={option.name}>
