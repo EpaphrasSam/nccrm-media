@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   const powerbiUrl = process.env.POWERBI_EMBED_URL;
 
