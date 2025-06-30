@@ -1,7 +1,9 @@
+import { serverEnv } from "@/utils/env";
+
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const powerbiUrl = process.env.POWERBI_EMBED_URL;
+  const powerbiUrl = serverEnv.powerbiEmbedUrl;
 
   return (
     <div className="h-screen -my-6 -mx-4 md:-mx-6">
@@ -12,9 +14,6 @@ export default function Home() {
           width="100%"
           height="100%"
           allowFullScreen
-          // loading="lazy"
-          // sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-popups"
-          // style={{ border: "none" }}
         />
       ) : (
         <div className="flex items-center justify-center h-full">

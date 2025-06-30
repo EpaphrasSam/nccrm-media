@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { navigationService } from "@/utils/navigation";
+import { PublicEnvScript } from "next-runtime-env";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <HeroUIProvider>
+        <PublicEnvScript />
         <ToastProvider placement="top-center" />
         {children}
       </HeroUIProvider>

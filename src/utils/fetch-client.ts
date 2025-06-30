@@ -1,22 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { signOut as nextAuthSignOut } from "next-auth/react";
-const isServer = typeof window === "undefined";
+import { getApiUrl, getAuthUrl } from "@/utils/env";
 
-let derivedBaseUrl: string;
-let derivedAuthUrl: string;
-
-if (isServer) {
-  derivedBaseUrl = process.env.SERVER_API_URL || "";
-  derivedAuthUrl = process.env.AUTH_URL || "";
-} else {
-  derivedBaseUrl = "/backend";
-  // derivedBaseUrl = "http://localhost:3035";
-  derivedAuthUrl = window.location.origin;
-}
-
-export const BASE_URL = derivedBaseUrl;
-export const authUrl = derivedAuthUrl;
+export const BASE_URL = getApiUrl();
+export const authUrl = getAuthUrl();
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;

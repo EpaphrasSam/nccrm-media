@@ -1,14 +1,8 @@
 import axiosBase from "axios";
+import { getApiUrl, getAuthUrl } from "@/utils/env";
 
-// In browser, only NEXT_PUBLIC_ vars are available
-export const BASE_URL =
-  process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://api:3035";
-
-// Prioritize NEXT_PUBLIC_ for browser environment
-const authUrl =
-  process.env.AUTH_URL ||
-  process.env.NEXT_PUBLIC_AUTH_URL ||
-  "http://localhost:3000";
+export const BASE_URL = getApiUrl();
+const authUrl = getAuthUrl();
 
 // Create main instance with auth interceptors
 const axios = axiosBase.create({
