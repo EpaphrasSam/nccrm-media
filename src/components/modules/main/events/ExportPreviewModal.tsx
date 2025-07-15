@@ -23,6 +23,8 @@ import {
   Select,
   SelectItem,
   DateRangePicker,
+  Tabs,
+  Tab,
 } from "@heroui/react";
 import useSWR from "swr";
 import { eventService } from "@/services/events/api";
@@ -38,6 +40,64 @@ interface ExportPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Date utility functions for presets
+const getDatePresets = () => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  // Last month
+  const lastMonth = new Date(currentYear, currentMonth - 1, 1);
+  const lastMonthEnd = new Date(currentYear, currentMonth, 0);
+
+  // Last year
+  const lastYear = new Date(currentYear - 1, 0, 1);
+  const lastYearEnd = new Date(currentYear - 1, 11, 31);
+
+  // Current year
+  const currentYearStart = new Date(currentYear, 0, 1);
+  const currentYearEnd = new Date(currentYear, 11, 31);
+
+  return {
+    lastMonth: {
+      start: parseDate(lastMonth.toISOString().split("T")[0]),
+      end: parseDate(lastMonthEnd.toISOString().split("T")[0]),
+    },
+    lastYear: {
+      start: parseDate(lastYear.toISOString().split("T")[0]),
+      end: parseDate(lastYearEnd.toISOString().split("T")[0]),
+    },
+    currentYear: {
+      start: parseDate(currentYearStart.toISOString().split("T")[0]),
+      end: parseDate(currentYearEnd.toISOString().split("T")[0]),
+    },
+  };
+};
+
+// Generate years for year selection (from 2000 to current year + 1)
+const generateYears = () => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: currentYear - 1999 + 2 }, (_, i) =>
+    (currentYear + 1 - i).toString()
+  ).reverse();
+};
+
+// Generate months
+const months = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
 
 // Define available columns for export (adjust as needed)
 const ALL_COLUMNS = [
@@ -124,6 +184,292 @@ const getAgeGroupLabel = (value: string) => {
   return match ? match[1] : found.label;
 };
 
+// Enhanced Date Filter Component
+interface EnhancedDateFilterProps {
+  value: RangeValue<DateValue> | null;
+  onChange: (range: RangeValue<DateValue> | null) => void;
+}
+
+function EnhancedDateFilter({ value, onChange }: EnhancedDateFilterProps) {
+  const [filterType, setFilterType] = useState<
+    "preset" | "custom" | "month" | "year"
+  >("preset");
+  const [monthRange, setMonthRange] = useState({
+    fromMonth: "",
+    fromYear: "",
+    toMonth: "",
+    toYear: "",
+  });
+  const [yearRange, setYearRange] = useState({ fromYear: "", toYear: "" });
+
+  const presets = getDatePresets();
+  const years = generateYears();
+
+  const handlePresetChange = (preset: string) => {
+    switch (preset) {
+      case "lastMonth":
+        onChange({
+          start: presets.lastMonth.start,
+          end: presets.lastMonth.end,
+        });
+        break;
+      case "lastYear":
+        onChange({ start: presets.lastYear.start, end: presets.lastYear.end });
+        break;
+      case "currentYear":
+        onChange({
+          start: presets.currentYear.start,
+          end: presets.currentYear.end,
+        });
+        break;
+      default:
+        onChange(null);
+    }
+  };
+
+  const handleMonthRangeApply = () => {
+    if (
+      monthRange.fromMonth &&
+      monthRange.fromYear &&
+      monthRange.toMonth &&
+      monthRange.toYear
+    ) {
+      const startDate = parseDate(
+        `${monthRange.fromYear}-${monthRange.fromMonth}-01`
+      );
+      const endDateObj = new Date(
+        parseInt(monthRange.toYear),
+        parseInt(monthRange.toMonth),
+        0
+      );
+      const endDate = parseDate(endDateObj.toISOString().split("T")[0]);
+      onChange({ start: startDate, end: endDate });
+    }
+  };
+
+  const handleYearRangeApply = () => {
+    if (yearRange.fromYear && yearRange.toYear) {
+      const startDate = parseDate(`${yearRange.fromYear}-01-01`);
+      const endDate = parseDate(`${yearRange.toYear}-12-31`);
+      onChange({ start: startDate, end: endDate });
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm-plus text-brand-black font-extrabold">
+        Event Date Filter
+      </p>
+      <Tabs
+        selectedKey={filterType}
+        onSelectionChange={(key) =>
+          setFilterType(key as "preset" | "custom" | "month" | "year")
+        }
+        variant="underlined"
+        color="danger"
+        size="sm"
+      >
+        <Tab key="preset" title="Quick">
+          <div className="space-y-3">
+            <div className="flex flex-row gap-2">
+              <Button
+                size="sm"
+                variant="bordered"
+                onPress={() => handlePresetChange("lastMonth")}
+                className={` flex-1 text-xs`}
+              >
+                Last Month
+              </Button>
+              <Button
+                size="sm"
+                variant="bordered"
+                onPress={() => handlePresetChange("lastYear")}
+                className={`flex-1 text-xs`}
+              >
+                Last Year
+              </Button>
+            </div>
+            <div className="flex flex-row gap-2">
+              <Button
+                size="sm"
+                variant="bordered"
+                onPress={() => handlePresetChange("currentYear")}
+                className={`flex-1 text-xs`}
+              >
+                Current Year
+              </Button>
+              <Button
+                size="sm"
+                variant="bordered"
+                color="danger"
+                onPress={() => onChange(null)}
+                className={`flex-1 text-xs text-brand-red-dark border-brand-red-dark`}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </Tab>
+
+        <Tab key="custom" title="Custom">
+          <div>
+            <DateRangePicker
+              value={value}
+              onChange={onChange}
+              showMonthAndYearPickers
+              variant="bordered"
+            />
+          </div>
+        </Tab>
+
+        <Tab key="month" title="Month">
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3">
+              <label className="text-sm text-gray-600">From</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  placeholder="Month"
+                  variant="bordered"
+                  selectedKeys={
+                    monthRange.fromMonth ? [monthRange.fromMonth] : []
+                  }
+                  onSelectionChange={(keys) =>
+                    setMonthRange((prev) => ({
+                      ...prev,
+                      fromMonth: Array.from(keys)[0] as string,
+                    }))
+                  }
+                >
+                  {months.map((month) => (
+                    <SelectItem key={month.value}>{month.label}</SelectItem>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="Year"
+                  variant="bordered"
+                  selectedKeys={
+                    monthRange.fromYear ? [monthRange.fromYear] : []
+                  }
+                  onSelectionChange={(keys) =>
+                    setMonthRange((prev) => ({
+                      ...prev,
+                      fromYear: Array.from(keys)[0] as string,
+                    }))
+                  }
+                >
+                  {years.map((year) => (
+                    <SelectItem key={year}>{year}</SelectItem>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <label className="text-sm text-gray-600">To</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  placeholder="Month"
+                  variant="bordered"
+                  selectedKeys={monthRange.toMonth ? [monthRange.toMonth] : []}
+                  onSelectionChange={(keys) =>
+                    setMonthRange((prev) => ({
+                      ...prev,
+                      toMonth: Array.from(keys)[0] as string,
+                    }))
+                  }
+                >
+                  {months.map((month) => (
+                    <SelectItem key={month.value}>{month.label}</SelectItem>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="Year"
+                  variant="bordered"
+                  selectedKeys={monthRange.toYear ? [monthRange.toYear] : []}
+                  onSelectionChange={(keys) =>
+                    setMonthRange((prev) => ({
+                      ...prev,
+                      toYear: Array.from(keys)[0] as string,
+                    }))
+                  }
+                >
+                  {years.map((year) => (
+                    <SelectItem key={year}>{year}</SelectItem>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button
+                color="primary"
+                onPress={handleMonthRangeApply}
+                className={`${buttonStyles} bg-brand-red-dark text-white px-6`}
+                isDisabled={
+                  !monthRange.fromMonth ||
+                  !monthRange.fromYear ||
+                  !monthRange.toMonth ||
+                  !monthRange.toYear
+                }
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        </Tab>
+
+        <Tab key="year" title="Year">
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3">
+              <label className="text-sm text-gray-600">Year Range</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  placeholder="From Year"
+                  variant="bordered"
+                  selectedKeys={yearRange.fromYear ? [yearRange.fromYear] : []}
+                  onSelectionChange={(keys) =>
+                    setYearRange((prev) => ({
+                      ...prev,
+                      fromYear: Array.from(keys)[0] as string,
+                    }))
+                  }
+                >
+                  {years.map((year) => (
+                    <SelectItem key={year}>{year}</SelectItem>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="To Year"
+                  variant="bordered"
+                  selectedKeys={yearRange.toYear ? [yearRange.toYear] : []}
+                  onSelectionChange={(keys) =>
+                    setYearRange((prev) => ({
+                      ...prev,
+                      toYear: Array.from(keys)[0] as string,
+                    }))
+                  }
+                >
+                  {years.map((year) => (
+                    <SelectItem key={year}>{year}</SelectItem>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button
+                color="primary"
+                onPress={handleYearRangeApply}
+                className={`${buttonStyles} bg-brand-red-dark text-white px-6`}
+                isDisabled={!yearRange.fromYear || !yearRange.toYear}
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        </Tab>
+      </Tabs>
+    </div>
+  );
+}
+
 export function ExportPreviewModal({
   isOpen,
   onClose,
@@ -177,6 +523,11 @@ export function ExportPreviewModal({
     } else if (key.startsWith("sub_indicator.")) {
       // Example: Handle potentially deep nested sub-indicator fields
       value = getNestedValue(item, key) || "N/A";
+    } else if (key === "coordinates") {
+      // Remove opening and closing brackets from coordinates
+      if (value && typeof value === "string") {
+        value = value.replace(/^\(|\)$/g, "");
+      }
     }
 
     // Default formatting for other types
@@ -265,6 +616,12 @@ export function ExportPreviewModal({
             row[key] = getAgeGroupLabel(event.pep_age || "");
           } else if (key === "victim_age_group") {
             row[key] = getAgeGroupLabel(event.victim_age || "");
+          } else if (key === "coordinates") {
+            let value = getNestedValue(event, key);
+            if (value && typeof value === "string") {
+              value = value.replace(/^\(|\)$/g, "");
+            }
+            row[key] = value;
           } else {
             let value = getNestedValue(event, key);
             if (key.endsWith("_date") || key.endsWith("_at")) {
@@ -482,15 +839,13 @@ export function ExportPreviewModal({
                                   <FiFilter className="w-3 h-3" color="gray" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="p-4 min-w-[180px]">
+                              <PopoverContent className="p-4 min-w-[300px]">
                                 {column.key === "event_date" ? (
-                                  <DateRangePicker
-                                    label="Event Date Range"
+                                  <EnhancedDateFilter
                                     value={
                                       filters.event_date as RangeValue<DateValue>
                                     }
                                     onChange={handleDateFilterChange}
-                                    showMonthAndYearPickers
                                   />
                                 ) : (
                                   <Select
