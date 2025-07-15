@@ -4,9 +4,15 @@ export const urlSync = {
     if (typeof window === "undefined") return;
     const searchParams = new URLSearchParams(window.location.search);
 
+    console.log("history", window.history.state);
+
     // If params is empty, clear all parameters
     if (Object.keys(params).length === 0) {
-      window.history.pushState({}, "", window.location.pathname);
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname
+      );
       return;
     }
 
@@ -20,7 +26,24 @@ export const urlSync = {
     });
 
     const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
-    window.history.pushState({}, "", newUrl);
+
+    // Only call replaceState if the URL actually changes
+    const currentUrlPath = `${window.location.pathname}${window.location.search}`;
+    if (newUrl !== currentUrlPath) {
+      // For Next.js, we need to update the internal routing state
+      const newState = { ...window.history.state };
+      if (newState.__PRIVATE_NEXTJS_INTERNALS_TREE) {
+        // Update the Next.js internal page state
+        const tree = newState.__PRIVATE_NEXTJS_INTERNALS_TREE;
+        if (tree[1]?.children?.[1]?.children?.[1]?.children?.[0]) {
+          tree[1].children[1].children[1].children[0] = `__PAGE__?${new URLSearchParams(
+            newUrl.split("?")[1] || ""
+          ).toString()}`;
+          tree[1].children[1].children[1].children[2] = newUrl;
+        }
+      }
+      window.history.replaceState(newState, "", newUrl);
+    }
   },
 
   parseFromUrl: (searchParams: URLSearchParams): Record<string, any> => {
