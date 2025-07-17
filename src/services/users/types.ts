@@ -18,6 +18,8 @@ export interface UserListItem {
   name: string;
   status: UserStatus;
   image: string;
+  created_at: string;
+  last_login: string;
   department: {
     name: string;
   };

@@ -40,9 +40,28 @@ const columns = [
   { key: "name", label: "Name" },
   { key: "department", label: "Department" },
   { key: "role", label: "Role" },
+  { key: "created_at/last_login", label: "Created/Last Login" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
 ];
+
+// Helper function to format date
+const formatDate = (dateString: string) => {
+  if (!dateString) return "Never";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "Invalid date";
+  }
+};
 
 // Helper functions for role colors
 const generateRandomColor = () => {
@@ -241,6 +260,12 @@ export function UsersTable() {
                       <Skeleton className="h-6 w-20 rounded-full" />
                     </TableCell>
                     <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-28" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-16" />
                     </TableCell>
                     <TableCell>
@@ -283,6 +308,16 @@ export function UsersTable() {
                 </TableCell>
                 <TableCell>
                   <RoleChip role={user?.role?.name} />
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm text-gray-600">
+                      {formatDate(user?.created_at)}
+                    </p>
+                    <p className="text-xs font-semibold text-gray-600">
+                      Last Login: {formatDate(user?.last_login)}
+                    </p>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <StatusText status={user?.status} />
