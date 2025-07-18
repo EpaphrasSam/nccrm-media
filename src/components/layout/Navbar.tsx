@@ -60,6 +60,7 @@ export function Navbar({ className = "" }: NavbarProps) {
                   fallback={
                     session?.user?.name ? getInitials(session.user.name) : ""
                   }
+                  src={session?.user?.image || ""}
                   isBordered
                   size="md"
                   className="cursor-pointer"

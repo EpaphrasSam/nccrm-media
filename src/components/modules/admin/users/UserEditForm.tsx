@@ -136,7 +136,10 @@ export function UserEditForm() {
         department_id: currentUser.department?.id || "",
         password: "",
       });
-      setProfileImage(currentUser.image || "");
+      // Only update profile image if it's not already set (to preserve user's new selection)
+      if (!profileImage || profileImage === currentUser.image) {
+        setProfileImage(currentUser.image || "");
+      }
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 1000);
@@ -148,6 +151,7 @@ export function UserEditForm() {
     profileForm,
     personalInfoForm,
     accountInfoForm,
+    profileImage,
   ]);
 
   // Auto-generate username when name changes and auto-generate is enabled
