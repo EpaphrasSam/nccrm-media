@@ -22,6 +22,8 @@ export default async function EditSituationalReportingPage({
           <AdminPageHeader
             title="Edit Situational Reporting"
             description="Modify situational reporting details."
+            showBackButton={true}
+            backButtonText="Situational Reporting"
           />
         }
       >

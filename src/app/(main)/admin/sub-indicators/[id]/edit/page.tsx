@@ -16,12 +16,14 @@ export default async function EditSubIndicatorPage({
 
   return (
     <>
-      <InitializeSubIndicator id={id} />
+      <InitializeSubIndicator id={id} />{" "}
       <AdminPageLayout
         header={
           <AdminPageHeader
             title="Edit Sub Indicator"
             description="Modify sub indicator details."
+            showBackButton={true}
+            backButtonText="Sub Indicators"
           />
         }
       >

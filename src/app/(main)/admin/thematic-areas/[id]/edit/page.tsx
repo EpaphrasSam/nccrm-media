@@ -22,6 +22,8 @@ export default async function EditThematicAreaPage({
           <AdminPageHeader
             title="Edit Thematic Area"
             description="Modify thematic area details."
+            showBackButton={true}
+            backButtonText="Thematic Areas"
           />
         }
       >

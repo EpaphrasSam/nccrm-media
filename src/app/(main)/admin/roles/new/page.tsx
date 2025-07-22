@@ -9,6 +9,8 @@ export default function NewRolePage() {
         <AdminPageHeader
           title="Add New Role"
           description="Create a new role and define its permissions."
+          showBackButton={true}
+          backButtonText="Roles"
         />
       }
     >

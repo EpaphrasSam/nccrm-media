@@ -11,6 +11,8 @@ export default function NewSubIndicatorPage() {
         <AdminPageHeader
           title="Add New Sub Indicator"
           description="Create a new sub indicator in the system."
+          showBackButton={true}
+          backButtonText="Sub Indicators"
         />
       }
     >

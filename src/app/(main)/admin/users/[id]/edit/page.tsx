@@ -19,6 +19,8 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
           <AdminPageHeader
             title="View User Details"
             description="View and manage detailed information about the user."
+            showBackButton={true}
+            backButtonText="Users"
           />
         }
       >

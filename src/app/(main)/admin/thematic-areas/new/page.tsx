@@ -11,6 +11,8 @@ export default function NewThematicAreaPage() {
         <AdminPageHeader
           title="Add New Thematic Area"
           description="Create a new thematic area in the system."
+          showBackButton={true}
+          backButtonText="Thematic Areas"
         />
       }
     >

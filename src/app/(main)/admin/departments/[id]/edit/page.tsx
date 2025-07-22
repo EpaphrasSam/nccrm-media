@@ -22,6 +22,8 @@ export default async function EditDepartmentPage({
           <AdminPageHeader
             title="Edit Department"
             description="Modify department details."
+            showBackButton={true}
+            backButtonText="Departments"
           />
         }
       >

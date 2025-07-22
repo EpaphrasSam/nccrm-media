@@ -19,6 +19,8 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           <AdminPageHeader
             title="Situational Analysis"
             description="Fill in the details for situational analysis"
+            showBackButton={true}
+            backButtonText="Situational Reporting"
           />
         }
       >

@@ -9,6 +9,8 @@ export default function NewMainIndicatorPage() {
         <AdminPageHeader
           title="Add New Main Indicator"
           description="Create a new main indicator in the system."
+          showBackButton={true}
+          backButtonText="Main Indicators"
         />
       }
     >

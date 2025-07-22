@@ -16,12 +16,14 @@ export default async function EditMainIndicatorPage({
 
   return (
     <>
-      <InitializeMainIndicator id={id} />
+      <InitializeMainIndicator id={id} />{" "}
       <AdminPageLayout
         header={
           <AdminPageHeader
             title="Edit Main Indicator"
             description="Modify main indicator details."
+            showBackButton={true}
+            backButtonText="Main Indicators"
           />
         }
       >

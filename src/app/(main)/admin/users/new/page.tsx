@@ -9,6 +9,8 @@ export default function NewUserPage() {
         <AdminPageHeader
           title="Add New User"
           description="Create a new user and assign their role and department."
+          showBackButton={true}
+          backButtonText="Users"
         />
       }
     >

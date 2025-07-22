@@ -12,6 +12,8 @@ export default function NewDepartmentPage() {
           <AdminPageHeader
             title="Add New Department"
             description="Create a new department in the system."
+            showBackButton={true}
+            backButtonText="Departments"
           />
         }
       >

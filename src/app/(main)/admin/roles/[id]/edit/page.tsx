@@ -20,6 +20,8 @@ export default async function EditRolePage({ params }: EditRolePageProps) {
           <AdminPageHeader
             title="View Role Details"
             description="View and manage detailed information about the role."
+            showBackButton={true}
+            backButtonText="Roles"
           />
         }
       >

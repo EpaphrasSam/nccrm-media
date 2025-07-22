@@ -15,12 +15,14 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
   const user = await auth();
   return (
     <>
-      <InitializeEvent id={id} userId={user?.user?.id || ""} />
+      <InitializeEvent id={id} userId={user?.user?.id || ""} />{" "}
       <MainPageLayout
         header={
           <MainPageHeader
             title="Edit Event"
             description="Update the details of an existing event"
+            showBackButton={true}
+            backButtonText="Events"
           />
         }
       >

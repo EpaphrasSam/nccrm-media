@@ -11,6 +11,8 @@ export default function NewSituationalReportingPage() {
         <AdminPageHeader
           title="Add Situational Reporting"
           description="Create a new situational reporting by specifying its name"
+          showBackButton={true}
+          backButtonText="Situational Reporting"
         />
       }
     >

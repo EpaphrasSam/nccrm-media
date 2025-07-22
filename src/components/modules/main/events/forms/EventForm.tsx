@@ -360,36 +360,31 @@ export function EventForm({
           variant="bordered"
           classNames={inputStyles}
         />
-
         <Controller
           name="reporter_id"
           control={control}
           defaultValue={currentEvent?.reporter?.id || session?.user?.id || ""}
           render={({ field }) => <Input {...field} type="hidden" />}
-        />
-
-        <Input
-          value={formatDateForInput(new Date().toISOString())}
-          type="date"
-          label="Report Date"
-          labelPlacement="outside"
-          variant="bordered"
-          classNames={inputStyles}
-          readOnly
-        />
-
+        />{" "}
         <Controller
           name="report_date"
           control={control}
-          render={({ field }) => <Input {...field} type="hidden" />}
+          render={({ field }) => (
+            <Input
+              {...field}
+              type="date"
+              label="Report Date"
+              labelPlacement="outside"
+              variant="bordered"
+              classNames={inputStyles}
+              readOnly
+            />
+          )}
         />
-
         <Controller
           name="sub_indicator_id"
           control={control}
           render={({ field }) => {
-            // field.value is the selected id
-            // whatQuery is the input value
             return (
               <Autocomplete
                 selectedKey={field.value || null}
@@ -433,7 +428,6 @@ export function EventForm({
             );
           }}
         />
-
         <Controller
           name="details"
           control={control}
@@ -450,7 +444,6 @@ export function EventForm({
             />
           )}
         />
-
         <Controller
           name="event_date"
           control={control}
@@ -468,7 +461,6 @@ export function EventForm({
             />
           )}
         />
-
         {/* Location Autocomplete Section */}
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
@@ -543,7 +535,6 @@ export function EventForm({
             classNames={inputStyles}
           />
         </div>
-
         {!isNew && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
