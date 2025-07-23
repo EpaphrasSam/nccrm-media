@@ -34,7 +34,7 @@ const columns = [
   { key: "reporter", label: "Reporter" },
   { key: "what", label: "What" },
   { key: "region", label: "City (District)" },
-  { key: "date", label: "Date" },
+  { key: "report_date", label: "Report Date" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Actions" },
 ] as const;
