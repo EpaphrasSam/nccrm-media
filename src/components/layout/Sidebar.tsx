@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { routes, bottomRoutes, Route, RouteGroup } from "@/lib/routes";
 import { authService } from "@/services/auth/api";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Spinner, Skeleton } from "@heroui/react";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -45,7 +45,6 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
     return routes
       .map((route) => {
         if ("routes" in route) {
-          // RouteGroup
           const filteredSubRoutes = route.routes.filter((subRoute) => {
             const permissionModuleKey = subRoute.permissionModule;
             return (
@@ -56,16 +55,24 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
             ? { ...route, routes: filteredSubRoutes }
             : null;
         } else {
-          // Single Route
           const permissionModuleKey = route.permissionModule;
-          // Corrected: Return route if allowed, otherwise null
           const canView =
             !permissionModuleKey || hasPermission(permissionModuleKey, "view");
           return canView ? route : null;
         }
       })
-      .filter(Boolean) as (Route | RouteGroup)[]; // filter(Boolean) now correctly removes only nulls
+      .filter(Boolean) as (Route | RouteGroup)[];
   }, [permissionsLoading, isAuthenticated, hasPermission]);
+
+  // Cache last good routes to prevent flicker during transient loading
+  const [cachedRoutes, setCachedRoutes] = useState<(Route | RouteGroup)[]>([]);
+  const hasInitialRoutes = useRef(false);
+  useEffect(() => {
+    if (!permissionsLoading && isAuthenticated) {
+      hasInitialRoutes.current = true;
+      setCachedRoutes(filteredRoutes);
+    }
+  }, [permissionsLoading, isAuthenticated, filteredRoutes]);
 
   const SkeletonIcon = () => <Skeleton className="h-5 w-5 rounded-md" />;
   const skeletonMainRoutes = Array.from({ length: 5 }).map((_, i) => ({
@@ -121,14 +128,19 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
     );
   };
 
-  const mainRoutes = filteredRoutes.filter(
+  const effectiveRoutes =
+    permissionsLoading && hasInitialRoutes.current && cachedRoutes.length > 0
+      ? cachedRoutes
+      : filteredRoutes;
+
+  const mainRoutes = effectiveRoutes.filter(
     (route) => !("routes" in route)
   ) as Route[];
-  const adminGroup = filteredRoutes.find((route) => "routes" in route) as
+  const adminGroup = effectiveRoutes.find((route) => "routes" in route) as
     | RouteGroup
     | undefined;
-
-  if (permissionsLoading) {
+  // Only show skeletons on first load; during later transient loads use cached routes
+  if (permissionsLoading && !hasInitialRoutes.current) {
     return (
       <div
         className={`flex flex-col h-full bg-white border-r ${
@@ -136,11 +148,9 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
         } ${className}`}
       >
         <div className="flex flex-col h-full px-4 py-6 space-y-4">
-          {/* Main skeleton routes */}
           <nav className="pt-6 space-y-2">
             {skeletonMainRoutes.map(renderRouteWithSkeleton)}
           </nav>
-          {/* Admin skeleton section */}
           <div className="mt-8 flex-1 min-h-0">
             <div className="h-full overflow-y-auto custom-scrollbar">
               <div className="space-y-4">
@@ -157,17 +167,12 @@ export function Sidebar({ className = "", isDrawer = false }: SidebarProps) {
               </div>
             </div>
           </div>
-          {/* Bottom skeleton routes */}
           <div className="py-6 mt-auto space-y-2">
             {skeletonBottomRoutes.map(renderRouteWithSkeleton)}
           </div>
         </div>
       </div>
     );
-  }
-
-  if (pathname === "/unauthorized") {
-    return null;
   }
 
   return (

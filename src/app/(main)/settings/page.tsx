@@ -19,7 +19,7 @@ import { useState, useEffect, useRef } from "react";
 import { FaCamera } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { generateUsername, generatePassword } from "@/helpers/userHelpers";
-import { useSession } from "next-auth/react";
+import { useStableUser } from "@/hooks/useStableUser";
 import { userService } from "@/services/users/api";
 import { useUserSync } from "@/hooks/useUserSync";
 
@@ -44,10 +44,10 @@ type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
 type AccountInfoFormData = z.infer<typeof accountInfoSchema>;
 
 export default function SettingsPage() {
-  const { data: session, status } = useSession();
+  const { user: stableUser, isInitialLoading } = useStableUser();
   const [localLoading, setLocalLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<string | undefined>(
-    session?.user?.image || ""
+    stableUser?.image || ""
   );
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerateUsername, setAutoGenerateUsername] = useState(false);
@@ -59,8 +59,8 @@ export default function SettingsPage() {
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: session?.user?.name || "",
-      email: session?.user?.email || "",
+      name: stableUser?.name || "",
+      email: stableUser?.email || "",
     },
   });
 
@@ -68,8 +68,8 @@ export default function SettingsPage() {
   const personalInfoForm = useForm<PersonalInfoFormData>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
-      phone_number: session?.user?.phone_number || "",
-      gender: (session?.user?.gender as "male" | "female") || GENDERS.MALE,
+      phone_number: stableUser?.phone_number || "",
+      gender: (stableUser?.gender as "male" | "female") || GENDERS.MALE,
     },
   });
 
@@ -77,7 +77,7 @@ export default function SettingsPage() {
   const accountInfoForm = useForm<AccountInfoFormData>({
     resolver: zodResolver(accountInfoSchema),
     defaultValues: {
-      username: session?.user?.username || "",
+      username: stableUser?.username || "",
       password: "",
     },
   });
@@ -86,34 +86,40 @@ export default function SettingsPage() {
 
   // Reset forms when session changes
   useEffect(() => {
-    if (status !== "loading" && session?.user) {
+    if (!isInitialLoading && stableUser) {
       profileForm.reset({
-        name: session.user.name || "",
-        email: session.user.email || "",
+        name: stableUser.name || "",
+        email: stableUser.email || "",
       });
       personalInfoForm.reset({
-        phone_number: session.user.phone_number || "",
-        gender: (session.user.gender as "male" | "female") || GENDERS.MALE,
+        phone_number: stableUser.phone_number || "",
+        gender: (stableUser.gender as "male" | "female") || GENDERS.MALE,
       });
       accountInfoForm.reset({
-        username: session.user.username || "",
+        username: stableUser.username || "",
         password: "",
       });
-      setProfileImage(session.user.image || "");
+      setProfileImage(stableUser.image || "");
       const timer = setTimeout(() => {
         setLocalLoading(false);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [session, status, profileForm, personalInfoForm, accountInfoForm]);
+  }, [
+    stableUser,
+    isInitialLoading,
+    profileForm,
+    personalInfoForm,
+    accountInfoForm,
+  ]);
 
   // Auto-generate username when name changes and auto-generate is enabled
   useEffect(() => {
-    if (autoGenerateUsername && session?.user) {
-      accountInfoForm.setValue("username", generateUsername(session.user.name));
+    if (autoGenerateUsername && stableUser) {
+      accountInfoForm.setValue("username", generateUsername(stableUser.name));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.name, autoGenerateUsername, accountInfoForm]);
+  }, [stableUser?.name, autoGenerateUsername, accountInfoForm]);
 
   const handleGeneratePassword = () => {
     accountInfoForm.setValue("password", generatePassword());
@@ -131,18 +137,18 @@ export default function SettingsPage() {
   };
 
   const handleProfileSubmit = async (data: ProfileFormData) => {
-    if (!session?.user?.id) return;
+    if (!stableUser?.id) return;
 
     try {
       const updateData = { ...data };
-      if (profileImage && profileImage !== session?.user?.image) {
+      if (profileImage && profileImage !== stableUser?.image) {
         const response = await fetch(profileImage);
         const blob = await response.blob();
         const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
         Object.assign(updateData, { image: file });
       }
 
-      const result = await userService.update(session.user.id, updateData);
+      const result = await userService.update(stableUser.id, updateData);
       if (
         ("error" in result && !result.error) ||
         (!("error" in result) && result)
@@ -154,10 +160,10 @@ export default function SettingsPage() {
   };
 
   const handlePersonalInfoSubmit = async (data: PersonalInfoFormData) => {
-    if (!session?.user?.id) return;
+    if (!stableUser?.id) return;
 
     try {
-      const result = await userService.update(session.user.id, data);
+      const result = await userService.update(stableUser.id, data);
       if (
         ("error" in result && !result.error) ||
         (!("error" in result) && result)
@@ -169,10 +175,10 @@ export default function SettingsPage() {
   };
 
   const handleAccountInfoSubmit = async (data: AccountInfoFormData) => {
-    if (!session?.user?.id) return;
+    if (!stableUser?.id) return;
 
     try {
-      const result = await userService.update(session.user.id, data);
+      const result = await userService.update(stableUser.id, data);
       if (
         ("error" in result && !result.error) ||
         (!("error" in result) && result)
@@ -183,7 +189,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (status === "loading" || localLoading) {
+  if (isInitialLoading || localLoading) {
     return (
       <div className="space-y-8 max-w-5xl">
         {/* Profile Section Loading */}
@@ -232,7 +238,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (!session?.user) {
+  if (!stableUser) {
     return <div>Not authenticated</div>;
   }
 
@@ -311,7 +317,7 @@ export default function SettingsPage() {
                   label="Role"
                   labelPlacement="outside"
                   isReadOnly
-                  value={session?.user?.role?.name || ""}
+                  value={stableUser?.role?.name || ""}
                   variant="underlined"
                   classNames={{ label: "text-base font-medium" }}
                 />
@@ -488,7 +494,7 @@ export default function SettingsPage() {
               placeholder="Department"
               labelPlacement="outside"
               isReadOnly
-              value={session?.user?.department || ""}
+              value={stableUser?.department || ""}
               variant="bordered"
               classNames={inputStyles}
             />

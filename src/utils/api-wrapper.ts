@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { addToast } from "@heroui/react";
+import { isHtmlLike } from "@/utils/html";
 
 export type ApiResponse<T> = {
   data: T;
@@ -51,10 +52,13 @@ export async function clientApiCall<T>(
 
     return result;
   } catch (error: any) {
-    const message =
-      error.response?.data?.error?.message ||
-      error.message ||
-      "Something went wrong";
+    const rawData = error?.response?.data;
+    const primary =
+      rawData?.error?.message || rawData?.message || error?.message;
+
+    const message = isHtmlLike(rawData)
+      ? "Server is unavailable. Please try again later."
+      : String(primary || "Something went wrong");
 
     // Only show toast if this exact error hasn't been shown recently
     if (!shownErrors.has(message)) {
@@ -93,8 +97,13 @@ export async function serverApiCall<T>(
 
     return { data, error: null };
   } catch (error: any) {
-    const message =
-      error.response?.data?.message || error.message || "Something went wrong";
-    return { data: fallback, error: message };
+    const rawData = error?.response?.data;
+    const primary =
+      rawData?.error?.message || rawData?.message || error?.message;
+
+    const safeMessage = isHtmlLike(rawData)
+      ? "Server is unavailable. Please try again later."
+      : String(primary || "Something went wrong");
+    return { data: fallback, error: safeMessage };
   }
 }

@@ -12,7 +12,7 @@ import {
 import { FiMenu } from "react-icons/fi";
 import { Logo } from "@/components/common/misc/Logo";
 import { Sidebar } from "./Sidebar";
-import { useSession } from "next-auth/react";
+import { useStableUser } from "@/hooks/useStableUser";
 
 interface NavbarProps {
   className?: string;
@@ -20,7 +20,8 @@ interface NavbarProps {
 
 export function Navbar({ className = "" }: NavbarProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const { user: displayUser, isInitialLoading: isFirstLoading } =
+    useStableUser();
 
   const getInitials = (name: string) => {
     return name
@@ -46,7 +47,7 @@ export function Navbar({ className = "" }: NavbarProps) {
             <Logo hideTextOnMobile />
           </div>
           <div className="flex items-center gap-3">
-            {status === "loading" ? (
+            {isFirstLoading ? (
               <>
                 <Skeleton className="w-10 h-10 rounded-full" />
                 <div className="space-y-0.5 mt-1">
@@ -58,19 +59,19 @@ export function Navbar({ className = "" }: NavbarProps) {
               <>
                 <Avatar
                   fallback={
-                    session?.user?.name ? getInitials(session.user.name) : ""
+                    displayUser?.name ? getInitials(displayUser.name) : ""
                   }
-                  src={session?.user?.image || ""}
+                  src={displayUser?.image || ""}
                   isBordered
                   size="md"
                   className="cursor-pointer"
                 />
                 <div className="space-y-0.5 mt-1">
                   <p className="text-sm-plus font-extrabold text-brand-black-dark">
-                    {session?.user?.name}
+                    {displayUser?.name}
                   </p>
                   <p className="text-xs-plus text-brand-green-dark font-extrabold capitalize">
-                    {session?.user?.role?.name}
+                    {displayUser?.role?.name}
                   </p>
                 </div>
               </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { useCallback } from "react";
 import type { RolePermissions, BaseFunctions } from "@/services/roles/types";
 
 type PermissionModule = keyof RolePermissions;
@@ -24,26 +25,26 @@ export function usePermissions(): UsePermissionsReturn {
   const isAuthenticated = status === "authenticated";
   const permissions = session?.user?.role?.functions;
 
-  const hasPermission = (
-    module: PermissionModule,
-    action: PermissionAction
-  ): boolean => {
-    if (isLoading || !isAuthenticated || !permissions) {
-      return false;
-    }
+  const hasPermission = useCallback(
+    (module: PermissionModule, action: PermissionAction): boolean => {
+      if (isLoading || !isAuthenticated || !permissions) {
+        return false;
+      }
 
-    const modulePermissions = permissions[module];
+      const modulePermissions = permissions[module];
 
-    if (!modulePermissions) {
-      return false; // Module or its permissions not found
-    }
+      if (!modulePermissions) {
+        return false;
+      }
 
-    if (action === "approve") {
-      return "approve" in modulePermissions && !!modulePermissions.approve;
-    }
+      if (action === "approve") {
+        return "approve" in modulePermissions && !!modulePermissions.approve;
+      }
 
-    return !!modulePermissions[action as keyof BaseFunctions];
-  };
+      return !!modulePermissions[action as keyof BaseFunctions];
+    },
+    [isLoading, isAuthenticated, permissions]
+  );
 
   return {
     hasPermission,
