@@ -625,7 +625,7 @@ export function ExportPreviewModal({
           } else {
             let value = getNestedValue(event, key);
             if (key.endsWith("_date") || key.endsWith("_at")) {
-              value = value ? new Date(value).toLocaleString() : "";
+              value = value ? new Date(value).toLocaleDateString() : "";
             } else if (key === "follow_ups") {
               value = (value || []).join("; ");
             }

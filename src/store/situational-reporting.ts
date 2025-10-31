@@ -345,8 +345,8 @@ export const useSituationalReportingStore = create<SituationalReportingState>(
               report.name,
               report.year,
               report.status,
-              new Date(report.created_at).toLocaleString(),
-              new Date(report.updated_at).toLocaleString(),
+              new Date(report.created_at).toLocaleDateString(),
+              new Date(report.updated_at).toLocaleDateString(),
             ]
               .map((value) => `"${String(value).replace(/"/g, '""')}"`)
               .join(",")

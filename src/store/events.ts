@@ -477,7 +477,7 @@ export const useEventsStore = create<EventsState>()(
                   typeof value === "number" ||
                   value instanceof Date
                 ) {
-                  value = value ? new Date(value).toLocaleString() : "";
+                  value = value ? new Date(value).toLocaleDateString() : "";
                 } else {
                   value = "";
                 }
