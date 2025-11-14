@@ -2,7 +2,6 @@
 
 import { Button } from "@heroui/react";
 import { FaChevronLeft } from "react-icons/fa";
-import { useRouter } from "next/navigation";
 import { buttonStyles } from "@/lib/styles";
 
 interface AdminPageHeaderProps {
@@ -20,13 +19,11 @@ export function AdminPageHeader({
   backButtonText = "",
   onBack,
 }: AdminPageHeaderProps) {
-  const router = useRouter();
-
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      window.history.back();
     }
   };
 
